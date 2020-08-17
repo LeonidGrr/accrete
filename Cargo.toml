@@ -1,0 +1,11 @@
+[package]
+name = "accrete"
+version = "0.1.0"
+authors = ["leonidgrr <leonidgrr@gmail.com>"]
+description="Rust port of Accrete, planetary system accretion simulation algorithm by Stephen H. Dole, published as 'Formation of Planetary Systems by Aggregation: A Computer Simulation'."
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rand = "0.7"
