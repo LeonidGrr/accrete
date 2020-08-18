@@ -1,5 +1,3 @@
-use std::fmt;
-
 #[derive(Debug, PartialOrd, PartialEq, Clone, Copy)]
 pub struct DustBand {
     pub inner: f64,
@@ -21,16 +19,6 @@ impl DustBand {
             dust: dust_present.unwrap_or(true),
             gas: gas_present.unwrap_or(true),
         }
-    }
-}
-
-impl fmt::Display for DustBand {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "Inner limit: {}", self.inner);
-        writeln!(f, "Outer limit: {}", self.outer);
-        writeln!(f, "Dust present: {}", self.dust);
-        writeln!(f, "Gas present: {}", self.gas);
-        Ok(())
     }
 }
 
