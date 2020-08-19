@@ -4,14 +4,17 @@ mod consts;
 mod dole_params;
 mod dust;
 mod planetismal;
+mod asteroid_belt;
+
 use crate::accrete::Accrete;
 use rand::prelude::*;
 
 #[allow(dead_code)]
 fn run() {
     let mut rng = rand::thread_rng();
-    let gen = Accrete::new();
+    let gen = Accrete::new(true, true);
     let s = gen.distribute_planets(Some(rng.gen_range(0.3, 1.2)), None);
+
     println!("Generated star system:");
     println!("{} planets", s.0.len());
     println!("Stellar mass: {}", s.1);
