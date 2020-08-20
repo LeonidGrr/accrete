@@ -1,8 +1,9 @@
+#![allow(dead_code)]
 use crate::astro;
 use crate::dole_params;
 use crate::dust::{DustBand, DustBands};
 use crate::planetismal::Planetismal;
-use crate::asteroid_belt::AsteroidBelt;
+// use crate::asteroid_belt::AsteroidBelt;
 
 use rand::prelude::*;
 use std::f64::consts::PI;
@@ -19,13 +20,10 @@ impl Accrete {
 
     pub fn distribute_planets(
         &self,
-        mass: Option<f64>,
-        luminosity: Option<f64>,
+        stellar_mass: f64,
+        stellar_luminosity: f64,
     ) -> (Vec<Planetismal>, f64, f64) {
-        let stellar_mass = mass.unwrap_or(1.0);
-        let stellar_luminosity = luminosity.unwrap_or(astro::luminosity(stellar_mass));
         let mut rng = rand::thread_rng();
-
         let mut planets = Vec::new();
         // let mut asteroid_belts = Vec::new();
         let mut dust_left = true;
@@ -105,7 +103,7 @@ impl Accrete {
             let mut p = Planetismal::new(
                 Some(
                     a * dole_params::outermost_moon(&planetary_mass)
-                        + dole_params::innermost_planet(&planetary_mass),
+                        + dole_params::innermost_moon(&planetary_mass),
                 ),
                 Some(dole_params::random_eccentricity(e)),
                 None,
@@ -147,13 +145,13 @@ impl Accrete {
         moons
     }
 
-    fn form_asteroid_belt(
-        asterois_belts: &Vec<AsteroidBelt>,
-        mass: &f64,
-        eccn: f64,
-    ) -> Vec<AsteroidBelt> {
-        Vec::new()
-    }
+    // fn form_asteroid_belt(
+    //     asterois_belts: &Vec<AsteroidBelt>,
+    //     mass: &f64,
+    //     eccn: f64,
+    // ) -> Vec<AsteroidBelt> {
+    //     Vec::new()
+    // }
 
     fn accrete_dust(
         nucleus: &mut Planetismal,
@@ -269,7 +267,6 @@ impl Accrete {
     }
 
     fn coalesce_two_planets(a: &Planetismal, b: &Planetismal) -> Planetismal {
-        println!("Collsion!");
         let new_mass = a.mass + b.mass;
         let new_axis = new_mass / (a.mass / a.axis + b.mass / b.axis);
         let term1 = a.mass * (a.axis * (1.0 - a.eccn.powf(2.0))).sqrt();

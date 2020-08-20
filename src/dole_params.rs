@@ -10,9 +10,9 @@ pub const ALPHA: f64 = 5.0;
 pub const N: f64 = 3.0;
 
 // A in Dole's paper
-pub const dust_density_coeff: f64 = 1.5e-3;
-pub const cloud_eccentricity: f64 = 0.25;
-pub const eccentricity_coeff: f64 = 0.077;
+pub const DUST_DENSITY_COEFF: f64 = 1.5e-3;
+pub const CLOUD_ECCENTRICITY: f64 = 0.25;
+pub const ECCENTRICITY_COEFF: f64 = 0.077;
 
 pub fn critical_mass(radius: &f64, eccentricity: &f64, luminosity: &f64) -> f64 {
     B * (perihelion_distance(radius, eccentricity) * luminosity.sqrt()).powf(-0.75)
@@ -37,11 +37,11 @@ pub fn reduced_margin(mass: &f64) -> f64 {
 }
 
 pub fn low_bound(inner: &f64) -> f64 {
-    inner / (1.0 + cloud_eccentricity)
+    inner / (1.0 + CLOUD_ECCENTRICITY)
 }
 
 pub fn high_bound(outer: &f64) -> f64 {
-    outer / (1.0 - cloud_eccentricity)
+    outer / (1.0 - CLOUD_ECCENTRICITY)
 }
 
 pub fn inner_effect_limit(mass: &f64, axis: &f64, eccn: &f64) -> f64 {
@@ -64,7 +64,7 @@ pub fn outer_swept_limit(mass: &f64, axis: &f64, eccn: &f64) -> f64 {
 }
 
 pub fn dust_density(stellar_mass: &f64, oribital_radius: &f64) -> f64 {
-    dust_density_coeff * stellar_mass.sqrt() * (-ALPHA * oribital_radius.powf(1.0 / N)).exp()
+    DUST_DENSITY_COEFF * stellar_mass.sqrt() * (-ALPHA * oribital_radius.powf(1.0 / N)).exp()
 }
 
 pub fn mass_density(dust_density: &f64, critical_mass: &f64, mass: &f64) -> f64 {
@@ -92,7 +92,7 @@ pub fn outermost_planet(mass: &f64) -> f64 {
 }
 
 pub fn random_eccentricity(random: f64) -> f64 {
-    1.0 - random.powf(eccentricity_coeff)
+    1.0 - random.powf(ECCENTRICITY_COEFF)
 }
 
 pub fn planet_outer_swept_limit(planetary_mass: &f64) -> f64 {

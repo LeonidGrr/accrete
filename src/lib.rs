@@ -6,42 +6,63 @@ mod dust;
 mod planetismal;
 mod asteroid_belt;
 
-use crate::accrete::Accrete;
+use serde_json::json;
 use rand::prelude::*;
 
-#[allow(dead_code)]
-fn run() {
+pub enum AccreteOutput {
+    Tuple((Vec<planetismal::Planetismal>, f64, f64)),
+    Json(String),
+}
+
+/// Run planetary system generator
+pub fn run(
+    with_moons: bool,
+    with_rings: bool,
+    _with_belts: bool,
+    to_json: bool,
+    stellar_mass: Option<f64>,
+    stellar_luminosity: Option<f64>,
+) -> AccreteOutput {
     let mut rng = rand::thread_rng();
-    let gen = Accrete::new(true, true);
-    let s = gen.distribute_planets(Some(rng.gen_range(0.3, 1.2)), None);
+    let stellar_mass = stellar_mass.unwrap_or(rng.gen_range(0.3, 1.2));
+    let stellar_luminosity = stellar_luminosity.unwrap_or(astro::luminosity(stellar_mass));
 
-    println!("Generated star system:");
-    println!("{} planets", s.0.len());
-    println!("Stellar mass: {}", s.1);
-    println!("Stellar luminosity: {}", s.2);
+    let gen = accrete::Accrete::new(with_moons, with_rings);
+    let system = gen.distribute_planets(stellar_mass, stellar_luminosity);
 
-    for (i, planet) in s.0.iter().enumerate() {
-        println!("Planet: {}", i + 1);
-        println!("Mass: {}", planet.get_earth_mass());
-        println!("Axis: {}", planet.axis);
-        println!("Gas giant?: {}", planet.gas_giant);
-        println!("Moons:");
-        for (j, moon) in planet.moons.iter().enumerate() {
-            println!("          Moon: {}", j+ 1);
-            println!("          Mass: {}", moon.get_earth_mass());
-            println!("          Axis: {}", moon.axis);
-            println!("          Gas giant?: {}", moon.gas_giant);
-            println!("          -----------");
-        }
-        println!("------------------------------------");
+    if to_json {
+        let (planets, stellar_mass, stellar_luminosity) = system;
+        let s = json!({
+            "stellar_mass": stellar_mass,
+            "stellar_luminosity": stellar_luminosity,
+            "planets": planets,
+        }).to_string();
+    
+        println!("{}", s);
+        return AccreteOutput::Json(s);
     }
+
+    AccreteOutput::Tuple(system)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
-    fn it_works() {
-        run();
+    fn run_with_all_options_disabled() {
+        run(false, false, false, false, None, None);
+    }
+    #[test]
+    fn run_with_all_options_enabled_with_default_star() {
+        run(true, true, true, false,None, None);
+    }
+    #[test]
+    fn run_with_json_output_with_default_star() {
+        run(true, true, true, true, None, None);
+    }
+
+    #[test]
+    fn run_with_json_output_with_massive_star() {
+        run(true, true, true, true, Some(10.0), None);
     }
 }

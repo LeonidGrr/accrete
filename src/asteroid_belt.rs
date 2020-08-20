@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::astro;
 
 #[derive(Debug, PartialOrd, PartialEq, Clone)]

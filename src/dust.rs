@@ -62,7 +62,7 @@ impl DustBands {
         }
     }
 
-    pub fn dust_availible(&self, inside: f64, outside: f64) -> bool {
+    pub fn _dust_availible(&self, inside: f64, outside: f64) -> bool {
         if self.bands.len() == 0 {
             return false;
         }

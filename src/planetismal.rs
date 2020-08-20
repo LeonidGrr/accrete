@@ -1,6 +1,7 @@
+use serde::Serialize;
 use crate::astro;
 
-#[derive(Debug, PartialOrd, PartialEq, Clone)]
+#[derive(Serialize, Debug, PartialOrd, PartialEq, Clone)]
 pub struct Planetismal {
     pub axis: f64,
     pub eccn: f64,

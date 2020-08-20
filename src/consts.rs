@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::f64::consts::PI;
 
 // Currently using this to limit extreme precision when creating star systems.
