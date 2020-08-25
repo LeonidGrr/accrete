@@ -9,38 +9,6 @@ pub enum BreathabilityPhase {
     Poisonous,
 }
 
-pub const SOLAR_MASS_IN_GRAMS: f64 = 1.989e33;
-pub const EARTH_MASS_IN_GRAMS: f64 = 5.977e27;
-pub const SOLAR_MASS_IN_EARTH_MASS: f64 = 332775.64;
-pub const EARTH_MASSES_PER_SOLAR_MASS: f64 = 332775.64;
-pub const EARTH_RADIUS_IN_CM: f64 = 6.378e6;
-pub const EARTH_RADIUS_IN_KM: f64 = 6378.0;
-pub const EARTH_DENSITY: f64 = 5.52;
-pub const EARTH_AXIAL_TILT: f64 = 23.4; /* Units of degrees */
-pub const EARTH_ACCELERATION: f64 = 981.0;
-pub const CM_IN_KM: f64 = 1.0e5;
-pub const CM_IN_AU: f64 = 1.495978707e13;
-pub const KM_IN_AU: f64 = 1.495978707e8;
-pub const DAYS_IN_YEAR: f64 = 365.256;
-pub const SECONDS_IN_HOUR: f64 = 3000.0;
-pub const GRAV_CONSTANT: f64 = 6.672e-8; /* units of dyne cm2/gram2 */
-pub const RADIANS_PER_ROTATION: f64 = 2.0 * PI;
-
-pub const SECONDS_PER_HOUR: f64 = 3600.0;
-
-pub const GREENHOUSE_EFFECT_CONST: f64 = 0.93; /* affects inner radius.. */
-
-pub const J: f64 = 1.46e-19; /* Used in day-length calcs: f64 = cm2/sec2 g; */
-
-pub const PROTOPLANET_MASS: f64 = 10.0e-25; // Units of solar masses
-pub const PROTOMOON_MASS: f64 = 10.0e-15; // Units of solar masses
-
-// For Kothari Radius
-pub const A1_20: f64 = 6.485e12;
-pub const A2_20: f64 = 4.0032e-8;
-pub const BETA_20: f64 = 5.71e12;
-pub const JIMS_FUDGE: f64 = 1.004;
-
 pub fn luminosity(mass: f64) -> f64 {
     let n = match mass > 1.0 {
         true => 1.75 * (mass - 0.1) + 3.325,
@@ -69,13 +37,9 @@ pub fn orbital_zone(luminosity: f64, orb_radius: f64) -> i32 {
     3
 }
 
-// Returns the radius of the planet in kilometers.
-// The mass passed in is in units of solar masses, the orbital radius in A.U.
-// This formula is listed as eq.9 in Fogg's article, although some typos
-// crop up in that eq. See "The Internal Constitution of Planets", by
-// Dr. D. S. Kothari, Mon. Not. of the Royal Astronomical Society, vol 96
-// pp.833-843, 1936 for the derivation. Specifically, this is Kothari's
-// eq.23, which appears on page 840.
+/// Returns the radius of the planet in kilometers.
+/// The mass passed in is in units of solar masses, the orbital radius in A.U.
+/// This formula is listed as eq.9 in Fogg's article, although some typos crop up in that eq. See "The Internal Constitution of Planets", by Dr. D. S. Kothari, Mon. Not. of the Royal Astronomical Society, vol 96 pp.833-843, 1936 for the derivation. Specifically, this is Kothari's eq.23, which appears on page 840.
 pub fn kothari_radius(mass: f64, giant: bool, zone: i32) -> f64 {
     let mut atomic_weight = 0.0;
     let mut atomic_num = 0.0;
@@ -120,14 +84,13 @@ pub fn kothari_radius(mass: f64, giant: bool, zone: i32) -> f64 {
     temp2 += 1.0;
 
     temp = temp / temp2;
-    temp = temp * mass.powf(0.3) / CM_IN_KM;
+    temp = temp * mass.powf(0.3) / CM_PER_KM;
     temp /= JIMS_FUDGE;
 
     temp
 }
 
-//The mass passed in is in units of solar masses, and the orbital radius
-//is in units of AU. The density is returned in units of grams/cc.
+/// The mass passed in is in units of solar masses, and the orbital radius is in units of AU. The density is returned in units of grams/cc.
 pub fn empirical_density(
     mass: f64,
     orb_radius: f64,
@@ -143,40 +106,30 @@ pub fn empirical_density(
     }
 }
 
-// The mass is in units of solar masses, and the density is in units
-// of grams/cc. The radius returned is in units of km.
+/// The mass is in units of solar masses, and the density is in units of grams/cc. The radius returned is in units of km.
 pub fn volume_radius(mass: f64, density: f64) -> f64 {
     let mut volume = 0.0;
     volume = mass * SOLAR_MASS_IN_GRAMS / density;
-    ((3.0 * volume) / (4.0 * PI)).powf(0.33) / CM_IN_KM
+    ((3.0 * volume) / (4.0 * PI)).powf(0.33) / CM_PER_KM
 }
 
-// The mass passed in is in units of solar masses, and the equatorial
-// radius is in km. The density is returned in units of grams/cc.
+/// The mass passed in is in units of solar masses, and the equatorial radius is in km. The density is returned in units of grams/cc.
 pub fn volume_density(mass: f64, equat_radius: &mut f64) -> f64 {
-    *equat_radius *= CM_IN_KM;
+    *equat_radius *= CM_PER_KM;
     let volume = (4.0 * PI * equat_radius.powf(3.0)) / 3.0;
     mass * SOLAR_MASS_IN_GRAMS / volume
 }
 
-// separation - Units of AU between the masses
-// returns the period of an entire xorbit in Earth days.
+/// Separation - Units of AU between the masses returns the period of an entire xorbit in Earth days.
 // pub fn period(planet: &Planet, separation: f64, small_mass: f64, largeMass: f64) -> f64 {
 //     let period_in_years = (separation.powf(3.0) / (small_mass + largeMass)).sqrt();
 //     period_in_years * planet.days_in_year
 // }
 
-// Fogg's information for this routine came from Dole "Habitable Planets
-// for Man", Blaisdell Publishing Company, NY, 1964. From this, he came
-// up with his eq.12, which is the equation for the base_angular_velocity
-// below. Going a bit further, he found an equation for the change in
-// angular velocity per time (dw/dt) from P. Goldreich and S. Soter's paper
-// "Q in the Solar System" in Icarus, vol 5, pp.375-389 (1966). Comparing
-// to the change in angular velocity for the Earth, we can come up with an
-// approximation for our new planet (his eq.13) and take that into account.
+/// Fogg's information for this routine came from Dole "Habitable Planets for Man", Blaisdell Publishing Company, NY, 1964. From this, he came up with his eq.12, which is the equation for the base_angular_velocity below. Going a bit further, he found an equation for the change in angular velocity per time (dw/dt) from P. Goldreich and S. Soter's paper "Q in the Solar System" in Icarus, vol 5, pp.375-389 (1966). Comparing to the change in angular velocity for the Earth, we can come up with an approximation for our new planet (his eq.13) and take that into account.
 //     pub fn day_length(&self, planet, stellar_mass, main_sequence_age) -> f64 {
 //         let planet_mass_in_grams = planet.mass * self.solar_mass_in_grams,
-//         equatorial_radius_in_cm = planet.radius * CM_IN_KM,
+//         equatorial_radius_in_cm = planet.radius * CM_PER_KM,
 //         year_in_hours = planet.orbPeriod || self.period(planet.axis, planet.mass, 1),
 //         giant = planet.giant || false,
 //         k2 = 0,
@@ -231,51 +184,39 @@ pub fn volume_density(mass: f64, equat_radius: &mut f64) -> f64 {
 //     return day_in_hours;
 //   },
 
-// This function implements the escape velocity calculation. Note that
-// it appears that Fogg's eq.15 is incorrect.
-// The mass is in units of solar mass, the radius in kilometers, and the
-// velocity returned is in cm/sec.
+/// This function implements the escape velocity calculation. Note that it appears that Fogg's eq.15 is i/ncorrect.
+/// The mass is in units of solar mass, the radius in kilometers, and the velocity returned is in cm/sec.
 pub fn escape_vel(mass: f64, radius: f64) -> f64 {
     let mass_in_grams = mass * SOLAR_MASS_IN_GRAMS;
-    let radius_in_cm = radius * CM_IN_KM;
+    let radius_in_cm = radius * CM_PER_KM;
     (2.0 * GRAV_CONSTANT * mass_in_grams / radius_in_cm).sqrt()
 }
 
-// The orbital radius is expected in units of Astronomical Units (AU).
-// Inclination is returned in units of degrees.
+/// The orbital radius is expected in units of Astronomical Units (AU).
+/// Inclination is returned in units of degrees.
 // pub fn inclination(orbital_radius: f64) -> f64 {
 //     let inclination = orbital_radius.powf(0.2) * utils.about(EARTH_AXIAL_TILT, 0.4);
 //     inclination % 360.0
 // }
 
-// This function calculates the surface acceleration of a planet. The
-// mass is in units of solar masses, the radius in terms of km, and the
-// acceleration is returned in units of cm/sec2.
+/// This function calculates the surface acceleration of a planet. The mass is in units of solar masses, the radius in terms of km, and the acceleration is returned in units of cm/sec2.
 pub fn acceleration(mass: f64, radius: f64) -> f64 {
-    GRAV_CONSTANT * mass * SOLAR_MASS_IN_GRAMS / (radius * CM_IN_KM).powf(2.0)
+    GRAV_CONSTANT * mass * SOLAR_MASS_IN_GRAMS / (radius * CM_PER_KM).powf(2.0)
 }
 
-// This function calculates the surface gravity of a planet. The
-// acceleration is in units of cm/sec2, and the gravity is returned in
-// units of Earth gravities.
+/// This function calculates the surface gravity of a planet. The acceleration is in units of cm/sec2, and the gravity is returned in units of Earth gravities.
 pub fn gravity(acceleration: f64) -> f64 {
     acceleration / EARTH_ACCELERATION
 }
 
-// This is Fogg's eq.16. The molecular weight (usually assumed to be N2)
-// is used as the basis of the Root Mean Square velocity of the molecule
-// or atom. The velocity returned is in cm/sec.
+/// This is Fogg's eq.16. The molecular weight (usually assumed to be N2) is used as the basis of the Root Mean Square velocity of the molecule or atom. The velocity returned is in cm/sec.
 pub fn rms_vel(molecular_weight: f64, orbital_radius: f64) -> f64 {
     let exospheric_temp = EARTH_EXOSPHERE_TEMP / orbital_radius.powf(2.0);
 
     ((3.0 * MOLAR_GAS_CONST * exospheric_temp) / molecular_weight).sqrt() * CM_PER_METER
 }
 
-// This function returns the smallest molecular weight retained by the
-// body, which is useful for determining the atmosphere composition.
-// Orbital radius is in A.U.(ie: in units of the earth's orbital radius),
-// mass is in units of solar masses, and equatorial radius is in units of
-// kilometers.
+/// This function returns the smallest molecular weight retained by the body, which is useful for determining the atmosphere composition. Orbital radius is in A.U.(ie: in units of the earth's orbital radius), mass is in units of solar masses, and equatorial radius is in units of kilometers.
 pub fn molecule_limit(mass: f64, equatorial_radius: f64) -> f64 {
     let escape_velocity = escape_vel(mass, equatorial_radius);
     3.0 * (GAS_RETENTION_THRESHOLD * CM_PER_METER).powf(2.0)
@@ -284,24 +225,20 @@ pub fn molecule_limit(mass: f64, equatorial_radius: f64) -> f64 {
         / escape_velocity.powf(2.0)
 }
 
-// This implements Fogg's eq.18. The pressure returned is in units of
-// millibars (mb). The gravity is in units of Earth gravities, the radius
-// in units of kilometers.
+/// This implements Fogg's eq.18. The pressure returned is in units of millibars (mb). The gravity is in units of Earth gravities, the radius in units of kilometers.
 // pub fn pressure(volatile_gas_inventory: f64, equatorial_radius: f64, gravity: f64) -> f64 {
 //     equatorial_radius = EARTH_RADIUS_IN_KM / equatorial_radius;
 //     volatile_gas_inventory * gravity / equatorial_radius.powf(2.0)
 // }
 
-// Note that if the orbital radius of the planet is greater than or equal
-// to R_inner, 99% of it's volatiles are assumed to have been deposited in
-// surface reservoirs (otherwise, it suffers from the greenhouse effect).
+/// Note that if the orbital radius of the planet is greater than or equal to R_inner, 99% of it's volatiles are assumed to have been deposited in surface reservoirs (otherwise, it suffers from the greenhouse effect).
 // pub fn greenhouse(planet: &Planet, zone: i32, orbital_radius: f64, ecosphere_radius: f64) -> bool {
 //     let greenhouse_radius = ecosphere_radius * GREENHOUSE_EFFECT_CONST;
 
 //     orbital_radius < greenhouse_radius && zone == 1 && planet.pressure > 0
 // }
 
-// This implements Fogg's eq.17. The 'inventory' returned is unitless.
+/// This implements Fogg's eq.17. The 'inventory' returned is unitless.
 // pub fn vol_inventory(
 //     mass: f64,
 //     escape_vel: f64,
@@ -334,23 +271,17 @@ pub fn molecule_limit(mass: f64, equatorial_radius: f64) -> f64 {
 // temp2 / 100.0
 // }
 
-// This function returns the boiling point of water in an atmosphere of
-// pressure 'surface_pressure', given in millibars. The boiling point is
-// returned in units of Kelvin. This is Fogg's eq.21.
+/// This function returns the boiling point of water in an atmosphere of pressure 'surface_pressure', given in millibars. The boiling point is returned in units of Kelvin. This is Fogg's eq.21.
 pub fn boiling_point(surface_pressure: f64) -> f64 {
     let surface_pressure_in_bars = surface_pressure / MILLIBARS_PER_BAR;
 
     1.0 / (surface_pressure_in_bars.log(std::f64::consts::E) / -5050.5 + 1.0 / 373.0)
 }
 
-// This function is Fogg's eq.22. Given the volatile gas inventory and
-// planetary radius of a planet (in Km), this function returns the
-// fraction of the planet covered with water.
-// I have changed the function very slightly: the fraction of Earth's
-// surface covered by water is 71%, not 75% as Fogg used.
+/// This function is Fogg's eq.22. Given the volatile gas inventory and planetary radius of a planet (in Km), this function returns the fraction of the planet covered with water.
 pub fn hydrosphere_fraction(volatile_gas_inventory: f64, planetary_radius: f64) -> f64 {
     let hydrosphere_fraction =
-        0.71 * volatile_gas_inventory / 1000.0 * (EARTH_RADIUS_IN_KM / planetary_radius).powf(2.0);
+        0.75 * volatile_gas_inventory / 1000.0 * (EARTH_RADIUS_IN_KM / planetary_radius).powf(2.0);
 
     match hydrosphere_fraction >= 1.0 {
         true => 1.0,
@@ -358,15 +289,15 @@ pub fn hydrosphere_fraction(volatile_gas_inventory: f64, planetary_radius: f64) 
     }
 }
 
-// The temperature calculated is in degrees Kelvin.
-// Quantities already known which are used in these calculations:
-// planet->molecule_weight
-// planet->surface_pressure
-// R_ecosphere
-// planet->a
-// planet->volatile_gas_inventory
-// planet->radius
-// planet->
+/// The temperature calculated is in degrees Kelvin.
+/// Quantities already known which are used in these calculations:
+/// planet->molecule_weight
+/// planet->surface_pressure
+/// R_ecosphere
+/// planet->a
+/// planet->volatile_gas_inventory
+/// planet->radius
+/// planet->
 // pub fn iterate_surface_temp(planet: &Planet, ecosphere_radius: f64) -> f64 {
 //     let albedo = 0.0;
 //     let water = 0.0;
@@ -402,9 +333,7 @@ pub fn hydrosphere_fraction(volatile_gas_inventory: f64, planetary_radius: f64) 
 //     surface_temp
 // }
 
-// This function returns the dimensionless quantity of optical depth,
-// which is useful in determining the amount of greenhouse effect on a
-// planet.
+/// This function returns the dimensionless quantity of optical depth, which is useful in determining the amount of greenhouse effect on a planet.
 pub fn opacity(molecular_weight: f64, surface_pressure: f64) -> f64 {
     let mut optical_depth = 0.0;
 
@@ -439,7 +368,7 @@ pub fn opacity(molecular_weight: f64, surface_pressure: f64) -> f64 {
     optical_depth
 }
 
-// This is Fogg's eq.20, and is also Hart's eq.20 in his "Evolution of Earth's Atmosphere" article. The effective temperature given is in units of Kelvin, as is the rise in temperature produced by the greenhouse effect, which is returned.
+/// This is Fogg's eq.20, and is also Hart's eq.20 in his "Evolution of Earth's Atmosphere" article. The effective temperature given is in units of Kelvin, as is the rise in temperature produced by the greenhouse effect, which is returned.
 pub fn green_rise(optical_depth: f64, effective_temp: f64, surface_pressure: f64) -> f64 {
     let convection_factor =
         EARTH_CONVECTION_FACTOR * (surface_pressure / EARTH_SURF_PRES_IN_MILLIBARS).powf(0.25);
@@ -447,12 +376,12 @@ pub fn green_rise(optical_depth: f64, effective_temp: f64, surface_pressure: f64
     ((1.0 + 0.75 * optical_depth).powf(0.25) - 1.0) * effective_temp * convection_factor
 }
 
-// Given the surface temperature of a planet (in Kelvin), this function  returns the fraction of cloud cover available. This is Fogg's eq.23.
-// See Hart in "Icarus" (vol 33, pp23 - 39, 1978) for an explanation.
-// This equation is Hart's eq.3.
-// I have modified it slightly using constants and relationships from
-// Glass's book "Introduction to Planetary Geology", p.46.
-// The 'CLOUD_COVERAGE_FACTOR' is the amount of surface area on Earth covered by one Kg. of cloud.
+/// Given the surface temperature of a planet (in Kelvin), this function  returns the fraction of cloud cover available. This is Fogg's eq.23.
+/// See Hart in "Icarus" (vol 33, pp23 - 39, 1978) for an explanation.
+/// This equation is Hart's eq.3.
+/// It was modified slightly by using constants and relationships from
+/// Glass's book "Introduction to Planetary Geology", p.46.
+/// The 'CLOUD_COVERAGE_FACTOR' is the amount of surface area on Earth covered by one Kg. of cloud.
 pub fn cloud_fraction(
     surface_temp: f64,
     smallest_mw_retained: f64,
@@ -476,9 +405,8 @@ pub fn cloud_fraction(
     fraction
 }
 
-// The surface temperature passed in is in units of Kelvin.
-// The cloud adjustment is the fraction of cloud cover obscuring each
-// of the three major components of albedo that lie below the clouds.
+/// The surface temperature passed in is in units of Kelvin.
+/// The cloud adjustment is the fraction of cloud cover obscuring each of the three major components of albedo that lie below the clouds.
 // pub fn planet_albedo(
 //     water_fraction: f64,
 //     cloud_fraction: f64,
@@ -539,14 +467,14 @@ pub fn cloud_fraction(
 //     cloud_contribution + rock_contribution + water_contribution + ice_contribution
 // }
 
-// This is Fogg's eq.19. The ecosphere radius is given in AU, the orbital radius in AU, and the temperature returned is in Kelvin.
+/// This is Fogg's eq.19. The ecosphere radius is given in AU, the orbital radius in AU, and the temperature returned is in Kelvin.
 pub fn eff_temp(ecosphere_radius: f64, orbital_radius: f64, albedo: f64) -> f64 {
     (ecosphere_radius / orbital_radius).sqrt()
         * ((1.0 - albedo) / 0.7).powf(0.25)
         * EARTH_EFFECTIVE_TEMP
 }
 
-// Given the surface temperature of a planet (in Kelvin), this function returns the fraction of the planet's surface covered by ice. This is Fogg's eq.24. See Hart[24] in Icarus vol.33, p.28 for an explanation.
+/// Given the surface temperature of a planet (in Kelvin), this function returns the fraction of the planet's surface covered by ice. This is Fogg's eq.24. See Hart[24] in Icarus vol.33, p.28 for an explanation.
 pub fn ice_fraction(hydrosphere_fraction: f64, surface_temp: &mut f64) -> f64 {
     if *surface_temp > 328.0 {
         *surface_temp = 328.0;

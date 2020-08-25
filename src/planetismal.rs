@@ -1,5 +1,5 @@
 use serde::Serialize;
-use crate::astro;
+use crate::consts;
 
 #[derive(Serialize, Debug, PartialOrd, PartialEq, Clone)]
 pub struct Planetismal {
@@ -20,7 +20,7 @@ impl Planetismal {
     ) -> Self {
         let axis = axis.unwrap_or(0.0);
         let eccn = eccn.unwrap_or(0.0);
-        let mass = mass.unwrap_or(astro::PROTOPLANET_MASS);
+        let mass = mass.unwrap_or(consts::PROTOPLANET_MASS);
         let gas_giant = gas_giant.unwrap_or(false);
         let moons = moons.unwrap_or_default();
 
@@ -34,6 +34,6 @@ impl Planetismal {
     }
 
     pub fn get_earth_mass(&self) -> f64 {
-        self.mass * astro::SOLAR_MASS_IN_EARTH_MASS
+        self.mass * consts::SOLAR_MASS_IN_EARTH_MASS
     }
 }

@@ -1,29 +1,15 @@
-// For critical mass
-pub const B: f64 = 1.2e-5;
-
-// Dust/gas ratio
-pub const K: f64 = 50.0;
-
-// ALPHA and N both used in density calculations
-pub const ALPHA: f64 = 5.0;
-
-pub const N: f64 = 3.0;
-
-// A in Dole's paper
-pub const DUST_DENSITY_COEFF: f64 = 1.5e-3;
-pub const CLOUD_ECCENTRICITY: f64 = 0.25;
-pub const ECCENTRICITY_COEFF: f64 = 0.077;
+use crate::consts::*;
 
 pub fn critical_mass(radius: &f64, eccentricity: &f64, luminosity: &f64) -> f64 {
     B * (perihelion_distance(radius, eccentricity) * luminosity.sqrt()).powf(-0.75)
 }
 
-// the distance between the orbiting body and the sun at it's closest approach.
+/// The distance between the orbiting body and the sun at it's closest approach.
 pub fn perihelion_distance(radius: &f64, eccentricity: &f64) -> f64 {
     radius * (1.0 - eccentricity)
 }
 
-// the distance between the orbiting body and the sun at it's furthest approach.
+// The distance between the orbiting body and the sun at it's furthest approach.
 pub fn aphelion_distance(radius: &f64, eccentricity: &f64) -> f64 {
     radius * (1.0 + eccentricity)
 }

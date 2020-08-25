@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use crate::astro;
+use crate::consts;
 use crate::dole_params;
 use crate::dust::{DustBand, DustBands};
 use crate::planetismal::Planetismal;
@@ -52,7 +52,7 @@ impl Accrete {
                 Accrete::accrete_dust(&mut p, &mut dust_bands.bands, critical_mass, dust_density);
 
             if mass > 0.0 {
-                if mass > astro::PROTOPLANET_MASS {
+                if mass > consts::PROTOPLANET_MASS {
                     if mass >= critical_mass {
                         p.gas_giant = true;
                     }
@@ -116,7 +116,7 @@ impl Accrete {
             let mass =
                 Accrete::accrete_dust(&mut p, &mut dust_bands.bands, critical_mass, dust_density);
 
-            if mass != 0.0 && mass != astro::PROTOMOON_MASS {
+            if mass != 0.0 && mass != consts::PROTOMOON_MASS {
                 if mass >= critical_mass {
                     p.gas_giant = true;
                 }

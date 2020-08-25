@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use crate::astro;
+use crate::consts;
 
 #[derive(Debug, PartialOrd, PartialEq, Clone)]
 pub struct AsteroidBelt {
@@ -16,6 +16,6 @@ impl AsteroidBelt {
     }
 
     pub fn get_earth_mass(&self) -> f64 {
-        self.mass * astro::SOLAR_MASS_IN_EARTH_MASS
+        self.mass * consts::SOLAR_MASS_IN_EARTH_MASS
     }
 }

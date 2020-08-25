@@ -1,10 +1,10 @@
 [package]
 name = "accrete"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["Leonid <leonidgrr@gmail.com>"]
-license="MIT OR Apache-2.0"
+license="MIT"
 repository = "https://github.com/LeonidGrr/accrete.git"
-description="Rust port of Accrete, planetary system accretion simulation algorithm by Stephen H. Dole, published as 'Formation of Planetary Systems by Aggregation: A Computer Simulation'."
+description="Rust port of Accrete, planetary system accretion simulation algorithm by Stephen H. Dole, published as 'Formation of Planetary Systems by Aggregation: A Computer Simulation' with some of improvements made by various talented people during past ~50 years."
 edition = "2018"
 readme = "README.md"
 keywords = ["accrete", "planetary", "system", "procedural", "generation"]

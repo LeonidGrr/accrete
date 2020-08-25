@@ -29,6 +29,12 @@ pub fn run(
 
     let gen = accrete::Accrete::new(with_moons, with_rings);
     let system = gen.distribute_planets(stellar_mass, stellar_luminosity);
+    
+    // println!("{}, {}", stellar_mass, stellar_luminosity); =
+    // for (i, p) in system.0.iter().enumerate() {
+    //     println!("Planet {}. {:#?}", i + 1, p);
+    //     println!("------------------------------------");
+    // }
 
     if to_json {
         let (planets, stellar_mass, stellar_luminosity) = system;
@@ -59,10 +65,5 @@ mod tests {
     #[test]
     fn run_with_json_output_with_default_star() {
         run(true, true, true, true, None, None);
-    }
-
-    #[test]
-    fn run_with_json_output_with_massive_star() {
-        run(true, true, true, true, Some(10.0), None);
     }
 }
