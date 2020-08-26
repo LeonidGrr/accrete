@@ -34,7 +34,8 @@ impl Accrete {
 
         while dust_left {
             let a = rng.gen_range(0.0, 1.0);
-            let e = rng.gen_range(0.0, 1.0);
+            let e = rng.gen_range(0.0, 0.25);
+
             let mut p = Planetismal::new(
                 Some(
                     a * dole_params::outermost_planet(&stellar_mass)
@@ -67,7 +68,7 @@ impl Accrete {
                         dole_params::innermost_planet(&stellar_mass),
                         dole_params::outermost_planet(&stellar_mass),
                     );
-
+                    
                     dust_bands.compress_lanes();
 
                     if self.with_moons {
@@ -75,10 +76,9 @@ impl Accrete {
                     }
 
                     planets.push(p);
-
                     planets.sort_by(|p1, p2| p1.axis.partial_cmp(&p2.axis).unwrap());
-        
-                    Accrete::coalesce_planetismals(&mut planets);
+                    
+                    // Accrete::coalesce_planetismals(&mut planets);
                 }
             }
         }
@@ -229,8 +229,7 @@ impl Accrete {
                     acc.push(p.clone());
                 } else {
                     if let Some(prev_p) = acc.get_mut(i - 1) {
-                        let dist = prev_p.axis - p.axis;
-
+                        let dist = p.axis - prev_p.axis;
                         let (dist1, dist2) = match dist > 0.0 {
                             true => {
                                 let dist1 =
@@ -254,9 +253,12 @@ impl Accrete {
                                 (dist1, dist2)
                             },
                         };
+                        println!("{}",dist);
+                        println!("{}, {}", dist1, dist2);
 
-                        if dist.abs() <= dist1.abs() || dist.abs() <= dist2.abs() {
+                        if dist.abs() < dist1.abs() || dist.abs() < dist2.abs() {
                             *prev_p = Accrete::coalesce_two_planets(&prev_p, p);
+                            println!("Collide: {:#?}", prev_p);
                         } else {
                             acc.push(p.clone());
                         }

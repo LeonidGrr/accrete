@@ -7,17 +7,17 @@ pub const MAX_SYSTEM_ITERATIONS: i32 = 100000;
 /// Sources:
 /// "Formation of Planetary Systems by Aggregation: A Computer Simulation" by Stephen H. Dole
 
-
 /// Optimal perameters as specified in Dole's paper: A = 0.0015, K =  50, ⍺ = 5, n = 3
 /// Initial mass-of-matter in solar masses per cubic A.U. (`A` in Dole's paper)
 /// Dole's paper tests ranges between 0.00125 and 0.0015
+/// Binary stars produced by increasing coeff of dust density in cloud (Formation of Planetary Systems by Aggregation: A Computer Simulation by Stephen H. Dole)
 pub const A: f64 = 0.0015; 
 
 /// The dust-to-gas ratio 50-100 (dust/gas = K), gas = hydrogen and helium, dust = other
 pub const K: f64 = 50.0; 
 
 /// Eccentricity of dust cloud 0.15-0.25
-pub const W: f64 = 0.20;
+pub const W: f64 = 0.2;
 
 /// Negative exponential coefficient used in calculating dust density - alpha in Dole's paper
 pub const ALPHA: f64 = 5.0; 
@@ -35,9 +35,6 @@ pub const B: f64 = 1.2e-5;
 pub const OMEGA: f64 = PI / 2.01;
 
 /// STAR GEN PARAMS
-
-/// Dole's was 0.077
-pub const ECCENTRICITY_COEFF: f64 = 0.077;
 
 /// Units of solar masses
 pub const PROTOPLANET_MASS: f64 = 1.0e-15; // Units of solar masses
@@ -176,9 +173,7 @@ pub const MOLAR_GAS_CONST: f64 = 8314.41;
 pub const J: f64 = 1.46e-19;
 pub const INCREDIBLY_LARGE_NUMBER: f64 = 9.9999e37;
 
-/// Binary stars produced by increasing coeff of dust density in cloud (Formation of Planetary Systems by Aggregation: A Computer Simulation by Stephen H. Dole)
-pub const DUST_DENSITY_COEFF: f64 = 2.0E-3; 
-pub const CLOUD_ECCENTRICITY: f64 = 0.25;
+
 pub const EARTH_MASSES_PER_SOLAR_MASS: f64 = 332775.64;
 pub const AIRLESS_ROCKY_ALBEDO: f64 = 0.07;
 pub const KELVIN_CELCIUS_DIFFERENCE: f64 = 273.0;
