@@ -6,8 +6,8 @@ use crate::dust::{DustBand, DustBands};
 use crate::planetismal::Planetismal;
 // use crate::asteroid_belt::AsteroidBelt;
 
-use rand::prelude::*;
 use std::f64::consts::PI;
+use rand::prelude::*;
 
 pub struct Accrete {
     pub with_moons: bool,
@@ -20,18 +20,17 @@ pub struct Accrete {
 impl Accrete {
     pub fn new(
         stellar_mass: Option<f64>,
-        stellar_luminosity: Option<f64>,
         with_moons: bool,
         with_rings: bool,
     ) -> Self {
         let mut rng = rand::thread_rng();
-        let stellar_mass = stellar_mass.unwrap_or(rng.gen_range(0.8, 1.2));
-        let stellar_luminosity = stellar_luminosity.unwrap_or(astro::luminosity(stellar_mass));
+        let stellar_mass = stellar_mass.unwrap_or(rng.gen_range(0.3, 1.2));
+        let stellar_luminosity = astro::luminosity(&stellar_mass);
         let planets = Vec::new();
 
         Accrete {
-            stellar_mass: 1.0,
-            stellar_luminosity: 1.0,
+            stellar_mass,
+            stellar_luminosity,
             with_moons,
             with_rings,
             planets,
@@ -39,7 +38,6 @@ impl Accrete {
     }
 
     pub fn distribute_planets(&mut self) {
-        let mut rng = rand::thread_rng();
         let mut planets = Vec::new();
         let Self {
             stellar_luminosity,
@@ -47,7 +45,6 @@ impl Accrete {
             ..
         } = self;
         // let mut asteroid_belts = Vec::new();
-
         let mut dust_left = true;
         let mut dust_bands = DustBands::new(
             dole_params::inner_dust_limit(&stellar_mass),
@@ -55,18 +52,14 @@ impl Accrete {
         );
 
         while dust_left {
-            println!("Dust left!");
-            let a = rng.gen_range(0.0, 1.0);
-            let e = rng.gen_range(0.0, 1.0);
-            
-            let mut p = Planetismal::new(a, e, &stellar_mass, consts::PROTOPLANET_MASS);
+            let mut p = Planetismal::new(&stellar_mass, consts::PROTOPLANET_MASS);
             
             let dust_density = dole_params::dust_density(&stellar_mass, &p.axis);
             let critical_mass = dole_params::critical_mass(&p.axis, &p.eccn, &stellar_luminosity);
             let mass =
                 Accrete::accrete_dust(&mut p, &mut dust_bands.bands, critical_mass, dust_density);
 
-            if mass > consts::PROTOPLANET_MASS {
+            if mass != 0.0 && mass != consts::PROTOPLANET_MASS { 
                 if mass >= critical_mass {
                     p.gas_giant = true;
                 }
@@ -86,15 +79,12 @@ impl Accrete {
                 // if self.with_moons {
                 //     p.moons = Accrete::distribute_moons(self, p.mass, stellar_luminosity);
                 // }
-
+                Accrete::coalesce_planetismals(&mut planets);
                 planets.push(p);
             }
         }
 
         planets.sort_by(|p1, p2| p1.axis.partial_cmp(&p2.axis).unwrap());
-        println!("Before collisions: {:#?}", planets);
-        Accrete::coalesce_planetismals(&mut planets);
-        println!("After collisions: {:#?}", planets);
         self.planets = planets;
     }
 
@@ -266,7 +256,7 @@ impl Accrete {
                             },
                         };
 
-                        if dist.abs() < dist1.abs() || dist.abs() < dist2.abs() {
+                        if dist.abs() <= dist1.abs() || dist.abs() <= dist2.abs() {
                             *prev_p = Accrete::coalesce_two_planets(&prev_p, p);
                         } else {
                             acc.push(p.clone());

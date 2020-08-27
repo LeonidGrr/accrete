@@ -1,6 +1,7 @@
 use serde::Serialize;
 use crate::consts;
 use crate::dole_params;
+use rand::prelude::*;
 
 #[derive(Serialize, Debug, PartialOrd, PartialEq, Clone)]
 pub struct Planetismal {
@@ -13,11 +14,13 @@ pub struct Planetismal {
 
 impl Planetismal {
     pub fn new(
-        a: f64,
-        e: f64,
         stellar_mass: &f64,
         mass: f64,
     ) -> Self {
+        let mut rng = rand::thread_rng();
+        let a = rng.gen_range(0.0, 1.0);
+        let e = rng.gen_range(0.0, 1.0);
+        
         let axis = a * dole_params::outermost_planet(stellar_mass) + dole_params::innermost_planet(stellar_mass);
         let eccn = dole_params::random_eccentricity(e);
         let gas_giant = false;

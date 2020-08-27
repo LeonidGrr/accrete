@@ -9,8 +9,8 @@ pub enum BreathabilityPhase {
     Poisonous,
 }
 
-pub fn luminosity(mass: f64) -> f64 {
-    let n = match mass > 1.0 {
+pub fn luminosity(mass: &f64) -> f64 {
+    let n = match *mass > 1.0 as f64 {
         true => 1.75 * (mass - 0.1) + 3.325,
         false => 0.5 * (2.0 - mass) + 4.4,
     };
