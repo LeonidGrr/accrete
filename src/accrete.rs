@@ -14,13 +14,6 @@ pub struct Accrete {
     pub with_rings: bool,
     pub stellar_mass: f64,
     pub stellar_luminosity: f64,
-    pub A: f64,
-    pub B: f64,
-    pub K: f64,
-    pub N: f64,
-    pub Q: f64,
-    pub W: f64,
-    pub ALPHA: f64,
     pub planets: Vec<Planetismal>,
 }
 
@@ -28,38 +21,17 @@ impl Accrete {
     pub fn new(
         stellar_mass: Option<f64>,
         stellar_luminosity: Option<f64>,
-        A: Option<f64>,
-        B: Option<f64>,
-        K: Option<f64>,
-        N: Option<f64>,
-        Q: Option<f64>,
-        W: Option<f64>,
-        ALPHA: Option<f64>,
         with_moons: bool,
         with_rings: bool,
     ) -> Self {
         let mut rng = rand::thread_rng();
-        let stellar_mass = stellar_mass.unwrap_or(rng.gen_range(0.3, 1.2));
+        let stellar_mass = stellar_mass.unwrap_or(rng.gen_range(0.8, 1.2));
         let stellar_luminosity = stellar_luminosity.unwrap_or(astro::luminosity(stellar_mass));
-        let A = A.unwrap_or(consts::A);
-        let B = B.unwrap_or(consts::B);
-        let K = K.unwrap_or(consts::K);
-        let N = N.unwrap_or(consts::N);
-        let Q = Q.unwrap_or(consts::Q);
-        let W = W.unwrap_or(consts::W);
-        let ALPHA = ALPHA.unwrap_or(consts::ALPHA);
         let planets = Vec::new();
 
         Accrete {
-            stellar_mass,
-            stellar_luminosity,
-            A,
-            B,
-            K,
-            N,
-            Q,
-            W,
-            ALPHA,
+            stellar_mass: 1.0,
+            stellar_luminosity: 1.0,
             with_moons,
             with_rings,
             planets,
@@ -83,17 +55,12 @@ impl Accrete {
         );
 
         while dust_left {
+            println!("Dust left!");
             let a = rng.gen_range(0.0, 1.0);
             let e = rng.gen_range(0.0, 1.0);
             
-            let mut p = Planetismal::new(
-                a * dole_params::outermost_planet(&stellar_mass) + dole_params::innermost_planet(&stellar_mass),
-                dole_params::random_eccentricity(e),
-                None,
-                None,
-                None,
-            );
-
+            let mut p = Planetismal::new(a, e, &stellar_mass, consts::PROTOPLANET_MASS);
+            
             let dust_density = dole_params::dust_density(&stellar_mass, &p.axis);
             let critical_mass = dole_params::critical_mass(&p.axis, &p.eccn, &stellar_luminosity);
             let mass =
@@ -114,7 +81,6 @@ impl Accrete {
                     dole_params::innermost_planet(&stellar_mass),
                     dole_params::outermost_planet(&stellar_mass),
                 );
-                
                 dust_bands.compress_lanes();
 
                 // if self.with_moons {
@@ -122,13 +88,14 @@ impl Accrete {
                 // }
 
                 planets.push(p);
-                planets.sort_by(|p1, p2| p1.axis.partial_cmp(&p2.axis).unwrap());
-                
-                Accrete::coalesce_planetismals(&mut planets);
             }
         }
-        self.planets = planets;
 
+        planets.sort_by(|p1, p2| p1.axis.partial_cmp(&p2.axis).unwrap());
+        println!("Before collisions: {:#?}", planets);
+        Accrete::coalesce_planetismals(&mut planets);
+        println!("After collisions: {:#?}", planets);
+        self.planets = planets;
     }
 
     // fn distribute_moons(

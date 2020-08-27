@@ -20,7 +20,7 @@ pub fn run(
     _with_belts: bool,
     to_json: bool,
 ) -> AccreteOutput {
-    let mut system = accrete::Accrete::new(None, None, None, None, None, None, None, None, None, with_moons, with_rings);
+    let mut system = accrete::Accrete::new(None, None, with_moons, with_rings);
     system.distribute_planets();
     
     println!("{}, {}", system.stellar_mass, system.stellar_luminosity);
@@ -41,8 +41,6 @@ pub fn run(
             "stellar_luminosity": stellar_luminosity,
             "planets": planets,
         }).to_string();
-    
-        println!("{}", s);
         return AccreteOutput::Json(s);
     }
 

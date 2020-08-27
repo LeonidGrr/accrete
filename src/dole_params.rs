@@ -4,6 +4,14 @@ pub fn critical_mass(radius: &f64, eccentricity: &f64, luminosity: &f64) -> f64 
     B * (perihelion_distance(radius, eccentricity) * luminosity.sqrt()).powf(-0.75)
 }
 
+pub fn dust_density(stellar_mass: &f64, oribital_radius: &f64) -> f64 {
+    A * stellar_mass.sqrt() * (-ALPHA * oribital_radius.powf(1.0 / N)).exp()
+}
+
+pub fn mass_density(dust_density: &f64, critical_mass: &f64, mass: &f64) -> f64 {
+    K * dust_density / (1.0 + (critical_mass / mass).sqrt() * (K - 1.0))
+}
+
 /// The distance between the orbiting body and the sun at it's closest approach.
 pub fn perihelion_distance(radius: &f64, eccentricity: &f64) -> f64 {
     radius * (1.0 - eccentricity)
@@ -46,14 +54,6 @@ pub fn outer_swept_limit(mass: &f64, axis: &f64, eccn: &f64) -> f64 {
     high_bound(&outer_effect_limit(mass, axis, eccn))
 }
 
-pub fn dust_density(stellar_mass: &f64, oribital_radius: &f64) -> f64 {
-    A * stellar_mass.sqrt() * (-ALPHA * oribital_radius.powf(1.0 / N)).exp()
-}
-
-pub fn mass_density(dust_density: &f64, critical_mass: &f64, mass: &f64) -> f64 {
-    K * dust_density / (1.0 + (critical_mass / mass).sqrt() * (K - 1.0))
-}
-
 pub fn inner_dust_limit(_stellar_mass: &f64) -> f64 {
     0.0
 }
@@ -74,18 +74,18 @@ pub fn random_eccentricity(random: f64) -> f64 {
     1.0 - random.powf(Q)
 }
 
-pub fn planet_outer_swept_limit(planetary_mass: &f64) -> f64 {
-    0.01 * planetary_mass.powf(0.33)
-}
+// pub fn planet_outer_swept_limit(planetary_mass: &f64) -> f64 {
+//     0.01 * planetary_mass.powf(0.33)
+// }
 
-pub fn planet_outer_dust_limit(planetary_mass: &f64) -> f64 {
-    4.0 * planetary_mass.powf(0.33)
-}
+// pub fn planet_outer_dust_limit(planetary_mass: &f64) -> f64 {
+//     4.0 * planetary_mass.powf(0.33)
+// }
 
-pub fn innermost_moon(planetary_mass: &f64) -> f64 {
-    0.001 * planetary_mass.powf(0.33)
-}
+// pub fn innermost_moon(planetary_mass: &f64) -> f64 {
+//     0.001 * planetary_mass.powf(0.33)
+// }
 
-pub fn outermost_moon(planetary_mass: &f64) -> f64 {
-    4.0 * planetary_mass.powf(0.33)
-}
+// pub fn outermost_moon(planetary_mass: &f64) -> f64 {
+//     4.0 * planetary_mass.powf(0.33)
+// }

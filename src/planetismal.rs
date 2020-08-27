@@ -1,5 +1,6 @@
 use serde::Serialize;
 use crate::consts;
+use crate::dole_params;
 
 #[derive(Serialize, Debug, PartialOrd, PartialEq, Clone)]
 pub struct Planetismal {
@@ -12,15 +13,15 @@ pub struct Planetismal {
 
 impl Planetismal {
     pub fn new(
-        axis: f64,
-        eccn: f64,
-        mass: Option<f64>,
-        gas_giant: Option<bool>,
-        moons: Option<Vec<Planetismal>>,
+        a: f64,
+        e: f64,
+        stellar_mass: &f64,
+        mass: f64,
     ) -> Self {
-        let mass = mass.unwrap_or(consts::PROTOPLANET_MASS);
-        let gas_giant = gas_giant.unwrap_or(false);
-        let moons = moons.unwrap_or_default();
+        let axis = a * dole_params::outermost_planet(stellar_mass) + dole_params::innermost_planet(stellar_mass);
+        let eccn = dole_params::random_eccentricity(e);
+        let gas_giant = false;
+        let moons = Vec::new();
 
         Planetismal {
             axis,
