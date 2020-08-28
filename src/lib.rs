@@ -25,7 +25,7 @@ fn generate_stellar_system() {
     let mut rng = rand::thread_rng();
     let stellar_mass_ratio = rng.gen_range(0.6, 1.3);
     let stellar_luminosity_ratio = luminosity(stellar_mass_ratio);
-    let stellar_dust_limit = Accrete::stellar_dust_limit(&stellar_mass_ratio);
+    let stellar_dust_limit = stellar_dust_limit(&stellar_mass_ratio);
     let system = distribute_planetary_masses(stellar_mass_ratio, stellar_luminosity_ratio, 0.0, stellar_dust_limit);
     // main_seq_life = 1.0E10 * (stellar_mass_ratio / stellar_luminosity_ratio);
     // if ((main_seq_life >= 6.0E9))
