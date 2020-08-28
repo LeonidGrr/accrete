@@ -5,25 +5,37 @@
 /*	P-4226.								*/
 /*----------------------------------------------------------------------*/
 
-/* Variables global to the accretion process */
-var dust_left;
-var r_inner;
-var r_outer;
-var reduced_mass;
-var dust_density;
-var cloud_eccentricity;
-var dust_head;
+pub struct Accrete {
+dust_left: bool,
+r_inner: f64,
+r_outer: f64,
+reduced_mass: f64,
+dust_density: f64,
+cloud_eccentricity: f64,
+dust_bands: Vec<DustBand>,
+planets: Vec<Planetismal>,
+cloud_eccentricity: f64,
+}
 
-function set_initial_conditions(inner_limit_of_dust, outer_limit_of_dust) {
-    dust_head = new dust_bands_record();
-    planet_head = NULL;
-    dust_head.next_band = NULL;
+Impl Accrete {
+
+pub fn set_initial_conditions(inner_limit_of_dust, outer_limit_of_dust) -> Self {
+    let mut dust_band = DustBand::new();
     dust_head.outer_edge = outer_limit_of_dust;
     dust_head.inner_edge = inner_limit_of_dust;
-    dust_head.dust_present = TRUE;
-    dust_head.gas_present = TRUE;
-    dust_left = TRUE;
-    cloud_eccentricity = 0.2;
+    dust_head.dust_present = true;
+    dust_head.gas_present = true;
+
+    Self {
+    dust_left: true,
+    planets: Vec::new(),
+    cloud_eccentricity: 0.2,
+    r_inner: 0.0,
+    r_outer: 0.0,
+    reduced_mass: 0.0,
+    dust_density: 0.0,
+    dust_bands,
+    }
 }
 
 function stellar_dust_limit(stellar_mass_ratio) {
