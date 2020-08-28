@@ -27,4 +27,5 @@ https://www.academia.edu/4173808/Extra_Solar_Planetary_Systems_A_Microcomputer_S
 - Ian Burrell
 - Zakski (https://github.com/zakski/accrete-starform-stargen)
 - Kbingman (https://github.com/kbingman/accretejs)
+- Calebrob6 (https://github.com/calebrob6)
 - Many other good people!
