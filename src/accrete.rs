@@ -1,5 +1,7 @@
 /// BIBLIOGRAPHY
-/// Dole, Stephen H.  "Formation of Planetary Systems by Aggregation: a Computer Simulation"  October 1969,  Rand  Corporation Paper P-4226.
+/// Dole, Stephen H.
+/// "Formation of Planetary Systems by Aggregation: a Computer Simulation"
+/// October 1969, Rand  Corporation Paper P-4226.
 use crate::structs::*;
 
 #[derive(Debug, Clone)]
@@ -30,14 +32,6 @@ impl Accrete {
 			dust_density: 0.0,
 			dust_bands,
 		}
-	}
-	
-	fn inner_effect_limit(&self, a: &f64, e: &f64, mass: &f64) -> f64 {
-		a * (1.0 - e) * (1.0 - mass) / (1.0 + self.cloud_eccentricity)
-	}
-	
-	fn outer_effect_limit(&self, a: &f64, e: &f64, mass: &f64) -> f64 {
-		a * (1.0 + e) * (1.0 + self.reduced_mass) / (1.0 - self.cloud_eccentricity)
 	}
 
 	fn dust_available(&self, inside_range: &f64, outside_range: &f64) -> bool {
@@ -111,17 +105,16 @@ impl Accrete {
             });
 		self.dust_left = dust_left;
 	}
-}
 
-
-// function collect_dust(last_mass, a, e, crit_mass, dust_band) {
+fn collect_dust(&mut self, last_mass: &f64, a: &f64, e: &f64, crit_mass: &f64, dust_band: &mut DustBand) {
 //     var mass_density, temp1, temp2, temp, temp_density, bandwidth, width, volume;
 
-//     temp = last_mass / (1.0 + last_mass);
-//     reduced_mass = Math.pow(temp, (1.0 / 4.0));
-//     r_inner = inner_effect_limit(a, e, reduced_mass);
-//     r_outer = outer_effect_limit(a, e, reduced_mass);
-//     if ((r_inner < 0.0))
+  let temp = last_mass / (1.0 + last_mass);
+  self.reduced_mass = temp.powf(0.25);
+  self.r_inner = inner_effect_limit(a, e, &self.reduced_mass, &self.cloud_eccentricity);
+  self.r_outer = outer_effect_limit(a, e, &self.reduced_mass, &self.cloud_eccentricity);
+    
+  if ((r_inner < 0.0))
 // 	r_inner = 0.0;
 //     if ((dust_band == NULL))
 // 	return (0.0);
@@ -153,33 +146,28 @@ impl Accrete {
 //     }
 // }
 
-// /*--------------------------------------------------------------------------*/
-// /* Orbital radius is in AU, eccentricity is unitless, and the stellar */
-// /* luminosity ratio is with respect to the sun. The value returned is the */
-// /* mass at which the planet begins to accrete gas as well as dust, and is */
-// /* in units of solar masses. */
-// /*--------------------------------------------------------------------------*/
+}
 
-// function critical_limit(orbital_radius, eccentricity, stellar_luminosity_ratio) {
-//     var temp, perihelion_dist;
+/// Orbital radius is in AU, eccentricity is unitless, and the stellar luminosity ratio is with respect to the sun.
+/// The value returned is the mass at which the planet begins to accrete gas as well as dust, and is in units of solar masses.
 
-//     perihelion_dist = (orbital_radius - orbital_radius * eccentricity);
-//     temp = perihelion_dist * Math.sqrt(stellar_luminosity_ratio);
-//     return (B * Math.pow(temp, -0.75));
-// }
+fn critical_limit(orbital_radius: &f64, eccentricity: &f64, stellar_luminosity_ratio: &f64) -> f64 {
+   let perihelion_dist = orbital_radius - orbital_radius * eccentricity;
+   let temp = perihelion_dist * stellar_luminosity_ratio.sqrt();
+   B * temp.powf(-0.75)
+}
 
-// // (double *seed_mass, double a, double e, double crit_mass, double body_inner_bound, double body_outer_bound)
-// function accrete_dust(seed_mass, a, e, crit_mass, body_inner_bound, body_outer_bound) {
-//     var new_mass, temp_mass;
+fn accrete_dust(seed_mass: &f64, a: &f64, e: &f64, crit_mass: &f64, body_inner_bound: &f64, body_outer_bound: &f64) {
+     let mut new_mass = seed_mass.VALUE;
+    
 
-//     new_mass = seed_mass.VALUE;
-//     do {
-// 	temp_mass = new_mass;
-// 	new_mass = collect_dust(new_mass, a, e, crit_mass, dust_head);
-//     } while (!(((new_mass - temp_mass) < (0.0001 * temp_mass))));
+loop {
+    let temp_mass = new_mass;
+	new_mass = collect_dust(new_mass, a, e, crit_mass, dust_head);
+  } while (!(((new_mass - temp_mass) < (0.0001 * temp_mass))));
 //     seed_mass.VALUE = seed_mass.VALUE + new_mass;
 //     update_dust_lanes(r_inner, r_outer, seed_mass.VALUE, crit_mass, body_inner_bound, body_outer_bound);
-// }
+}
 
 // function coalesce_planetesimals(a, e, mass, crit_mass, stellar_luminosity_ratio, body_inner_bound, body_outer_bound) {
 //     var node1, node2, node3;
@@ -303,3 +291,11 @@ fn innermost_planet(stellar_mass_ratio: &f64) -> f64 {
 fn outermost_planet(stellar_mass_ratio: &f64) -> f64 {
 	50.0 * stellar_mass_ratio.powf(0.33)
 }
+
+fn inner_effect_limit(&self, a: &f64, e: &f64, mass: &f64, cloud_eccentricity: &f64) -> f64 {
+		a * (1.0 - e) * (1.0 - mass) / (1.0 + cloud_eccentricity)
+	}
+
+fn outer_effect_limit(&self, a: &f64, e: &f64, mass: &f64, cloud_eccentricity: &f64) -> f64 {
+		a * (1.0 + e) * (1.0 + mass) / (1.0 - cloud_eccentricity)
+	}
