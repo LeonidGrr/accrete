@@ -22,8 +22,8 @@ pub struct Planetismal {
     pub a: f64, /* semi-major axis of the orbit (in AU)*/
     pub e: f64, /* eccentricity of the orbit	     */
     pub mass: f64, /* mass (in solar masses)	     */
-    pub gas_giant: f64, /* TRUE if the planet is a gas giant */
-    pub orbit_zone: f64, /* the 'zone' of the planet          */
+    pub gas_giant: book, /* TRUE if the planet is a gas giant */
+    pub orbit_zone: i32, /* the 'zone' of the planet          */
     pub radius: f64, /* equatorial radius (in km)	     */
     pub density: f64, /* density (in g/cc)		     */
     pub orbital_period: f64, /* length of the local year (days)   */
@@ -44,5 +44,5 @@ pub struct Planetismal {
     pub hydrosphere: f64, /* fraction of surface covered	     */
     pub cloud_cover: f64, /* fraction of surface covered	     */
     pub ice_cover: f64, /* fraction of surface covered	     */
-    pub first_moon: f64,
+    pub moons: Vec<Planetismal>,
 }
