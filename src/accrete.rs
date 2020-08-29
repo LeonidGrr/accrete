@@ -166,17 +166,17 @@ fn critical_limit(orbital_radius: &f64, eccentricity: &f64, stellar_luminosity_r
 
 fn accrete_dust(&mut self, planetismal_mass: &mut f64, a: &f64, e: &f64, crit_mass: &f64) {
      let mut new_mass = planetismal_mass;
-     let temp_mass = planetismal_mass;
+     let mut temp_mass = planetismal_mass;
      loop {
        for d in self.dust_bands.iter_mut() {
           temp_mass = new_mass;
-          new_mass += self.collect_dust(&new_mass, &a, &e, crit_mass, d);
+          new_mass += self.collect_dust(&new_mass, a, e, crit_mass, d);
        }
        if !(new_mass - temp_mass > 0.0001 * temp_mass) {
           break;
        }
       }
-      planetismal_mass = new_mass;
+     planetismal_mass = planetismal_mass + new_mass;
 }
 
 // function coalesce_planetesimals(a, e, mass, crit_mass, stellar_luminosity_ratio, body_inner_bound, body_outer_bound) {
