@@ -43,7 +43,7 @@ impl Accrete {
         })
 	}
 
-	fn update_dust_lanes(&mut self, min: f64, max: f64, mass: f64, crit_mass: f64, body_inner_bound: f64, body_outer_bound: f64) {
+	fn update_dust_lanes(&mut self, min: &f64, max: &f64, mass: &f64, crit_mass: &f64, body_inner_bound: &f64, body_outer_bound: &f64) {
 		let mut gas = true;
 		let mut dust_left = false;
 
@@ -107,45 +107,52 @@ impl Accrete {
 	}
 
 fn collect_dust(&mut self, last_mass: &f64, a: &f64, e: &f64, crit_mass: &f64, dust_band: &mut DustBand) {
-//     var mass_density, temp1, temp2, temp, temp_density, bandwidth, width, volume;
-
+  Let mut temp1 = 0.0;
+  Let mut temp2 = 0.0;
+  Let mut temp = 0.0;
+  Let mut bandwidth = 0.0;
+  Let mut width = 0.0;
+  Let mut volume = 0.0;
+  let mut temp_density = 0.0;
+  let mut mass_density = 0.0;
   let temp = last_mass / (1.0 + last_mass);
   self.reduced_mass = temp.powf(0.25);
   self.r_inner = inner_effect_limit(a, e, &self.reduced_mass, &self.cloud_eccentricity);
   self.r_outer = outer_effect_limit(a, e, &self.reduced_mass, &self.cloud_eccentricity);
     
-  if ((r_inner < 0.0))
-// 	r_inner = 0.0;
-//     if ((dust_band == NULL))
-// 	return (0.0);
-//     else {
-// 	if ((dust_band.dust_present == FALSE))
-// 	    temp_density = 0.0;
-// 	else
-// 	    temp_density = dust_density;
-// 	if (((last_mass < crit_mass) || (dust_band.gas_present == FALSE)))
-// 	    mass_density = temp_density;
-// 	else
-// 	    mass_density = K * temp_density / (1.0 + Math.sqrt(crit_mass / last_mass) * (K - 1.0));
-// 	if (((dust_band.outer_edge <= r_inner) || (dust_band.inner_edge >= r_outer)))
-// 	    return (collect_dust(last_mass, a, e, crit_mass, dust_band.next_band));
-// 	else {
-// 	    bandwidth = (r_outer - r_inner);
-// 	    temp1 = r_outer - dust_band.outer_edge;
-// 	    if (temp1 < 0.0)
-// 		temp1 = 0.0;
-// 	    width = bandwidth - temp1;
-// 	    temp2 = dust_band.inner_edge - r_inner;
-// 	    if (temp2 < 0.0)
-// 		temp2 = 0.0;
-// 	    width = width - temp2;
-// 	    temp = 4.0 * PI * Math.pow(a, 2.0) * reduced_mass * (1.0 - e * (temp1 - temp2) / bandwidth);
-// 	    volume = temp * width;
-// 	    return (volume * mass_density + collect_dust(last_mass, a, e, crit_mass, dust_band.next_band));
-// 	}
-//     }
-// }
+  if self.r_inner < 0.0 {
+      self.r_inner = 0.0;
+  }
+  
+  if dust_band.dust_present == false {
+      temp_density = 0.0;
+  } else {
+      temp_density = dust_density;
+  }
 
+  if last_mass < crit_mass || dust_band.gas_present == false {
+      mass_density = temp_density;
+  } else {
+      mass_density = K * temp_density / (1.0 + (crit_mass / last_mass).sqrt() * (K - 1.0));
+  }
+
+  if dust_band.outer_edge <= self.r_inner || dust_band.inner_edge >= self.r_outer {
+     return 0.0;
+  }
+     bandwidth = (self.r_outer - self.r_inner);
+     temp1 = self.r_outer - dust_band.outer_edge;
+	    if temp1 < 0.0 {
+		temp1 = 0.0;
+            }
+ 	    width = bandwidth - temp1;
+	    temp2 = dust_band.inner_edge - self.r_inner;
+	    if temp2 < 0.0 {
+		temp2 = 0.0;
+            }
+	    width = width - temp2;
+	    temp = 4.0 * PI * a.powf(2.0) * self.reduced_mass * (1.0 - e * (temp1 - temp2) / bandwidth);
+ 	    volume = temp * width;
+	    volume * mass_density
 }
 
 /// Orbital radius is in AU, eccentricity is unitless, and the stellar luminosity ratio is with respect to the sun.
@@ -157,16 +164,23 @@ fn critical_limit(orbital_radius: &f64, eccentricity: &f64, stellar_luminosity_r
    B * temp.powf(-0.75)
 }
 
-fn accrete_dust(seed_mass: &f64, a: &f64, e: &f64, crit_mass: &f64, body_inner_bound: &f64, body_outer_bound: &f64) {
-     let mut new_mass = seed_mass.VALUE;
-    
+fn accrete_dust(&mut self, planetismal_mass: &mut f64, a: &f64, e: &f64, crit_mass: &f64) {
+     let mut new_mass = planetismal_mass;
 
-loop {
-    let temp_mass = new_mass;
-	new_mass = collect_dust(new_mass, a, e, crit_mass, dust_head);
-  } while (!(((new_mass - temp_mass) < (0.0001 * temp_mass))));
-//     seed_mass.VALUE = seed_mass.VALUE + new_mass;
-//     update_dust_lanes(r_inner, r_outer, seed_mass.VALUE, crit_mass, body_inner_bound, body_outer_bound);
+     loop {
+       nucleus.mass = new_mass;
+       new_mass = 0.0;
+
+       for d in self.dust_bands.iter_mut() {
+          new_mass += self.collect_dust(&new_mass, &a, &e, crit_mass, d);
+       }
+       if !(new_mass - temp_mass > 0.0001 * temp_mass) {
+          break;
+       }
+      }
+      nucleus.mass = new_mass;
+      nucleus.mass
+      planetismal_mass = planetismal_mass + new_mass;
 }
 
 // function coalesce_planetesimals(a, e, mass, crit_mass, stellar_luminosity_ratio, body_inner_bound, body_outer_bound) {
@@ -264,7 +278,8 @@ loop {
 // 	    console.debug(sprintf(".. Injecting protoplanet.\n"));
 // 	    dust_density = DUST_DENSITY_COEFF * Math.sqrt(stellar_mass_ratio) * Math.exp(-ALPHA * Math.pow(a, (1.0 / N)));
 // 	    crit_mass = critical_limit(a, e, stellar_luminosity_ratio);
-// 	    accrete_dust(mass, a, e, crit_mass, planetesimal_inner_bound, planetesimal_outer_bound);
+ 	    accrete_dust(mass, a, e, crit_mass);
+            update_dust_lanes(r_inner, r_outer, planetismal_mass, crit_mass, planetesimal_inner_bound, planetesimal_outer_bound);
 // 	    if ((mass.VALUE != 0.0) && (mass.VALUE != PROTOPLANET_MASS)) {
 // 		coalesce_planetesimals(a, e, mass.VALUE, crit_mass, stellar_luminosity_ratio, planetesimal_inner_bound, planetesimal_outer_bound);
 // 	    } else {
