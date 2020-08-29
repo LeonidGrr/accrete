@@ -17,7 +17,7 @@ pub struct Accrete {
 }
 
 impl Accrete {
-	pub fn set_initial_conditions(inner_limit_of_dust: f64, outer_limit_of_dust: f64) -> Self {
+	fn set_initial_conditions(inner_limit_of_dust: f64, outer_limit_of_dust: f64) -> Self {
 		let mut dust_band = DustBand::new(outer_limit_of_dust, inner_limit_of_dust, true, true);
 		let mut dust_bands = Vec::new();
 		dust_bands.push(dust_band);
@@ -179,8 +179,8 @@ fn accrete_dust(&mut self, planetismal_mass: &mut f64, a: &f64, e: &f64, crit_ma
      planetismal_mass = planetismal_mass + new_mass;
 }
 
-// function coalesce_planetesimals(a, e, mass, crit_mass, stellar_luminosity_ratio, body_inner_bound, body_outer_bound) {
-//     var node1, node2, node3;
+ fn coalesce_planetesimals(a, e, mass, crit_mass, stellar_luminosity_ratio, body_inner_bound, body_outer_bound) {
+ //    var node1, node2, node3;
 //     var coalesced;
 //     var dist1, dist2, a3;
 
@@ -256,40 +256,31 @@ fn accrete_dust(&mut self, planetismal_mass: &mut f64, a: &f64, e: &f64, crit_ma
 //     }
 // }
 
-// function distribute_planetary_masses(stellar_mass_ratio, stellar_luminosity_ratio, inner_dust, outer_dust) {
-//     var a, e, crit_mass, planetesimal_inner_bound, planetesimal_outer_bound;
-//     var mass;
-
-//     set_initial_conditions(inner_dust, outer_dust);
-//     planetesimal_inner_bound = innermost_planet(stellar_mass_ratio);
-//     planetesimal_outer_bound = outermost_planet(stellar_mass_ratio);
-//     while (dust_left) {
-// 	a = random_number(planetesimal_inner_bound, planetesimal_outer_bound);
-// 	e = random_eccentricity();
-// 	mass = new MASS(PROTOPLANET_MASS);
-// 	if (VERBOSE) {
-// 	    console.debug(sprintf("Checking %f AU.\n", a));
-// 	}
-// 	if (dust_available(inner_effect_limit(a, e, mass.VALUE), outer_effect_limit(a, e, mass.VALUE))) {
-// 	    console.debug(sprintf(".. Injecting protoplanet.\n"));
-// 	    dust_density = DUST_DENSITY_COEFF * Math.sqrt(stellar_mass_ratio) * Math.exp(-ALPHA * Math.pow(a, (1.0 / N)));
-// 	    crit_mass = critical_limit(a, e, stellar_luminosity_ratio);
+ fn distribute_planetary_masses(stellar_mass_ratio: f64, stellar_luminosity_ratio: f64, inner_dust: f64, outer_dust: f64) {
+       let mut accrete = Accrete::set_initial_conditions(inner_dust, outer_dust);
+       let planetesimal_inner_bound = innermost_planet(stellar_mass_ratio);
+       let planetesimal_outer_bound = outermost_planet(stellar_mass_ratio);
+       while (accrete.dust_left) {
+ 	let a = random_number(planetesimal_inner_bound, planetesimal_outer_bound);
+ 	let e = random_eccentricity();
+ 	let mass = PROTOPLANET_MASS;
+        let inside_range = inner_effect_limit(a, e, mass, accrete.cloud_eccentricity);
+        let outside_range = outer_effect_limit(a, e, mass, accrete.cloud_eccentricity);
+ 	if accrete.dust_available(inside_range, outside_range) {
+ 	    let dust_density = DUST_DENSITY_COEFF * stellar_mass_ratio.sqrt() * (-ALPHA * a.powf(1.0 / N)).exp());
+ 	    let crit_mass = critical_limit(a, e, stellar_luminosity_ratio);
  	    accrete_dust(mass, a, e, crit_mass);
-            update_dust_lanes(r_inner, r_outer, planetismal_mass, crit_mass, planetesimal_inner_bound, planetesimal_outer_bound);
-// 	    if ((mass.VALUE != 0.0) && (mass.VALUE != PROTOPLANET_MASS)) {
-// 		coalesce_planetesimals(a, e, mass.VALUE, crit_mass, stellar_luminosity_ratio, planetesimal_inner_bound, planetesimal_outer_bound);
-// 	    } else {
-// 		console.debug(sprintf(".. failed due to large neighbor.\n"));
-// 	    }
-// 	} else {
-// 	    if (VERBOSE) {
-// 		console.debug(sprintf(".. failed.\n"));
-// 	    }
-// 	}
-
-//     }
-//     return (planet_head);
-// }
+            update_dust_lanes(accrete.r_inner, accrete.r_outer, mass, crit_mass, planetesimal_inner_bound, planetesimal_outer_bound);
+	    if mass != 0.0 && mass != PROTOPLANET_MASS {
+ 		coalesce_planetesimals(a, e, mass.VALUE, crit_mass, stellar_luminosity_ratio, planetesimal_inner_bound, planetesimal_outer_bound);
+ 	    } else { 
+               // belt?
+ 		// console.debug(sprintf(".. failed due to large neighbor.\n"));
+	    }
+ 	}
+     }
+     accrete 
+ }
 
 pub fn stellar_dust_limit(stellar_mass_ratio: &f64) -> f64 {
 	200.0 * stellar_mass_ratio.powf(0.33)
@@ -303,10 +294,10 @@ fn outermost_planet(stellar_mass_ratio: &f64) -> f64 {
 	50.0 * stellar_mass_ratio.powf(0.33)
 }
 
-fn inner_effect_limit(&self, a: &f64, e: &f64, mass: &f64, cloud_eccentricity: &f64) -> f64 {
+fn inner_effect_limit(a: &f64, e: &f64, mass: &f64, cloud_eccentricity: &f64) -> f64 {
 		a * (1.0 - e) * (1.0 - mass) / (1.0 + cloud_eccentricity)
 	}
 
-fn outer_effect_limit(&self, a: &f64, e: &f64, mass: &f64, cloud_eccentricity: &f64) -> f64 {
+fn outer_effect_limit(a: &f64, e: &f64, mass: &f64, cloud_eccentricity: &f64) -> f64 {
 		a * (1.0 + e) * (1.0 + mass) / (1.0 - cloud_eccentricity)
 	}
