@@ -43,14 +43,6 @@ impl Accrete {
         })
 	}
         
-     fn dust_remaining(&self, inner_bound: &f64, outer_bound: &f64) -> bool {
-        self.dust_bands.iter().fold(false, |mut acc, band| {
-            if band.dust_present && band.outer_edge >= inner_bound && band.inner_edge <= outer_bound {
-                acc = true;
-            }
-            acc
-        })
-    }
 	fn update_dust_lanes(&mut self, min: &f64, max: &f64, mass: &f64, crit_mass: &f64, body_inner_bound: &f64, body_outer_bound: &f64) {
 		let mut gas = true;
 		let mut dust_left = false;
@@ -88,7 +80,7 @@ impl Accrete {
 				acc
 			});
             
-            dust_left = self.dust_remaining(&body_inner_bound, &body_outer_bound);
+            dust_left = self.dust_availible(&body_inner_bound, &body_outer_bound);
 
 		// Compress lanes
 		self.dust_bands = self
