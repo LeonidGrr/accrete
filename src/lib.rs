@@ -3,11 +3,11 @@ mod consts;
 mod enviro;
 mod structs;
 
-use enviro::*;
 use accrete::*;
-use rand::prelude::*;
+use enviro::*;
 use serde_json::json;
 use std::f64::consts::PI;
+use structs::*;
 
 pub enum AccreteOutput {
     Tuple(Accrete),
@@ -20,13 +20,10 @@ pub enum AccreteOutput {
 // var r_greenhouse;
 // var spin_resonance;
 
-fn generate_stellar_system() {
-    let radians_per_rotation = 2.0 * PI;    
-    let mut rng = rand::thread_rng();
-    let stellar_mass_ratio = rng.gen_range(0.6, 1.3);
-    let stellar_luminosity_ratio = luminosity(stellar_mass_ratio);
-    let stellar_dust_limit = stellar_dust_limit(&stellar_mass_ratio);
-    let system = distribute_planetary_masses(stellar_mass_ratio, stellar_luminosity_ratio, 0.0, stellar_dust_limit);
+fn generate_stellar_system() -> Vec<Planetismal> {
+    // let radians_per_rotation = 2.0 * PI;
+    
+    let system = distribute_planetary_masses();
     // main_seq_life = 1.0E10 * (stellar_mass_ratio / stellar_luminosity_ratio);
     // if ((main_seq_life >= 6.0E9))
     // age = random_number(1.0E9, 6.0E9);
@@ -74,19 +71,20 @@ fn generate_stellar_system() {
     // }
     // planet = planet.next_planet;
     // }
+    system
 }
- 
+
 pub fn run() {
     let system = generate_stellar_system();
     // display_system();
     println!("{:#?}", system);
- }
+}
 
- #[cfg(test)]
+#[cfg(test)]
 mod tests {
     use super::*;
     #[test]
-    fn run_with_all_options_disabled() {
+    fn run_it() {
         run();
     }
 }

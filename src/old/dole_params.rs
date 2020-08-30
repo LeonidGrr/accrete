@@ -74,18 +74,18 @@ pub fn random_eccentricity(random: f64) -> f64 {
     1.0 - random.powf(Q)
 }
 
-// pub fn planet_outer_swept_limit(planetary_mass: &f64) -> f64 {
-//     0.01 * planetary_mass.powf(0.33)
-// }
+pub fn planet_outer_swept_limit(planetary_mass: &f64) -> f64 {
+    0.01 * planetary_mass.powf(0.33)
+}
 
-// pub fn planet_outer_dust_limit(planetary_mass: &f64) -> f64 {
-//     4.0 * planetary_mass.powf(0.33)
-// }
+pub fn planet_outer_dust_limit(planetary_mass: &f64) -> f64 {
+    4.0 * planetary_mass.powf(0.33)
+}
 
-// pub fn innermost_moon(planetary_mass: &f64) -> f64 {
-//     0.001 * planetary_mass.powf(0.33)
-// }
+pub fn innermost_moon(planetary_mass: &f64) -> f64 {
+    0.001 * planetary_mass.powf(0.33)
+}
 
-// pub fn outermost_moon(planetary_mass: &f64) -> f64 {
-//     4.0 * planetary_mass.powf(0.33)
-// }
+pub fn outermost_moon(planetary_mass: &f64) -> f64 {
+    4.0 * planetary_mass.powf(0.33)
+}

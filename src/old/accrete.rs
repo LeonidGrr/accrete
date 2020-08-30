@@ -29,11 +29,7 @@ impl Accrete {
         let planets = Vec::new();
 
         Accrete {
-            stellar_mass,
-            stellar_luminosity,
-            with_moons,
-            with_rings,
-            planets,
+            
         }
     }
 
@@ -79,12 +75,13 @@ impl Accrete {
                 // if self.with_moons {
                 //     p.moons = Accrete::distribute_moons(self, p.mass, stellar_luminosity);
                 // }
-                Accrete::coalesce_planetismals(&mut planets);
                 planets.push(p);
             }
         }
 
         planets.sort_by(|p1, p2| p1.axis.partial_cmp(&p2.axis).unwrap());
+        
+        Accrete::coalesce_planetismals(&mut planets);
         self.planets = planets;
     }
 

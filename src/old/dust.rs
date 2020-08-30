@@ -62,18 +62,6 @@ impl DustBands {
         }
     }
 
-    pub fn _dust_availible(&self, inside: f64, outside: f64) -> bool {
-        if self.bands.len() == 0 {
-            return false;
-        }
-        self.bands.iter().fold(false, |mut acc, band| {
-            if band.inner < outside {
-                acc = band.dust;
-            }
-            acc
-        })
-    }
-
     pub fn update_lanes(&mut self, min: f64, max: f64, used_gas: &bool) {
         self.bands = self
             .bands
