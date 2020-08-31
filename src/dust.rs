@@ -1,6 +1,6 @@
 use crate::consts::*;
-use crate::utils::*;
 use crate::planetismal::*;
+use crate::utils::*;
 
 #[derive(Debug, Copy, Clone)]
 pub struct DustBand {
@@ -11,12 +11,7 @@ pub struct DustBand {
 }
 
 impl DustBand {
-    pub fn new(
-        outer_edge: f64,
-        inner_edge: f64,
-        dust_present: bool,
-        gas_present: bool,
-    ) -> Self {
+    pub fn new(outer_edge: f64, inner_edge: f64, dust_present: bool, gas_present: bool) -> Self {
         Self {
             outer_edge,
             inner_edge,

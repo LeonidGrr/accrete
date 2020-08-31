@@ -1,9 +1,9 @@
 mod accrete;
 mod consts;
-mod enviro;
 mod dust;
-mod utils;
+mod enviro;
 mod planetismal;
+mod utils;
 
 use accrete::distribute_planetary_masses;
 use enviro::*;
@@ -75,7 +75,8 @@ fn generate_stellar_system(to_json: bool) -> AccreteOutput {
             // "stellar_mass": stellar_mass,
             // "stellar_luminosity": stellar_luminosity,
             "planets": system,
-        }).to_string();
+        })
+        .to_string();
         return AccreteOutput::Json(s);
     }
 

@@ -37,7 +37,11 @@ pub fn dust_density(stellar_mass: &f64, oribital_radius: &f64) -> f64 {
 
 /// Orbital radius is in AU, eccentricity is unitless, and the stellar luminosity ratio is with respect to the sun.
 /// The value returned is the mass at which the planet begins to accrete gas as well as dust, and is in units of solar masses.
-pub fn critical_limit(orbital_radius: &f64, eccentricity: &f64, stellar_luminosity_ratio: &f64) -> f64 {
+pub fn critical_limit(
+    orbital_radius: &f64,
+    eccentricity: &f64,
+    stellar_luminosity_ratio: &f64,
+) -> f64 {
     let perihelion_dist = orbital_radius - orbital_radius * eccentricity;
     let temp = perihelion_dist * stellar_luminosity_ratio.sqrt();
     B * temp.powf(-0.75)

@@ -3,8 +3,8 @@
 /// "Formation of Planetary Systems by Aggregation: a Computer Simulation"
 /// October 1969, Rand  Corporation Paper P-4226.
 use crate::consts::*;
-use crate::enviro::*;
 use crate::dust::*;
+use crate::enviro::*;
 use crate::planetismal::*;
 use crate::utils::*;
 use rand::prelude::*;

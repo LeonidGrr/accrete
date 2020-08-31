@@ -4,7 +4,7 @@ pub const PI: f64 = std::f64::consts::PI;
 
 /// Used to calculate the eccentricity of planetary nuclei
 /// Dole states this conforms to an empirical probability function for distribution of orbital eccentricities
-pub const ECCENTRICITY_COEFF: f64 = 0.077; 
+pub const ECCENTRICITY_COEFF: f64 = 0.077;
 
 /// Units of solar masses
 pub const PROTOPLANET_MASS: f64 = 1.0E-15;
@@ -89,7 +89,7 @@ pub const B: f64 = 1.2E-5;
 /// "A" in Dole's paper
 /// Dole's paper tests ranges between 0.00125 and 0.0015
 /// Binary stars produced by increasing coeff of dust density in cloud (Formation of Planetary Systems by Aggregation: A Computer Simulation by Stephen H. Dole)
-pub const DUST_DENSITY_COEFF: f64 = 1.5E-3; 
+pub const DUST_DENSITY_COEFF: f64 = 1.5E-3;
 
 /// Negative exponential coefficient used in calculating dust density - alpha in Dole's paper
 pub const ALPHA: f64 = 5.0;
@@ -171,7 +171,7 @@ pub const AN_CH3CH2OH: f64 = 905.0;
 pub const EARTH_AVERAGE_CELSIUS: f64 = 14.0;
 pub const EARTH_AVERAGE_KELVIN: f64 = EARTH_AVERAGE_CELSIUS + FREEZING_POINT_OF_WATER;
 
-/// Dole p. 15 
+/// Dole p. 15
 pub const EARTH_SURF_PRES_IN_MMHG: f64 = 760.0;
 
 /// Pounds per square inch
@@ -183,32 +183,32 @@ pub const MMHG_TO_MILLIBARS: f64 = EARTH_SURF_PRES_IN_MILLIBARS;
 /// EARTH_SURF_PRES_IN_PSI;
 pub const PSI_TO_MILLIBARS: f64 = EARTH_SURF_PRES_IN_MILLIBARS;
 
-/// Dole p. 15 
+/// Dole p. 15
 pub const H20_ASSUMED_PRESSURE: f64 = 47.0 * MMHG_TO_MILLIBARS;
-pub const MIN_O2_IPP: f64 = 72.0 * MMHG_TO_MILLIBARS;   
-pub const MAX_O2_IPP: f64 = 400.0 * MMHG_TO_MILLIBARS;   
+pub const MIN_O2_IPP: f64 = 72.0 * MMHG_TO_MILLIBARS;
+pub const MAX_O2_IPP: f64 = 400.0 * MMHG_TO_MILLIBARS;
 
 /// Dole, p. 16
-pub const MAX_HE_IPP: f64 = 61000.0 * MMHG_TO_MILLIBARS; 
-pub const MAX_NE_IPP: f64 = 3900.0 * MMHG_TO_MILLIBARS;   
-pub const MAX_N2_IPP: f64 = 2330.0 * MMHG_TO_MILLIBARS;   
-pub const MAX_AR_IPP: f64 = 1220.0 * MMHG_TO_MILLIBARS;   
-pub const MAX_KR_IPP: f64 = 350.0 * MMHG_TO_MILLIBARS;   
-pub const MAX_XE_IPP: f64 = 160.0 * MMHG_TO_MILLIBARS;   
-pub const MAX_CO2_IPP: f64 = 7.0 * MMHG_TO_MILLIBARS;   
+pub const MAX_HE_IPP: f64 = 61000.0 * MMHG_TO_MILLIBARS;
+pub const MAX_NE_IPP: f64 = 3900.0 * MMHG_TO_MILLIBARS;
+pub const MAX_N2_IPP: f64 = 2330.0 * MMHG_TO_MILLIBARS;
+pub const MAX_AR_IPP: f64 = 1220.0 * MMHG_TO_MILLIBARS;
+pub const MAX_KR_IPP: f64 = 350.0 * MMHG_TO_MILLIBARS;
+pub const MAX_XE_IPP: f64 = 160.0 * MMHG_TO_MILLIBARS;
+pub const MAX_CO2_IPP: f64 = 7.0 * MMHG_TO_MILLIBARS;
 pub const MAX_HABITABLE_PRESSURE: f64 = 118.0 * PSI_TO_MILLIBARS;
 
 /// The next gases are listed as poisonous in parts per million by volume at 1 atm:
 pub const PPM_PRSSURE: f64 = EARTH_SURF_PRES_IN_MILLIBARS / 1000000.0;
 
 /// Dole, p. 18
-pub const MAX_F_IPP: f64 = 0.1 * PPM_PRSSURE;   
-pub const MAX_CL_IPP: f64 = 1.0 * PPM_PRSSURE;  
-pub const MAX_NH3_IPP: f64 = 100.0 * PPM_PRSSURE;  
-pub const MAX_O3_IPP: f64 = 0.1 * PPM_PRSSURE;  
+pub const MAX_F_IPP: f64 = 0.1 * PPM_PRSSURE;
+pub const MAX_CL_IPP: f64 = 1.0 * PPM_PRSSURE;
+pub const MAX_NH3_IPP: f64 = 100.0 * PPM_PRSSURE;
+pub const MAX_O3_IPP: f64 = 0.1 * PPM_PRSSURE;
 pub const MAX_CH4_IPP: f64 = 50000.0 * PPM_PRSSURE;
 
-/// Units of g/cc 
+/// Units of g/cc
 pub const EARTH_DENSITY: f64 = 5.52;
 
 /// Units of Earth Masses
