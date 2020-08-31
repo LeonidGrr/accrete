@@ -4,9 +4,9 @@ mod enviro;
 mod structs;
 
 use accrete::*;
-use enviro::*;
-use serde_json::json;
-use std::f64::consts::PI;
+// use enviro::*;
+// use serde_json::json;
+// use std::f64::consts::PI;
 use structs::*;
 
 pub enum AccreteOutput {
@@ -22,7 +22,7 @@ pub enum AccreteOutput {
 
 fn generate_stellar_system() -> Vec<Planetismal> {
     // let radians_per_rotation = 2.0 * PI;
-    
+
     let system = distribute_planetary_masses();
     // main_seq_life = 1.0E10 * (stellar_mass_ratio / stellar_luminosity_ratio);
     // if ((main_seq_life >= 6.0E9))

@@ -1,11 +1,8 @@
 pub fn luminosity(mass_ratio: &f64) -> f64 {
-    let mut n = 0.0;
-
-    if *mass_ratio < 1.0 {
-        n = 1.75 * (mass_ratio - 0.1) + 3.325;
-    } else {
-        n = 0.5 * (2.0 - mass_ratio) + 4.4;
-    }
+    let n = match *mass_ratio < 1.0 {
+        true => 1.75 * (mass_ratio - 0.1) + 3.325,
+        false => 0.5 * (2.0 - mass_ratio) + 4.4,
+    };
 
     mass_ratio.powf(n)
 }

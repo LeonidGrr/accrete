@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 pub const PI: f64 = std::f64::consts::PI;
 pub const ECCENTRICITY_COEFF: f64 = 0.077; /* Dole's was 0.077 */
 pub const PROTOPLANET_MASS: f64 = 1.0E-15; /* Units of solar masses */

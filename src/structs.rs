@@ -56,7 +56,7 @@ impl Planetismal {
         let gas_giant = false;
         let a = rng.gen_range(planetesimal_inner_bound, planetesimal_outer_bound);
         let e = random_eccentricity(rng.gen_range(0.0, 1.0));
-    
+
         Planetismal {
             a,
             e,
@@ -73,4 +73,3 @@ impl Planetismal {
 fn random_eccentricity(random: f64) -> f64 {
     1.0 - random.powf(ECCENTRICITY_COEFF)
 }
-
