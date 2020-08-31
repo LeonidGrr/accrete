@@ -1,27 +1,26 @@
 mod accrete;
 mod consts;
 mod enviro;
-mod structs;
+mod dust;
+mod utils;
+mod planetismal;
 
-use accrete::*;
-// use enviro::*;
-// use serde_json::json;
-// use std::f64::consts::PI;
-use structs::*;
+use accrete::distribute_planetary_masses;
+use enviro::*;
+use planetismal::Planetismal;
+use serde_json::json;
 
 pub enum AccreteOutput {
-    Tuple(Accrete),
+    Tuple(Vec<Planetismal>),
     Json(String),
 }
 
-// var anum;
-// var main_seq_life;
-// var age, r_ecosphere;
-// var r_greenhouse;
-// var spin_resonance;
-
-fn generate_stellar_system() -> Vec<Planetismal> {
-    // let radians_per_rotation = 2.0 * PI;
+fn generate_stellar_system(to_json: bool) -> AccreteOutput {
+    // var anum;
+    // var main_seq_life;
+    // var age, r_ecosphere;
+    // var r_greenhouse;
+    // var spin_resonance;
 
     let system = distribute_planetary_masses();
     // main_seq_life = 1.0E10 * (stellar_mass_ratio / stellar_luminosity_ratio);
@@ -71,13 +70,17 @@ fn generate_stellar_system() -> Vec<Planetismal> {
     // }
     // planet = planet.next_planet;
     // }
-    system
-}
+    if to_json {
+        let s = json!({
+            // "stellar_mass": stellar_mass,
+            // "stellar_luminosity": stellar_luminosity,
+            "planets": system,
+        }).to_string();
+        return AccreteOutput::Json(s);
+    }
 
-pub fn run() {
-    let system = generate_stellar_system();
-    // display_system();
     println!("{:#?}", system);
+    AccreteOutput::Tuple(system)
 }
 
 #[cfg(test)]
@@ -85,6 +88,6 @@ mod tests {
     use super::*;
     #[test]
     fn run_it() {
-        run();
+        generate_stellar_system(false);
     }
 }
