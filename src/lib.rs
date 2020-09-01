@@ -1,11 +1,11 @@
-mod accrete;
+mod system;
 mod consts;
 mod dust;
 mod enviro;
 mod planetismal;
 mod utils;
 
-use accrete::distribute_planetary_masses;
+use system::distribute_planetary_masses;
 use enviro::*;
 use planetismal::Planetismal;
 use serde_json::json;
@@ -15,7 +15,7 @@ pub enum AccreteOutput {
     Json(String),
 }
 
-fn generate_stellar_system(to_json: bool) -> AccreteOutput {
+pub fn run(to_json: bool) -> AccreteOutput {
     // var anum;
     // var main_seq_life;
     // var age, r_ecosphere;
@@ -89,6 +89,6 @@ mod tests {
     use super::*;
     #[test]
     fn run_it() {
-        generate_stellar_system(false);
+        run(false);
     }
 }

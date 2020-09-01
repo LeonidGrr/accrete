@@ -4,6 +4,17 @@ This is rust port of Accrete - planetary system accretion algorithm by H. Dole. 
 
 This implemetation do not pretend to be accurate scientific modelling tool, but produce plausible planetary systems.
 
+## Example
+```rust
+use accrete;
+
+// To return JSON instead of struct just pass true to run function;
+fn main() {
+    let planets = accrete::run(false);
+    println!("{:#?}", planets);
+}
+```
+
 ## Brief history
 >Accrete's origin dates back to the late 60's when Stephen H. Dole published "Formation of Planetary Systems by Aggregation: A Computer Simulation". 
 >Almost a decade later Carl Sagan and Richard Isaacson refined Dole's model -- which shortly thereafter was also implemented in FORTRAN, and again elaborately and academically published by Martin Fogg in his paper "Extra-Solar Planetary Systems".

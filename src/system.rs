@@ -10,7 +10,7 @@ use crate::utils::*;
 use rand::prelude::*;
 
 #[derive(Debug, Clone)]
-pub struct Accrete {
+pub struct System {
     pub with_moons: bool,
     pub with_rings: bool,
     pub stellar_mass: f64,
@@ -21,7 +21,7 @@ pub struct Accrete {
     pub planetismal_outer_bound: f64,
 }
 
-impl Accrete {
+impl System {
     fn set_initial_conditions() -> Self {
         let mut rng = rand::thread_rng();
         let stellar_mass = rng.gen_range(0.6, 1.3);
@@ -44,7 +44,7 @@ impl Accrete {
 }
 
 pub fn distribute_planetary_masses() -> Vec<Planetismal> {
-    let mut accrete = Accrete::set_initial_conditions();
+    let mut accrete = System::set_initial_conditions();
     let inner_dust = 0.0;
     let outer_dust = stellar_dust_limit(&accrete.stellar_mass);
     let dust_band = DustBand::new(outer_dust, inner_dust, true, true);
