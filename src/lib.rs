@@ -10,8 +10,9 @@ use enviro::*;
 use planetismal::Planetismal;
 use serde_json::json;
 
+#[derive(Debug)]
 pub enum AccreteOutput {
-    Tuple(Vec<Planetismal>),
+    Struct(Vec<Planetismal>),
     Json(String),
 }
 
@@ -79,9 +80,8 @@ pub fn run(to_json: bool) -> AccreteOutput {
         .to_string();
         return AccreteOutput::Json(s);
     }
-
     println!("{:#?}", system);
-    AccreteOutput::Tuple(system)
+    AccreteOutput::Struct(system)
 }
 
 #[cfg(test)]
