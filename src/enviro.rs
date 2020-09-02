@@ -1,131 +1,124 @@
-pub fn luminosity(mass_ratio: &f64) -> f64 {
-    let n = match *mass_ratio < 1.0 {
-        true => 1.75 * (mass_ratio - 0.1) + 3.325,
-        false => 0.5 * (2.0 - mass_ratio) + 4.4,
+use crate::consts::*;
+
+pub fn luminosity(mass: &f64) -> f64 {
+    let n = match *mass < 1.0 {
+        true => 1.75 * (mass - 0.1) + 3.325,
+        false => 0.5 * (2.0 - mass) + 4.4,
     };
 
-    mass_ratio.powf(n)
+    mass.powf(n)
 }
 
-// /*--------------------------------------------------------------------------*/
-// /* This function, given the orbital radius of a planet in AU, returns */
-// /* the orbital 'zone' of the particle. */
-// /*--------------------------------------------------------------------------*/
-// function orbital_zone(orbital_radius) {
-//     if (orbital_radius < (4.0 * Math.sqrt(stellar_luminosity_ratio)))
-// 	return 1;
-//     else {
-// 	if ((orbital_radius >= (4.0 * Math.sqrt(stellar_luminosity_ratio))) && (orbital_radius < (15.0 * Math.sqrt(stellar_luminosity_ratio))))
-// 	    return 2;
-// 	else
-// 	    return 3;
-//     }
-// }
+pub fn ecosphere(luminosity: f64) -> (f64, f64) {
+    let min_ecosphere_radius = (luminosity / 1.51).sqrt();
+    let max_ecosphere_radius = (luminosity / 0.48).sqrt();
+    (min_ecosphere_radius, max_ecosphere_radius)
+}
 
-// /*--------------------------------------------------------------------------*/
-// /* The mass is in units of solar masses, and the density is in units */
-// /* of grams/cc. The radius returned is in units of km. */
-// /*--------------------------------------------------------------------------*/
-// // double
-// function volume_radius(mass, density) {
-//     var volume;
+pub fn main_sequence_age(stellar_mass: f64, stellar_luminosity: f64) -> f64 {
+    1.0e10 * stellar_mass / stellar_luminosity
+}
 
-//     mass = mass * SOLAR_MASS_IN_GRAMS;
-//     volume = mass / density;
-//     return (Math.pow((3.0 * volume) / (4.0 * PI), (1.0 / 3.0)) / CM_PER_KM);
-// }
+/// This function, given the orbital radius of a planet in AU, returns the orbital 'zone' of the particle.
+pub fn orbital_zone(luminosity: f64, orb_radius: f64) -> i32 {
+    if orb_radius < 4.0 * luminosity.sqrt() {
+        return 1;
+    } else if orb_radius < 15.0 * luminosity.sqrt() {
+        return 2;
+    }
+    3
+}
 
-// /*--------------------------------------------------------------------------*/
-// /* Returns the radius of the planet in kilometers. */
-// /* The mass passed in is in units of solar masses, the orbital radius */
-// /* in A.U. */
-// /* This formula is listed as eq.9 in Fogg's article, although some typos */
-// /* crop up in that eq. See "The Internal Constitution of Planets", by */
-// /* Dr. D. S. Kothari, Mon. Not. of the Royal Astronomical Society, vol 96 */
-// /* pp.833-843, 1936 for the derivation. Specifically, this is Kothari's */
-// /* eq.23, which appears on page 840. */
-// /*--------------------------------------------------------------------------*/
-// // double
-// function kothari_radius(mass, orbital_radius, giant, zone) {
-//     var temp, temp2, atomic_weight, atomic_num;
+/// The mass is in units of solar masses, and the density is in units of grams/cc. The radius returned is in units of km.
+pub fn volume_radius(mass: f64, density: f64) -> f64 {
+    let mut volume = 0.0;
+    volume = mass * SOLAR_MASS_IN_GRAMS / density;
+    ((3.0 * volume) / (4.0 * PI)).powf(0.33) / CM_PER_KM
+}
 
-//     if (zone == 1) {
-// 	if (giant) {
-// 	    atomic_weight = 9.5;
-// 	    atomic_num = 4.5;
-// 	} else {
-// 	    atomic_weight = 15.0;
-// 	    atomic_num = 8.0;
-// 	}
-//     } else if (zone == 2) {
-// 	if (giant) {
-// 	    atomic_weight = 2.47;
-// 	    atomic_num = 2.0;
-// 	} else {
-// 	    atomic_weight = 10.0;
-// 	    atomic_num = 5.0;
-// 	}
-//     } else {
-// 	if (giant) {
-// 	    atomic_weight = 7.0;
-// 	    atomic_num = 4.0;
-// 	} else {
-// 	    atomic_weight = 10.0;
-// 	    atomic_num = 5.0;
-// 	}
-//     }
-//     temp = atomic_weight * atomic_num;
-//     temp = (2.0 * BETA_20 * Math.pow(SOLAR_MASS_IN_GRAMS, (1.0 / 3.0))) / (A1_20 * Math.pow(temp, (1.0 / 3.0)));
-//     temp2 = A2_20 * Math.pow(atomic_weight, (4.0 / 3.0)) * Math.pow(SOLAR_MASS_IN_GRAMS, (2.0 / 3.0));
-//     temp2 = temp2 * Math.pow(mass, (2.0 / 3.0));
-//     temp2 = temp2 / (A1_20 * Math.pow(atomic_num, 2.0));
-//     temp2 = 1.0 + temp2;
-//     temp = temp / temp2;
-//     temp = (temp * Math.pow(mass, (1.0 / 3.0))) / CM_PER_KM;
-//     return (temp);
-// }
+/// Returns the radius of the planet in kilometers.
+/// The mass passed in is in units of solar masses, the orbital radius in A.U.
+/// This formula is listed as eq.9 in Fogg's article, although some typos crop up in that eq. See "The Internal Constitution of Planets", by Dr. D. S. Kothari, Mon. Not. of the Royal Astronomical Society, vol 96 pp.833-843, 1936 for the derivation. Specifically, this is Kothari's eq.23, which appears on page 840.
+pub fn kothari_radius(mass: f64, giant: bool, zone: i32) -> f64 {
+    let mut atomic_weight = 0.0;
+    let mut atomic_num = 0.0;
+    let mut temp = 0.0;
+    let mut temp1 = 0.0;
+    let mut temp2 = 0.0;
 
-// /*--------------------------------------------------------------------------*/
-// /* The mass passed in is in units of solar masses, and the orbital radius */
-// /* is in units of AU. The density is returned in units of grams/cc. */
-// /*--------------------------------------------------------------------------*/
-// // double
-// function empirical_density(mass, orbital_radius, gas_giant) {
-//     var temp;
+    match (zone, giant) {
+        (1, true) => {
+            atomic_weight = 9.5;
+            atomic_num = 4.5;
+        }
+        (1, false) => {
+            atomic_weight = 15.0;
+            atomic_num = 8.0;
+        }
+        (2, true) => {
+            atomic_weight = 2.47;
+            atomic_num = 2.0;
+        }
+        (2, false) => {
+            atomic_weight = 10.0;
+            atomic_num = 5.0;
+        }
+        (3, true) => {
+            atomic_weight = 7.0;
+            atomic_num = 4.0;
+        }
+        (3, false) => {
+            atomic_weight = 10.0;
+            atomic_num = 5.0;
+        }
+        (_, _) => (),
+    }
 
-//     temp = Math.pow(mass * EARTH_MASSES_PER_SOLAR_MASS, (1.0 / 8.0));
-//     temp = temp * Math.pow(r_ecosphere / orbital_radius, (1.0 / 4.0));
-//     if (gas_giant)
-// 	return (temp * 1.2);
-//     else
-// 	return (temp * 5.5);
-// }
+    temp = atomic_weight * atomic_num;
+    temp = 2.0 * BETA_20 * SOLAR_MASS_IN_GRAMS.powf(0.3) / A1_20 * (temp as f64).powf(0.3);
 
-// /*--------------------------------------------------------------------------*/
-// /* The mass passed in is in units of solar masses, and the equatorial */
-// /* radius is in km. The density is returned in units of grams/cc. */
-// /*--------------------------------------------------------------------------*/
-// // double
-// function volume_density(mass, equatorial_radius) {
-//     var volume;
+    temp2 = A2_20 * atomic_weight.powf(1.3) * SOLAR_MASS_IN_GRAMS.powf(0.6);
+    temp2 = temp2 * mass.powf(0.6);
+    temp2 = temp2 / (A1_20 * atomic_num.powf(2.0));
+    temp2 += 1.0;
 
-//     mass = mass * SOLAR_MASS_IN_GRAMS;
-//     equatorial_radius = equatorial_radius * CM_PER_KM;
-//     volume = (4.0 * PI * Math.pow(equatorial_radius, 3.0)) / 3.0;
-//     return (mass / volume);
-// }
+    temp = temp / temp2;
+    temp = temp * mass.powf(0.3) / CM_PER_KM;
+    temp /= JIMS_FUDGE;
 
-// /*--------------------------------------------------------------------------*/
-// /* The separation is in units of AU, and both masses are in units of solar */
-// /* masses. The period returned is in terms of Earth days. */
-// /*--------------------------------------------------------------------------*/
-// // double
-// function period(separation, small_mass, large_mass) {
-//     var period_in_years;
+    temp
+}
 
-//     period_in_years = Math.sqrt(Math.pow(separation, 3.0) / (small_mass + large_mass));
-//     return (period_in_years * DAYS_IN_A_YEAR);
-// }
+/// The mass passed in is in units of solar masses, and the orbital radius is in units of AU. The density is returned in units of grams/cc.
+pub fn empirical_density(
+    mass: f64,
+    orb_radius: f64,
+    ecosphere_radius: f64,
+    gas_giant: bool,
+) -> f64 {
+    let mut density = (mass * EARTH_MASSES_PER_SOLAR_MASS).powf(1.0 / 8.0);
+    density = density * (ecosphere_radius / orb_radius).powf(0.25);
+
+    match gas_giant {
+        true => density * 1.2,
+        false => density * 5.5,
+    }
+}
+
+/// The mass passed in is in units of solar masses, and the equatorial radius is in km. The density is returned in units of grams/cc.
+pub fn volume_density(mass: f64, equat_radius: &mut f64) -> f64 {
+    *equat_radius *= CM_PER_KM;
+    let volume = (4.0 * PI * equat_radius.powf(3.0)) / 3.0;
+    mass * SOLAR_MASS_IN_GRAMS / volume
+}
+
+/// Separation - Units of AU between the masses returns the period of an entire xorbit in Earth days.
+pub fn period(separation: f64, small_mass: f64, largeMass: f64) -> f64 {
+    let period_in_years = (separation.powf(3.0) / (small_mass + largeMass)).sqrt();
+    // period_in_years * planet.days_in_year
+    period_in_years * DAYS_IN_A_YEAR
+}
+
 
 // /*--------------------------------------------------------------------------*/
 // /* Fogg's information for this routine came from Dole "Habitable Planets */
@@ -198,55 +191,30 @@ pub fn luminosity(mass_ratio: &f64) -> f64 {
 //     return (Math.sqrt(2.0 * GRAV_CONSTANT * mass_in_grams / radius_in_cm));
 // }
 
-// /*--------------------------------------------------------------------------*/
-// /* This is Fogg's eq.16. The molecular weight (usually assumed to be N2) */
-// /* is used as the basis of the Root Mean Square velocity of the molecule */
-// /* or atom. The velocity returned is in cm/sec. */
-// /*--------------------------------------------------------------------------*/
-// // double
-// function rms_vel(molecular_weight, orbital_radius) {
-//     var exospheric_temp;
+/// This is Fogg's eq.16. The molecular weight (usually assumed to be N2) is used as the basis of the Root Mean Square velocity of the molecule or atom. The velocity returned is in cm/sec.
+pub fn rms_vel(molecular_weight: f64, orbital_radius: f64) -> f64 {
+    let exospheric_temp = EARTH_EXOSPHERE_TEMP / orbital_radius.powf(2.0);
+    ((3.0 * MOLAR_GAS_CONST * exospheric_temp) / molecular_weight).sqrt() * CM_PER_METER
+}
 
-//     exospheric_temp = EARTH_EXOSPHERE_TEMP / Math.pow(orbital_radius, 2.0);
-//     return (Math.sqrt((3.0 * MOLAR_GAS_CONST * exospheric_temp) / molecular_weight) * CM_PER_METER);
-// }
+/// This function returns the smallest molecular weight retained by the body, which is useful for determining the atmosphere composition. Orbital radius is in A.U.(ie: in units of the earth's orbital radius), mass is in units of solar masses, and equatorial radius is in units of kilometers.
+pub fn molecule_limit(mass: f64, equatorial_radius: f64) -> f64 {
+    let escape_velocity = escape_vel(mass, equatorial_radius);
+    3.0 * (GAS_RETENTION_THRESHOLD * CM_PER_METER).powf(2.0)
+        * MOLAR_GAS_CONST
+        * EARTH_EXOSPHERE_TEMP
+        / escape_velocity.powf(2.0)
+}
 
-// /*--------------------------------------------------------------------------*/
-// /* This function returns the smallest molecular weight retained by the */
-// /* body, which is useful for determining the atmosphere composition. */
-// /*
-//  * Orbital radius is in A.U.(ie: in units of the earth's orbital radius), *) (*
-//  * mass is in units of solar masses, and equatorial radius is in units of
-//  */
-// /* kilometers. */
-// /*--------------------------------------------------------------------------*/
-// // double
-// function molecule_limit(orbital_radius, mass, equatorial_radius) {
-//     var escape_velocity;
+/// This function calculates the surface acceleration of a planet. The mass is in units of solar masses, the radius in terms of km, and the acceleration is returned in units of cm/sec2.
+pub fn acceleration(mass: f64, radius: f64) -> f64 {
+    GRAV_CONSTANT * mass * SOLAR_MASS_IN_GRAMS / (radius * CM_PER_KM).powf(2.0)
+}
 
-//     escape_velocity = escape_vel(mass, equatorial_radius);
-//     return ((3.0 * Math.pow(GAS_RETENTION_THRESHOLD * CM_PER_METER, 2.0) * MOLAR_GAS_CONST * EARTH_EXOSPHERE_TEMP) / Math.pow(escape_velocity, 2.0));
-// }
-
-// /*--------------------------------------------------------------------------*/
-// /* This function calculates the surface acceleration of a planet. The */
-// /* mass is in units of solar masses, the radius in terms of km, and the */
-// /* acceleration is returned in units of cm/sec2. */
-// /*--------------------------------------------------------------------------*/
-// // double
-// function acceleration(mass, radius) {
-//     return (GRAV_CONSTANT * (mass * SOLAR_MASS_IN_GRAMS) / Math.pow(radius * CM_PER_KM, 2.0));
-// }
-
-// /*--------------------------------------------------------------------------*/
-// /* This function calculates the surface gravity of a planet. The */
-// /* acceleration is in units of cm/sec2, and the gravity is returned in */
-// /* units of Earth gravities. */
-// /*--------------------------------------------------------------------------*/
-// // double
-// function gravity(acceleration) {
-//     return (acceleration / EARTH_ACCELERATION);
-// }
+/// This function calculates the surface gravity of a planet. The acceleration is in units of cm/sec2, and the gravity is returned in units of Earth gravities.
+pub fn gravity(acceleration: f64) -> f64 {
+    acceleration / EARTH_ACCELERATION
+}
 
 // /*--------------------------------------------------------------------------*/
 // /* Note that if the orbital radius of the planet is greater than or equal */
