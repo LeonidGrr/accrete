@@ -1,5 +1,10 @@
 use crate::consts::*;
+use rand::prelude::*;
 
+pub fn about(value: f64, variation: f64) -> f64 {
+    let mut rng = rand::thread_rng();
+    rng.gen_range(value - variation, value + variation)
+}
 pub fn stellar_dust_limit(stellar_mass_ratio: &f64) -> f64 {
     200.0 * stellar_mass_ratio.powf(0.33)
 }

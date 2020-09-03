@@ -24,7 +24,7 @@ pub fn run(to_json: bool) -> AccreteOutput {
     // var spin_resonance;
 
     let system = distribute_planetary_masses();
-    // main_seq_life = 1.0E10 * (stellar_mass_ratio / stellar_luminosity_ratio);
+    // let main_seq_life = 1.0E10 * (stellar_mass_ratio / stellar_luminosity_ratio);
     // if ((main_seq_life >= 6.0E9))
     // age = random_number(1.0E9, 6.0E9);
     // else
@@ -75,13 +75,13 @@ pub fn run(to_json: bool) -> AccreteOutput {
         let s = json!({
             // "stellar_mass": stellar_mass,
             // "stellar_luminosity": stellar_luminosity,
-            "planets": system,
+            "planets": system.planets,
         })
         .to_string();
         return AccreteOutput::Json(s);
     }
     println!("{:#?}", system);
-    AccreteOutput::Struct(system)
+    AccreteOutput::Struct(system.planets)
 }
 
 #[cfg(test)]

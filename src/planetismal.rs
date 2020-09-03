@@ -22,7 +22,7 @@ pub struct Planetismal {
                    // pub rms_velocity: f64, /* units of cm/sec		     */
                    // pub molecule_weight: f64, /* smallest molecular weight retained*/
                    // pub volatile_gas_inventory: f64,
-                   // pub surface_pressure: f64, /* units of millibars (mb)	     */
+                   pub surface_pressure: f64, /* units of millibars (mb)	     */
                    // pub greenhouse_effect: f64, /* runaway greenhouse effect?	*/
                    // pub boil_point: f64, /* the boiling point of water (Kelvin)*/
                    // pub albedo: f64, /* albedo of the planet		     */
@@ -45,6 +45,7 @@ impl Planetismal {
             e,
             mass: PROTOPLANET_MASS,
             gas_giant,
+            surface_pressure: 0.0,
         }
     }
 
