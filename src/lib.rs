@@ -16,40 +16,41 @@ pub enum AccreteOutput {
     Json(String),
 }
 
-struct InitialConditions {
-    /// Enable moon generation by accretion and collision
-    with_moons: bool,
-
+pub fn run(
     /// Limit number of planets
-    planets_limit: u8,
+    planets_limit: Option<u8>,
 
     /// Preconfigured stellar mass
-    stellar_mass: f64,
+    stellar_mass: Option<f64>,
 
     /// "A" in Dole's paper
     /// Dole's paper tests ranges between 0.00125 and 0.0015
     /// Binary stars produced by increasing coeff of dust density in cloud (Formation of Planetary Systems by Aggregation: A Computer Simulation by Stephen H. Dole)
     /// Range: 0.00125-0.0015
     /// Default: 0.0015
-    DUST_DENSITY_COEFF: f64,
+    DUST_DENSITY_COEFF: Option<f64>,
    
     /// The dust-to-gas ratio 50-100 (dust/gas = K), gas = hydrogen and helium, dust = other
     /// Range: 50.0-100.0
     /// Default: 50.0
-    K: f64,
+    K: Option<f64>,
 
     /// Eccentricity of dust cloud
     /// Range: 0.15-0.25
     /// Default: 0.20
-    DUST_CLOUD_ECCENTRICITY: f64,
+    DUST_CLOUD_ECCENTRICITY: Option<f64>,
 
     /// Crit_mass coeff
     /// Range: 1.0e-5 - 1.2e-5
     /// Default: 1.2e-5
-    B: f64,
-}
+    B: Option<f64>,
+    
+    /// Enable moon generation by accretion and collision
+    with_moons: bool,
 
-pub fn run(to_json: bool) -> AccreteOutput {
+    /// Return json instead of struct
+    to_json: bool,
+) -> AccreteOutput {
     // var anum;
     // var main_seq_life;
     // var age, r_ecosphere;
