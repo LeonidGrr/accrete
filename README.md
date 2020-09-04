@@ -32,7 +32,9 @@ fn main() {
 - Martin Fogg
 - Matt Burdick
 - Ian Burrell
-- Zakski (https://github.com/zakski/accrete-starform-stargen)
-- Kbingman (https://github.com/kbingman/accretejs)
-- Calebrob6 (https://github.com/calebrob6)
+- [Jim Burrows](http://www.eldacur.com/~brons/NerdCorner/StarGen/StarGen.html)
+- [Zakski](https://github.com/zakski/accrete-starform-stargen)
+- [Tmanderson](https://github.com/tmanderson/Accrete.js)
+- [Kbingman](https://github.com/kbingman/accretejs)
+- [Calebrob6](https://github.com/calebrob6/accrete)
 - Many other good people!
