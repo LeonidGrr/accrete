@@ -22,7 +22,7 @@ pub struct System {
 }
 
 impl System {
-    fn set_initial_conditions() -> Self {
+    pub fn set_initial_conditions() -> Self {
         let mut rng = rand::thread_rng();
         let stellar_mass = rng.gen_range(0.6, 1.3);
         let stellar_luminosity = luminosity(&stellar_mass);
@@ -41,10 +41,9 @@ impl System {
             planetismal_outer_bound,
         }
     }
-}
 
-pub fn distribute_planetary_masses() -> System {
-    let mut planetary_system = System::set_initial_conditions();
+    pub fn distribute_planetary_masses(&mut self) {
+    Let mut planetary_system = self;
     let inner_dust = 0.0;
     let outer_dust = stellar_dust_limit(&planetary_system.stellar_mass);
     let dust_band = DustBand::new(outer_dust, inner_dust, true, true);
@@ -99,6 +98,6 @@ pub fn distribute_planetary_masses() -> System {
             &planetary_system.planetismal_outer_bound,
         );
     }
+}
 
-    planetary_system
 }
