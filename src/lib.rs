@@ -23,12 +23,13 @@ struct InitialConditions {
     planets_limit: u8,
     /// Preconfigured stellar mass
     stellar_mass: f64,
-    /// Initial mass-of-matter in solar masses per cubic A.U. (`A` in Dole's paper)
+    /// "A" in Dole's paper
+    /// Dole's paper tests ranges between 0.00125 and 0.0015
+    /// Binary stars produced by increasing coeff of dust density in cloud (Formation of Planetary Systems by Aggregation: A Computer Simulation by Stephen H. Dole)
     /// Range: 0.00125-0.0015
     /// Default: 0.0015
-    A: f64,
-    /// Density of dust cloud
-    dust_density: f64,
+    DUST_DENSITY_COEFF: f64,
+    
     /// The dust-to-gas ratio (dust/gas = K)
     paper)
     /// Range: 50.0-100.0
@@ -39,7 +40,7 @@ struct InitialConditions {
     /// Default: 0.20
     W: f64,
     /// Crit_mass coeff
-    /// Range: 1.2e-5...??
+    /// Range: 1.0e-5 - 1.2e-5
     /// Default: 1.2e-5
     B: f64,
 }
