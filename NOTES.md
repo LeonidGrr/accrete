@@ -17,3 +17,13 @@ For these values, the total mass of the cloud in terms of solar mass Ms, is M = 
 
 "Running ACRETE with the parameters a = 4.4, a = 0.22, and A = 4.2 ! x 10-4 leads to a pathological multiple star system. Clearly, this same result will occur if A is increased to 0.0015 Mo/AU31 in which case all of the parameters would be identical to those used by Dole except for f31 which is 0.22 instead of 0.33. The companion star, then, forms near the edge of the nebula; Table 1 indicates that it is the more gradual decrease in the former case that is causing the difficulty. "
 
+"The asteroid belt formed from the primordial solar nebula as a group of planetesimals.[8] Planetesimals are the smaller precursors of the protoplanets. Between Mars and Jupiter, however, gravitational perturbations from Jupiter imbued the protoplanets with too much orbital energy for them to accrete into a planet.[8][9] Collisions became too violent, and instead of fusing together, the planetesimals and most of the protoplanets shattered."
+
+"In an anonymous footnote to his 1766 translation of Charles Bonnet's Contemplation de la Nature, the astronomer Johann Daniel Titius of Wittenberg noted an apparent pattern in the layout of the planets, now known as the Titius-Bode Law. If one began a numerical sequence at 0, then included 3, 6, 12, 24, 48, etc., doubling each time, and added four to each number and divided by 10, this produced a remarkably close approximation to the radii of the orbits of the known planets as measured in astronomic units."
+
+Habitable moons:
+Based on tidal heating models, scientists have defined zones in satellite systems similarly to those of planetary systems. One such zone is the circumplanetary habitable zone (or "habitable edge"). According to this theory, moons closer to their planet than the habitable edge cannot support liquid water at their surface. When effects of eclipses as well as constraints from a satellite's orbital stability are included into this concept, one finds that — depending on a moon's orbital eccentricity — there is a minimum mass of roughly 0.2 solar masses for stars to host habitable moons within the stellar HZ.[48]
+The magnetic environment of exomoons, which is critically triggered by the intrinsic magnetic field of the host planet, has been identified as another effect on exomoon habitability.[49] Most notably, it was found that moons at distances between about 5 and 20 planetary radii from a giant planet can be habitable from an illumination and tidal heating point of view, but still the planetary magnetosphere would critically influence their habitability.
+
+https://arxiv.org/pdf/1209.0050.pdf
+https://arxiv.org/pdf/1309.0811.pdf
