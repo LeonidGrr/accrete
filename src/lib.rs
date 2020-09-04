@@ -16,6 +16,34 @@ pub enum AccreteOutput {
     Json(String),
 }
 
+struct InitialConditions {
+    /// Enable moon generation by accretion and collision
+    with_moons: bool,
+    /// Limit number of planets
+    planets_limit: u8,
+    /// Preconfigured stellar mass
+    stellar_mass: f64,
+    /// Initial mass-of-matter in solar masses per cubic A.U. (`A` in Dole's paper)
+    /// Range: 0.00125-0.0015
+    /// Default: 0.0015
+    A: f64,
+    /// Density of dust cloud
+    dust_density: f64,
+    /// The dust-to-gas ratio (dust/gas = K)
+    paper)
+    /// Range: 50.0-100.0
+    /// Default: 50.0
+    K: f64,
+    /// Eccentricity of dust cloud
+    /// Range: 0.15-0.25
+    /// Default: 0.20
+    W: f64,
+    /// Crit_mass coeff
+    /// Range: 1.2e-5...??
+    /// Default: 1.2e-5
+    B: f64,
+}
+
 pub fn run(to_json: bool) -> AccreteOutput {
     // var anum;
     // var main_seq_life;
