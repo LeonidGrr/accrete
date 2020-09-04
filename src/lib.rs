@@ -19,26 +19,30 @@ pub enum AccreteOutput {
 struct InitialConditions {
     /// Enable moon generation by accretion and collision
     with_moons: bool,
+
     /// Limit number of planets
     planets_limit: u8,
+
     /// Preconfigured stellar mass
     stellar_mass: f64,
+
     /// "A" in Dole's paper
     /// Dole's paper tests ranges between 0.00125 and 0.0015
     /// Binary stars produced by increasing coeff of dust density in cloud (Formation of Planetary Systems by Aggregation: A Computer Simulation by Stephen H. Dole)
     /// Range: 0.00125-0.0015
     /// Default: 0.0015
     DUST_DENSITY_COEFF: f64,
-    
-    /// The dust-to-gas ratio (dust/gas = K)
-    paper)
+   
+    /// The dust-to-gas ratio 50-100 (dust/gas = K), gas = hydrogen and helium, dust = other
     /// Range: 50.0-100.0
     /// Default: 50.0
     K: f64,
+
     /// Eccentricity of dust cloud
     /// Range: 0.15-0.25
     /// Default: 0.20
-    W: f64,
+    DUST_CLOUD_ECCENTRICITY: f64,
+
     /// Crit_mass coeff
     /// Range: 1.0e-5 - 1.2e-5
     /// Default: 1.2e-5
