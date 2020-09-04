@@ -1,5 +1,5 @@
-use crate::consts::*;
 use rand::prelude::*;
+use crate::consts::{ALPHA, N};
 
 pub fn about(value: f64, variation: f64) -> f64 {
     let mut rng = rand::thread_rng();
@@ -32,24 +32,25 @@ pub fn outer_effect_limit(a: &f64, e: &f64, mass: &f64, cloud_eccentricity: &f64
     a * (1.0 + e) * (1.0 + mass) / (1.0 - cloud_eccentricity)
 }
 
-pub fn mass_density(dust_density: &f64, critical_mass: &f64, mass: &f64) -> f64 {
-    K * dust_density / (1.0 + (critical_mass / mass).sqrt() * (K - 1.0))
+pub fn mass_density(k: &f64, dust_density: &f64, critical_mass: &f64, mass: &f64) -> f64 {
+    k * dust_density / (1.0 + (critical_mass / mass).sqrt() * (k - 1.0))
 }
 
-pub fn dust_density(stellar_mass: &f64, oribital_radius: &f64) -> f64 {
-    DUST_DENSITY_COEFF * stellar_mass.sqrt() * (-ALPHA * oribital_radius.powf(1.0 / N)).exp()
+pub fn dust_density(dust_density_coeff: &f64, stellar_mass: &f64, oribital_radius: &f64) -> f64 {
+    dust_density_coeff * stellar_mass.sqrt() * (-ALPHA * oribital_radius.powf(1.0 / N)).exp()
 }
 
 /// Orbital radius is in AU, eccentricity is unitless, and the stellar luminosity ratio is with respect to the sun.
 /// The value returned is the mass at which the planet begins to accrete gas as well as dust, and is in units of solar masses.
 pub fn critical_limit(
+    b: &f64,
     orbital_radius: &f64,
     eccentricity: &f64,
     stellar_luminosity_ratio: &f64,
 ) -> f64 {
     let perihelion_dist = orbital_radius - orbital_radius * eccentricity;
     let temp = perihelion_dist * stellar_luminosity_ratio.sqrt();
-    B * temp.powf(-0.75)
+    b * temp.powf(-0.75)
 }
 
 /// The distance between the orbiting body and the sun at it's closest approach.

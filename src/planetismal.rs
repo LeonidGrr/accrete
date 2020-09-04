@@ -1,4 +1,4 @@
-use crate::consts::*;
+use crate::consts::{EARTH_MASSES_PER_SOLAR_MASS, PROTOPLANET_MASS};
 use crate::utils::*;
 use rand::prelude::*;
 use serde::Serialize;
@@ -34,11 +34,11 @@ pub struct Planetismal {
 }
 
 impl Planetismal {
-    pub fn new(planetesimal_inner_bound: &f64, planetesimal_outer_bound: &f64) -> Self {
+    pub fn new(planetesimal_inner_bound: &f64, planetesimal_outer_bound: &f64, cloud_eccentricity: &f64) -> Self {
         let mut rng = rand::thread_rng();
         let gas_giant = false;
         let a = rng.gen_range(planetesimal_inner_bound, planetesimal_outer_bound);
-        let e = random_eccentricity(rng.gen_range(0.0, 1.0));
+        let e = random_eccentricity(rng.gen_range(0.0, 1.0), cloud_eccentricity);
 
         Planetismal {
             a,
@@ -54,8 +54,8 @@ impl Planetismal {
     }
 }
 
-fn random_eccentricity(random: f64) -> f64 {
-    1.0 - random.powf(ECCENTRICITY_COEFF)
+fn random_eccentricity(random: f64, cloud_eccentricity: &f64) -> f64 {
+    1.0 - random.powf(*cloud_eccentricity)
 }
 
 pub fn coalesce_planetismals(planets: &mut Vec<Planetismal>, cloud_eccentricity: &f64) {

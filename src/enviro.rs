@@ -114,8 +114,8 @@ pub fn volume_density(mass: &f64, equat_radius: &mut f64) -> f64 {
 }
 
 /// Separation - Units of AU between the masses returns the period of an entire xorbit in Earth days.
-pub fn period(separation: &f64, small_mass: &f64, largeMass: &f64) -> f64 {
-    let period_in_years = (separation.powf(3.0) / (small_mass + largeMass)).sqrt();
+pub fn period(separation: &f64, small_mass: &f64, large_mass: &f64) -> f64 {
+    let period_in_years = (separation.powf(3.0) / (small_mass + large_mass)).sqrt();
     // period_in_years * planet.days_in_year
     period_in_years * DAYS_IN_A_YEAR
 }
@@ -302,8 +302,8 @@ pub fn vol_inventory(
 }
 
 /// This implements Fogg's eq.18. The pressure returned is in units of millibars (mb). The gravity is in units of Earth gravities, the radius in units of kilometers.
-pub fn pressure(volatile_gas_inventory: f64, equatorial_radius: f64, gravity: f64) -> f64 {
-    equatorial_radius = EARTH_RADIUS_IN_KM / equatorial_radius;
+pub fn pressure(volatile_gas_inventory: &f64, equatorial_radius: &f64, gravity: &f64) -> f64 {
+    let equatorial_radius = EARTH_RADIUS_IN_KM / equatorial_radius;
     volatile_gas_inventory * gravity / equatorial_radius.powf(2.0)
 }
 
@@ -419,27 +419,25 @@ pub fn green_rise(optical_depth: f64, effective_temp: f64, surface_pressure: f64
 /// The surface temperature passed in is in units of Kelvin.
 /// The cloud adjustment is the fraction of cloud cover obscuring each of the three major components of albedo that lie below the clouds.
 pub fn planet_albedo(
-    water_fraction: f64,
-    cloud_fraction: f64,
-    ice_fraction: f64,
-    surface_pressure: f64,
+    water_fraction: &mut f64,
+    cloud_fraction: &mut f64,
+    ice_fraction: &mut f64,
+    surface_pressure: &mut f64,
 ) -> f64 {
-    let rock_contribution = 0.0;
-    let ice_contribution = 0.0;
-    let rock_fraction = 1.0 - water_fraction - ice_fraction;
-    let components = 0.0;
+    let mut rock_fraction = 1.0 - *water_fraction - *ice_fraction;
+    let mut components = 0.0;
 
-    if water_fraction > 0.0 {
+    if *water_fraction > 0.0 {
         components = components + 1.0;
     }
-    if ice_fraction > 0.0 {
+    if *ice_fraction > 0.0 {
         components = components + 1.0;
     }
     if rock_fraction > 0.0 {
         components = components + 1.0;
     }
 
-    let cloud_adjustment = cloud_fraction / components;
+    let cloud_adjustment = *cloud_fraction / components as f64;
 
     if rock_fraction >= cloud_adjustment {
         rock_fraction = rock_fraction - cloud_adjustment;
@@ -447,33 +445,25 @@ pub fn planet_albedo(
         rock_fraction = 0.0;
     }
 
-    if water_fraction > cloud_adjustment {
-        water_fraction = water_fraction - cloud_adjustment;
+    if *water_fraction > cloud_adjustment {
+        *water_fraction -= cloud_adjustment;
     } else {
-        water_fraction = 0.0;
+        *water_fraction = 0.0;
     }
 
-    if ice_fraction > cloud_adjustment {
-        ice_fraction = ice_fraction - cloud_adjustment;
+    if *ice_fraction > cloud_adjustment {
+        *ice_fraction -= cloud_adjustment;
     } else {
-        ice_fraction = 0.0;
+        *ice_fraction = 0.0;
     }
 
-    let cloud_contribution = cloud_fraction * about(CLOUD_ALBEDO, 0.2);
+    let cloud_contribution = *cloud_fraction * about(CLOUD_ALBEDO, 0.2);
+    let water_contribution = *water_fraction * about(WATER_ALBEDO, 0.2);
+    let (rock_contribution, ice_contribution) = match *surface_pressure == 0.0 {
+        true => (rock_fraction * about(AIRLESS_ROCKY_ALBEDO, 0.3), *ice_fraction * about(AIRLESS_ICE_ALBEDO, 0.4)),
+        false => (rock_fraction * about(ROCKY_ALBEDO, 0.1), *ice_fraction * about(ICE_ALBEDO, 0.1)),
+    };
 
-    if surface_pressure == 0.0 {
-        rock_contribution = rock_fraction * about(AIRLESS_ROCKY_ALBEDO, 0.3);
-    } else {
-        rock_contribution = rock_fraction * about(ROCKY_ALBEDO, 0.1);
-    }
-
-    let water_contribution = water_fraction * about(WATER_ALBEDO, 0.2);
-
-    if surface_pressure == 0.0 {
-        ice_contribution = ice_fraction * about(AIRLESS_ICE_ALBEDO, 0.4);
-    } else {
-        ice_contribution = ice_fraction * about(ICE_ALBEDO, 0.1);
-    }
 
     cloud_contribution + rock_contribution + water_contribution + ice_contribution
 }

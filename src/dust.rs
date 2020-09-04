@@ -1,4 +1,4 @@
-use crate::consts::*;
+use crate::consts::PI;
 use crate::planetismal::*;
 use crate::utils::*;
 
@@ -37,6 +37,7 @@ pub fn accrete_dust(
     crit_mass: &f64,
     dust_density: &f64,
     cloud_eccentricity: &f64,
+    k: &f64,
 ) {
     let mut new_mass = planetismal.mass;
 
@@ -45,7 +46,7 @@ pub fn accrete_dust(
         new_mass = 0.0;
 
         for d in dust_bands.iter_mut() {
-            new_mass += collect_dust(planetismal, crit_mass, d, cloud_eccentricity, dust_density);
+            new_mass += collect_dust(planetismal, crit_mass, d, cloud_eccentricity, dust_density, k);
         }
 
         if !(new_mass - planetismal.mass > 0.0001 * planetismal.mass) {
@@ -61,6 +62,7 @@ pub fn collect_dust(
     dust_band: &mut DustBand,
     cloud_eccentricity: &f64,
     dust_density: &f64,
+    k: &f64,
 ) -> f64 {
     let Planetismal { mass, a, e, .. } = p;
     let mut temp = mass / (1.0 + mass);
@@ -82,7 +84,7 @@ pub fn collect_dust(
     };
 
     let mass_density = match mass < crit_mass || dust_band.gas_present {
-        true => mass_density(&temp_density, &crit_mass, &mass),
+        true => mass_density(k, &temp_density, &crit_mass, &mass),
         // K * temp_density / (1.0 + (crit_mass / mass).sqrt() * (K - 1.0)),
         false => temp_density,
     };
