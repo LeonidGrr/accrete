@@ -5,7 +5,7 @@ mod enviro;
 mod planetismal;
 mod utils;
 
-use system::distribute_planetary_masses;
+use system::System;
 use enviro::*;
 use planetismal::Planetismal;
 use serde_json::json;
@@ -22,8 +22,8 @@ pub fn run(to_json: bool) -> AccreteOutput {
     // var age, r_ecosphere;
     // var r_greenhouse;
     // var spin_resonance;
-
-    let system = distribute_planetary_masses();
+    Let mut system = System::set_initial_conditions();
+    system.distribute_planetary_masses();
     // let main_seq_life = 1.0E10 * (stellar_mass_ratio / stellar_luminosity_ratio);
     // if ((main_seq_life >= 6.0E9))
     // age = random_number(1.0E9, 6.0E9);
