@@ -1,5 +1,5 @@
-use rand::prelude::*;
 use crate::consts::{ALPHA, N};
+use rand::prelude::*;
 
 pub fn about(value: f64, variation: f64) -> f64 {
     let mut rng = rand::thread_rng();
@@ -17,11 +17,11 @@ pub fn outermost_planet(stellar_mass_ratio: &f64) -> f64 {
     50.0 * stellar_mass_ratio.powf(0.33)
 }
 
-pub fn innermost_moon(planetary_mass: &f64) -> f64 {
+pub fn _innermost_moon(planetary_mass: &f64) -> f64 {
     0.001 * planetary_mass.powf(0.33)
 }
 
-pub fn outermost_moon(planetary_mass: &f64) -> f64 {
+pub fn _outermost_moon(planetary_mass: &f64) -> f64 {
     4.0 * planetary_mass.powf(0.33)
 }
 pub fn inner_effect_limit(a: &f64, e: &f64, mass: &f64, cloud_eccentricity: &f64) -> f64 {
@@ -54,11 +54,11 @@ pub fn critical_limit(
 }
 
 /// The distance between the orbiting body and the sun at it's closest approach.
-pub fn perihelion_distance(radius: &f64, eccentricity: &f64) -> f64 {
+pub fn _perihelion_distance(radius: &f64, eccentricity: &f64) -> f64 {
     radius * (1.0 - eccentricity)
 }
 
 // The distance between the orbiting body and the sun at it's furthest approach.
-pub fn aphelion_distance(radius: &f64, eccentricity: &f64) -> f64 {
+pub fn _aphelion_distance(radius: &f64, eccentricity: &f64) -> f64 {
     radius * (1.0 + eccentricity)
 }

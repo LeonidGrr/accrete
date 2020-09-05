@@ -1,6 +1,6 @@
 use crate::consts::*;
-use crate::utils::*;
 use crate::planetismal::Planetismal;
+use crate::utils::*;
 
 pub fn luminosity(mass: &f64) -> f64 {
     let n = match *mass < 1.0 {
@@ -22,9 +22,9 @@ pub fn main_sequence_age(stellar_mass: &f64, stellar_luminosity: &f64) -> f64 {
 
 /// This function, given the orbital radius of a planet in AU, returns the orbital 'zone' of the particle.
 pub fn orbital_zone(luminosity: &f64, orb_radius: &f64) -> i32 {
-    if orb_radius < &(4.0 * luminosity.sqrt()) {
+    if *orb_radius < (4.0 * luminosity.sqrt()) {
         return 1;
-    } else if orb_radius < &(15.0 * luminosity.sqrt()) {
+    } else if *orb_radius < (15.0 * luminosity.sqrt()) {
         return 2;
     }
     3
@@ -32,20 +32,16 @@ pub fn orbital_zone(luminosity: &f64, orb_radius: &f64) -> i32 {
 
 /// The mass is in units of solar masses, and the density is in units of grams/cc. The radius returned is in units of km.
 pub fn volume_radius(mass: &f64, density: &f64) -> f64 {
-    let mut volume = 0.0;
-    volume = mass * SOLAR_MASS_IN_GRAMS / density;
+    let volume = mass * SOLAR_MASS_IN_GRAMS / density;
     ((3.0 * volume) / (4.0 * PI)).powf(0.33) / CM_PER_KM
 }
 
 /// Returns the radius of the planet in kilometers.
 /// The mass passed in is in units of solar masses, the orbital radius in A.U.
 /// This formula is listed as eq.9 in Fogg's article, although some typos crop up in that eq. See "The Internal Constitution of Planets", by Dr. D. S. Kothari, Mon. Not. of the Royal Astronomical Society, vol 96 pp.833-843, 1936 for the derivation. Specifically, this is Kothari's eq.23, which appears on page 840.
-pub fn kothari_radius(mass: &f64, giant: bool, zone: i32) -> f64 {
+pub fn kothari_radius(mass: &f64, giant: &bool, zone: &i32) -> f64 {
     let mut atomic_weight = 0.0;
     let mut atomic_num = 0.0;
-    let mut temp = 0.0;
-    let mut temp1 = 0.0;
-    let mut temp2 = 0.0;
 
     match (zone, giant) {
         (1, true) => {
@@ -75,16 +71,16 @@ pub fn kothari_radius(mass: &f64, giant: bool, zone: i32) -> f64 {
         (_, _) => (),
     }
 
-    temp = atomic_weight * atomic_num;
-    temp = 2.0 * BETA_20 * SOLAR_MASS_IN_GRAMS.powf(0.3) / A1_20 * (temp as f64).powf(0.3);
+    let mut temp = atomic_weight * atomic_num;
+    temp = 2.0 * BETA_20 * SOLAR_MASS_IN_GRAMS.powf(1.0/3.0) / (A1_20 * (temp as f64).powf(1.0/3.0));
 
-    temp2 = A2_20 * atomic_weight.powf(1.3) * SOLAR_MASS_IN_GRAMS.powf(0.6);
-    temp2 = temp2 * mass.powf(0.6);
+    let mut temp2 = A2_20 * atomic_weight.powf(4.0 / 3.0) * SOLAR_MASS_IN_GRAMS.powf(2.0 / 3.0);
+    temp2 = temp2 * mass.powf(2.0 / 3.0);
     temp2 = temp2 / (A1_20 * atomic_num.powf(2.0));
     temp2 += 1.0;
 
     temp = temp / temp2;
-    temp = temp * mass.powf(0.3) / CM_PER_KM;
+    temp = (temp * mass.powf(1.0 / 3.0)) / CM_PER_KM;
     temp /= JIMS_FUDGE;
 
     temp
@@ -95,7 +91,7 @@ pub fn empirical_density(
     mass: &f64,
     orb_radius: &f64,
     ecosphere_radius: &f64,
-    gas_giant: bool,
+    gas_giant: &bool,
 ) -> f64 {
     let mut density = (mass * EARTH_MASSES_PER_SOLAR_MASS).powf(1.0 / 8.0);
     density = density * (ecosphere_radius / orb_radius).powf(0.25);
@@ -107,8 +103,8 @@ pub fn empirical_density(
 }
 
 /// The mass passed in is in units of solar masses, and the equatorial radius is in km. The density is returned in units of grams/cc.
-pub fn volume_density(mass: &f64, equat_radius: &mut f64) -> f64 {
-    *equat_radius *= CM_PER_KM;
+pub fn volume_density(mass: &f64, equat_radius: &f64) -> f64 {
+    let equat_radius = equat_radius * CM_PER_KM;
     let volume = (4.0 * PI * equat_radius.powf(3.0)) / 3.0;
     mass * SOLAR_MASS_IN_GRAMS / volume
 }
@@ -120,106 +116,50 @@ pub fn period(separation: &f64, small_mass: &f64, large_mass: &f64) -> f64 {
     period_in_years * DAYS_IN_A_YEAR
 }
 
-// /*--------------------------------------------------------------------------*/
-// /* Fogg's information for this routine came from Dole "Habitable Planets */
-// /* for Man", Blaisdell Publishing Company, NY, 1964. From this, he came */
-// /* up with his eq.12, which is the equation for the base_angular_velocity */
-// /* below. Going a bit further, he found an equation for the change in */
-// /* angular velocity per time (dw/dt) from P. Goldreich and S. Soter's paper */
-// /* "Q in the Solar System" in Icarus, vol 5, pp.375-389 (1966). Comparing */
-// /* to the change in angular velocity for the Earth, we can come up with an */
-// /* approximation for our new planet (his eq.13) and take that into account. */
-// /*--------------------------------------------------------------------------*/
-// // double
-// function day_length(mass, radius, orbital_period, eccentricity, giant) {
-//     var base_angular_velocity, planetary_mass_in_grams, k2, temp, equatorial_radius_in_cm, change_in_angular_velocity, spin_resonance_period;
-
-//     spin_resonance = FALSE;
-//     if (giant)
-// 	k2 = 0.24;
-//     else
-// 	k2 = 0.33;
-//     planetary_mass_in_grams = mass * SOLAR_MASS_IN_GRAMS;
-//     equatorial_radius_in_cm = radius * CM_PER_KM;
-//     base_angular_velocity = Math.sqrt(2.0 * J * (planetary_mass_in_grams) / (k2 * Math.pow(equatorial_radius_in_cm, 2.0)));
-//     /* This next term describes how much a planet's rotation is slowed by */
-//     /* it's moons. Find out what dw/dt is after figuring out Goldreich and */
-//     /* Soter's Q'. */
-//     change_in_angular_velocity = 0.0;
-//     temp = base_angular_velocity + (change_in_angular_velocity * age);
-//     /* 'temp' is now the angular velocity. Now we change from rad/sec to */
-//     /* hours/rotation. */
-//     temp = 1.0 / ((temp / radians_per_rotation) * SECONDS_PER_HOUR);
-//     if (temp >= orbital_period) {
-// 	spin_resonance_period = ((1.0 - eccentricity) / (1.0 + eccentricity)) * orbital_period;
-// 	printf("...maybe: %f\n", spin_resonance_period);
-
-// 	if (eccentricity > 0.01) {
-// 	    printf("...resonance...\n");
-// 	    temp = spin_resonance_period;
-// 	    spin_resonance = TRUE;
-// 	} else
-// 	    temp = orbital_period;
-//     }
-//     return (temp);
-// }
 /// Fogg's information for this routine came from Dole "Habitable Planets for Man", Blaisdell Publishing Company, NY, 1964. From this, he came up with his eq.12, which is the equation for the base_angular_velocity below.
 /// Going a bit further, he found an equation for the change in angular velocity per time (dw/dt) from P. Goldreich and S. Soter's paper "Q in the Solar System" in Icarus, vol 5, pp.375-389 (1966).
 /// Comparing to the change in angular velocity for the Earth, we can come up with an approximation for our new planet (his eq.13) and take that into account.
-// pub fn day_length(planet: &mut Planetismal, stellar_mass: &f64, main_sequence_age: &f64) -> f64 {
-//     let planet_mass_in_grams = planet.mass * self.solar_mass_in_grams,
-//     equatorial_radius_in_cm = planet.radius * CM_PER_KM,
-//     year_in_hours = planet.orbPeriod || self.period(planet.axis, planet.mass, 1),
-//     let giant = planet.giant || false;
-//     let k2 = 0.0;
-//     base_angular_velocity = 0.0;
-//     change_in_angular_velocity = 0.0;
-//     ang_velocity = 0.0;
-//     spin_resonance_factor = 0.0;
-//     day_in_hours = 0.0;
-//     stopped = false;
+pub fn day_length(planet: &mut Planetismal, stellar_mass: &f64, main_sequence_age: &f64) -> f64 {
+    let planet_mass_in_grams = planet.mass * SOLAR_MASS_IN_GRAMS;
+    let equatorial_radius_in_cm = planet.radius * CM_PER_KM;
+    let year_in_hours = planet.orbital_period;
 
-//     planet.resonant_period = false;
+    let k2 = match planet.gas_giant {
+        true => 0.24,
+        false => 0.33,
+    };
 
-//     if (giant) {
-//         k2 = 0.24;
-//     }
-//     else {
-//         k2 = 0.33;
-//     }
+    let base_angular_velocity =
+        (2.0 * J * planet_mass_in_grams).sqrt() / (k2 * equatorial_radius_in_cm.powf(2.0));
 
-//     base_angular_velocity = Math.sqrt(2 * J * planet_mass_in_grams) /
-//     (k2 * Math.pow(equatorial_radius_in_cm, 2));
+    let change_in_angular_velocity = CHANGE_IN_EARTH_ANG_VEL
+        * (planet.density / EARTH_DENSITY)
+        * (equatorial_radius_in_cm / EARTH_RADIUS_IN_CM)
+        * (EARTH_MASS_IN_GRAMS / planet_mass_in_grams)
+        * stellar_mass.powf(2.0)
+        * (1.0 / planet.a.powf(6.0));
 
-//     change_in_angular_velocity = self.change_in_earth_ang_vel *
-//         (planet.density / EARTH_DENSITY) *
-//         (equatorial_radius_in_cm / EARTH_RADIUS_IN_CM) *
-//         (EARTH_MASS_IN_GRAMS / planet_mass_in_grams) *
-//         Math.pow(stellar_masss, 2) *
-//         (1 / Math.pow(planet.axis, 6));
+    let ang_velocity = base_angular_velocity + (change_in_angular_velocity * main_sequence_age);
 
-//     ang_velocity = base_angular_velocity + (change_in_angular_velocity * main_sequence_age);
+    let (stopped, day_in_hours) = match ang_velocity <= 0.0 {
+        true => (true, INCREDIBLY_LARGE_NUMBER),
+        false => (
+            false,
+            RADIANS_PER_ROTATION / (SECONDS_PER_HOUR * ang_velocity),
+        ),
+    };
 
-//     if (ang_velocity <= 0.0) {
-//         stopped = true;
-//         day_in_hours = self.very_large_number;
-//     }
-//     else {
-//         day_in_hours = self.radians_per_rotation / (seconds_per_hour * ang_velocity);
-//     }
-
-//     if (day_in_hours >= year_in_hours || stopped) {
-//         if (planet.eccn > 0.1) {
-//         spin_resonance_factor = (1 - planet.eccn) / (1 + planet.eccn);
-//         planet.resonant_period = true;
-
-//         return spin_resonance_factor * year_in_hours;
-//     } else {
-//         return year_in_hours;
-//     }
-//     }
-//     return day_in_hours;
-// }
+    if day_in_hours >= year_in_hours || stopped {
+        if planet.e > 0.1 {
+            let spin_resonance_factor = (1.0 - planet.e) / (1.0 + planet.e);
+            planet.resonant_period = true;
+            return spin_resonance_factor * year_in_hours;
+        } else {
+            return year_in_hours;
+        }
+    }
+    day_in_hours
+}
 
 /// The orbital radius is expected in units of Astronomical Units (AU).
 /// Inclination is returned in units of degrees.
@@ -262,20 +202,24 @@ pub fn gravity(acceleration: &f64) -> f64 {
 }
 
 /// Note that if the orbital radius of the planet is greater than or equal to R_inner, 99% of it's volatiles are assumed to have been deposited in surface reservoirs (otherwise, it suffers from the greenhouse effect).
-pub fn greenhouse(planet: &Planetismal, zone: i32, orbital_radius: f64, ecosphere_radius: f64) -> bool {
+pub fn greenhouse(
+    orbital_radius: &f64,
+    orbit_zone: &i32,
+    surface_pressure: &f64,
+    ecosphere_radius: &f64,
+) -> bool {
     let greenhouse_radius = ecosphere_radius * GREENHOUSE_EFFECT_CONST;
-
-    orbital_radius < greenhouse_radius && zone == 1 && planet.surface_pressure > 0.0
+    *orbital_radius < greenhouse_radius && *orbit_zone == 1 && *surface_pressure > 0.0
 }
 
 /// This implements Fogg's eq.17. The 'inventory' returned is unitless.
 pub fn vol_inventory(
-    mass: f64,
-    escape_vel: f64,
-    rms_vel: f64,
-    stellar_mass: f64,
-    zone: i32,
-    greenhouse_effect: bool,
+    mass: &f64,
+    escape_vel: &f64,
+    rms_vel: &f64,
+    stellar_mass: &f64,
+    zone: &i32,
+    greenhouse_effect: &bool,
 ) -> f64 {
     let velocity_ratio = escape_vel / rms_vel;
 
@@ -294,7 +238,7 @@ pub fn vol_inventory(
     let temp1 = proportion_const * mass_in_earth_units / stellar_mass;
     let temp2 = about(temp1, 0.2);
 
-    if greenhouse_effect {
+    if *greenhouse_effect {
         return temp2;
     }
 
@@ -355,12 +299,12 @@ pub fn cloud_fraction(
 }
 
 /// Given the surface temperature of a planet (in Kelvin), this function returns the fraction of the planet's surface covered by ice. This is Fogg's eq.24. See Hart[24] in Icarus vol.33, p.28 for an explanation.
-pub fn ice_fraction(hydrosphere_fraction: &f64, surface_temp: &mut f64) -> f64 {
-    if *surface_temp > 328.0 {
-        *surface_temp = 328.0;
-    }
-
-    let mut temp = ((328.0 - *surface_temp) / 70.0).powf(5.0);
+pub fn ice_fraction(hydrosphere_fraction: &f64, surface_temp: &f64) -> f64 {
+    let surface_temp = match *surface_temp > 328.0 {
+        true => 328.0,
+        false => *surface_temp,
+    };
+    let mut temp = ((328.0 - surface_temp) / 70.0).powf(5.0);
 
     if temp > 1.5 * hydrosphere_fraction {
         temp = 1.5 * hydrosphere_fraction;
@@ -388,41 +332,13 @@ pub fn green_rise(optical_depth: f64, effective_temp: f64, surface_pressure: f64
     ((1.0 + 0.75 * optical_depth).powf(0.25) - 1.0) * effective_temp * convection_factor
 }
 
-
-
-//
-//     if (rock_fraction >= cloud_adjustment)
-// 	rock_fraction = rock_fraction - cloud_adjustment;
-//     else
-// 	rock_fraction = 0.0;
-//     if (water_fraction > cloud_adjustment)
-// 	water_fraction = water_fraction - cloud_adjustment;
-//     else
-// 	water_fraction = 0.0;
-//     if (ice_fraction > cloud_adjustment)
-// 	ice_fraction = ice_fraction - cloud_adjustment;
-//     else
-// 	ice_fraction = 0.0;
-//     cloud_contribution = cloud_fraction * about(CLOUD_ALBEDO, 0.2);
-//     if (surface_pressure == 0.0)
-// 	rock_contribution = rock_fraction * about(AIRLESS_ROCKY_ALBEDO, 0.3);
-//     else
-// 	rock_contribution = rock_fraction * about(ROCKY_ALBEDO, 0.1);
-//     water_contribution = water_fraction * about(WATER_ALBEDO, 0.2);
-//     if (surface_pressure == 0.0)
-// 	ice_contribution = ice_fraction * about(AIRLESS_ICE_ALBEDO, 0.4);
-//     else
-// 	ice_contribution = ice_fraction * about(ICE_ALBEDO, 0.1);
-//     return (cloud_contribution + rock_contribution + water_contribution + ice_contribution);
-// }
-
 /// The surface temperature passed in is in units of Kelvin.
 /// The cloud adjustment is the fraction of cloud cover obscuring each of the three major components of albedo that lie below the clouds.
 pub fn planet_albedo(
-    water_fraction: &mut f64,
-    cloud_fraction: &mut f64,
-    ice_fraction: &mut f64,
-    surface_pressure: &mut f64,
+    water_fraction: &f64,
+    cloud_fraction: &f64,
+    ice_fraction: &f64,
+    surface_pressure: &f64,
 ) -> f64 {
     let mut rock_fraction = 1.0 - *water_fraction - *ice_fraction;
     let mut components = 0.0;
@@ -445,25 +361,28 @@ pub fn planet_albedo(
         rock_fraction = 0.0;
     }
 
-    if *water_fraction > cloud_adjustment {
-        *water_fraction -= cloud_adjustment;
-    } else {
-        *water_fraction = 0.0;
-    }
-
-    if *ice_fraction > cloud_adjustment {
-        *ice_fraction -= cloud_adjustment;
-    } else {
-        *ice_fraction = 0.0;
-    }
-
-    let cloud_contribution = *cloud_fraction * about(CLOUD_ALBEDO, 0.2);
-    let water_contribution = *water_fraction * about(WATER_ALBEDO, 0.2);
-    let (rock_contribution, ice_contribution) = match *surface_pressure == 0.0 {
-        true => (rock_fraction * about(AIRLESS_ROCKY_ALBEDO, 0.3), *ice_fraction * about(AIRLESS_ICE_ALBEDO, 0.4)),
-        false => (rock_fraction * about(ROCKY_ALBEDO, 0.1), *ice_fraction * about(ICE_ALBEDO, 0.1)),
+    let water_fraction = match *water_fraction > cloud_adjustment {
+        true => *water_fraction - cloud_adjustment,
+        false => 0.0,
     };
 
+    let ice_fraction = match *ice_fraction > cloud_adjustment {
+        true => *ice_fraction - cloud_adjustment,
+        false => 0.0,
+    };
+
+    let cloud_contribution = *cloud_fraction * about(CLOUD_ALBEDO, 0.2);
+    let water_contribution = water_fraction * about(WATER_ALBEDO, 0.2);
+    let (rock_contribution, ice_contribution) = match *surface_pressure == 0.0 {
+        true => (
+            rock_fraction * about(AIRLESS_ROCKY_ALBEDO, 0.3),
+            ice_fraction * about(AIRLESS_ICE_ALBEDO, 0.4),
+        ),
+        false => (
+            rock_fraction * about(ROCKY_ALBEDO, 0.1),
+            ice_fraction * about(ICE_ALBEDO, 0.1),
+        ),
+    };
 
     cloud_contribution + rock_contribution + water_contribution + ice_contribution
 }
@@ -503,88 +422,38 @@ pub fn opacity(molecular_weight: f64, surface_pressure: f64) -> f64 {
     optical_depth
 }
 
+/// The temperature calculated is in degrees Kelvin.
+pub fn iterate_surface_temp(planet: &mut Planetismal, ecosphere_radius: &f64) -> f64 {
+    let mut albedo = 0.0;
+    let mut water = 0.0;
+    let mut clouds = 0.0;
+    let mut ice = 0.0;
 
+    let mut optical_depth = opacity(planet.molecule_weight, planet.surface_pressure);
+    let mut effective_temp = eff_temp(ecosphere_radius, &planet.a, &EARTH_ALBEDO);
+    let mut greenhouse_rise = green_rise(optical_depth, effective_temp, planet.surface_pressure);
+    let mut surface_temp = effective_temp + greenhouse_rise;
+    let mut previous_temp = surface_temp - 5.0;
 
-// /*--------------------------------------------------------------------------*/
-// /* The temperature calculated is in degrees Kelvin. */
-// /* Quantities already known which are used in these calculations: */
-// /* planet->molecule_weight */
-// /* planet->surface_pressure */
-// /* R_ecosphere */
-// /* planet->a */
-// /* planet->volatile_gas_inventory */
-// /* planet->radius */
-// /* planet->boil_point */
-// /*--------------------------------------------------------------------------*/
-// function iterate_surface_temp(planet) {
+    while (surface_temp - previous_temp).abs() > 1.0 {
+        previous_temp = surface_temp;
+        water = hydrosphere_fraction(&planet.volatile_gas_inventory, &planet.radius);
+        clouds = cloud_fraction(surface_temp, planet.molecule_weight, planet.radius, water);
+        ice = ice_fraction(&water, &surface_temp);
 
-//     var surface_temp, effective_temp, greenhouse_rise, previous_temp, optical_depth, albedo = 0.0, water = 0.0, clouds = 0.0, ice = 0.0;
-
-//     optical_depth = opacity(planet.molecule_weight, planet.surface_pressure);
-//     effective_temp = eff_temp(r_ecosphere, planet.a, EARTH_ALBEDO);
-//     greenhouse_rise = green_rise(optical_depth, effective_temp, planet.surface_pressure);
-//     surface_temp = effective_temp + greenhouse_rise;
-//     previous_temp = surface_temp - 5.0;
-//     while ((Math.abs(surface_temp - previous_temp) > 1.0)) {
-// 	previous_temp = surface_temp;
-// 	water = hydrosphere_fraction(planet.volatile_gas_inventory, planet.radius);
-// 	clouds = cloud_fraction(surface_temp, planet.molecule_weight, planet.radius, water);
-// 	ice = ice_fraction(water, surface_temp);
-// 	if ((surface_temp >= planet.boil_point) || (surface_temp <= FREEZING_POINT_OF_WATER)){
-// 	    water = 0.0;
-// 	}
-// 	albedo = planet_albedo(water, clouds, ice, planet.surface_pressure);
-// 	optical_depth = opacity(planet.molecule_weight, planet.surface_pressure);
-// 	effective_temp = eff_temp(r_ecosphere, planet.a, albedo);
-// 	greenhouse_rise = green_rise(optical_depth, effective_temp, planet.surface_pressure);
-// 	surface_temp = effective_temp + greenhouse_rise;
-//     }
-//     planet.hydrosphere = water;
-//     planet.cloud_cover = clouds;
-//     planet.ice_cover = ice;
-//     planet.albedo = albedo;
-//     planet.surface_temp = surface_temp;
-// };
-// The temperature calculated is in degrees Kelvin.
-// Quantities already known which are used in these calculations:
-// planet->molecule_weight
-// planet->surface_pressure
-// R_ecosphere
-// planet->a
-// planet->volatile_gas_inventory
-// planet->radius
-// planet->
-// pub fn iterate_surface_temp(planet: &Planet, ecosphere_radius: f64) -> f64 {
-//     let albedo = 0.0;
-//     let water = 0.0;
-//     let clouds = 0.0;
-//     let ice = 0.0;
-
-//     let optical_depth = planet.opacity(planet.molecule_weight, planet.surface_pressure);
-//     let effective_temp = planet.eff_temp(ecosphere_radius, planet.a, EARTH_ALBEDO);
-//     let greenhouse_rise = planet.green_rise(optical_depth, effective_temp, planet.surface_pressure);
-//     let surface_temp = effective_temp + greenhouse_rise;
-//     let previous_temp = surface_temp - 5.0;
-
-//     while (surface_temp - previous_temp).abs() > 1.0 {
-//         previous_temp = surface_temp;
-//         water = planet.hydrosphere_fraction(planet.volatile_gas_inventory, planet.radius);
-//         clouds = planet.cloud_fraction(surface_temp, planet.molecule_weight, planet.radius, water);
-//         ice = planet.ice_fraction(water, surface_temp);
-
-//         if surface_temp >= planet.boilPoint || surface_temp <= FREEZING_POINT_OF_WATER {
-//             water = 0.0;
-//         }
-//         albedo = planet.planet_albedo(water, clouds, ice, planet.surface_pressure);
-//         optical_depth = planet.opacity(planet.molecule_weight, planet.surface_pressure);
-//         effective_temp = planet.eff_temp(ecosphere_radius, planet.a, albedo);
-//         greenhouse_rise = planet.green_rise(optical_depth, effective_temp, planet.surface_pressure);
-//         surface_temp = effective_temp + greenhouse_rise;
-//     }
-//     // planet.hydrosphere = water;
-//     // planet.cloud_cover = clouds;
-//     // planet.ice_cover = ice;
-//     // planet.albedo = albedo;
-//     // planet.surface_temp = surface_temp;
-//     surface_temp
-// }
+        if surface_temp >= planet.boil_point || surface_temp <= FREEZING_POINT_OF_WATER {
+            water = 0.0;
+        }
+        albedo = planet_albedo(&water, &clouds, &ice, &planet.surface_pressure);
+        optical_depth = opacity(planet.molecule_weight, planet.surface_pressure);
+        effective_temp = eff_temp(ecosphere_radius, &planet.a, &albedo);
+        greenhouse_rise = green_rise(optical_depth, effective_temp, planet.surface_pressure);
+        surface_temp = effective_temp + greenhouse_rise;
+    }
+    planet.hydrosphere = water;
+    planet.cloud_cover = clouds;
+    planet.ice_cover = ice;
+    planet.albedo = albedo;
+    planet.surface_temp = surface_temp;
+    surface_temp
+}

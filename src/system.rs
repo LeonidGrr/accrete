@@ -1,3 +1,5 @@
+use crate::consts::PROTOPLANET_MASS;
+use crate::consts::*;
 /// BIBLIOGRAPHY
 /// Dole, Stephen H.
 /// "Formation of Planetary Systems by Aggregation: a Computer Simulation"
@@ -6,7 +8,7 @@ use crate::dust::*;
 use crate::enviro::*;
 use crate::planetismal::*;
 use crate::utils::*;
-use crate::consts::PROTOPLANET_MASS;
+use rand::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct System {
@@ -14,6 +16,9 @@ pub struct System {
     pub with_rings: bool,
     pub stellar_mass: f64,
     pub stellar_luminosity: f64,
+    pub main_seq_life: f64,
+    pub age: f64,
+    pub ecosphere: (f64, f64),
     pub planets: Vec<Planetismal>,
     pub cloud_eccentricity: f64,
     pub planetismal_inner_bound: f64,
@@ -32,15 +37,27 @@ impl System {
         k: f64,
         cloud_eccentricity: f64,
         b: f64,
-        with_moons: bool,
+        _with_moons: bool,
     ) -> Self {
         let stellar_luminosity = luminosity(&stellar_mass);
         let planetismal_inner_bound = innermost_planet(&stellar_mass);
         let planetismal_outer_bound = outermost_planet(&stellar_mass);
 
+        let main_seq_life = main_sequence_age(&stellar_mass, &stellar_luminosity);
+
+        let mut rng = rand::thread_rng();
+        let age = match main_seq_life >= 6.0E9 {
+            true => rng.gen_range(1.0E9, 6.0E9),
+            false => rng.gen_range(1.0E9, main_seq_life),
+        };
+        let ecosphere = ecosphere(&stellar_luminosity);
+
         Self {
             stellar_mass,
             stellar_luminosity,
+            main_seq_life,
+            age,
+            ecosphere,
             with_moons: false,
             with_rings: false,
             planets: Vec::new(),
@@ -107,8 +124,7 @@ impl System {
                         p.gas_giant = true;
                     }
                     planets.push(p);
-                    planets
-                        .sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
+                    planets.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
                     coalesce_planetismals(planets, &cloud_eccentricity);
                 } else {
                     // belt?
@@ -126,6 +142,70 @@ impl System {
                 Some(limit) => planets.len() < *limit && dust_still_left,
                 None => dust_still_left,
             };
+        }
+    }
+
+    pub fn generate_planetary_environment(&mut self) {
+        for planet in self.planets.iter_mut() {
+            planet.orbit_zone = orbital_zone(&self.stellar_luminosity, &planet.a);
+            if planet.gas_giant {
+                planet.density = empirical_density(
+                    &planet.mass,
+                    &planet.a,
+                    &self.ecosphere.1,
+                    &planet.gas_giant,
+                );
+                planet.radius = volume_radius(&planet.mass, &planet.density);
+            } else {
+                planet.radius = kothari_radius(&planet.mass, &planet.gas_giant, &planet.orbit_zone);
+                planet.density = volume_density(&planet.mass, &planet.radius);
+            }
+
+            planet.orbital_period = period(&planet.a, &planet.mass, &self.stellar_mass);
+            planet.day = day_length(planet, &self.stellar_mass, &self.main_seq_life);
+            planet.axial_tilt = inclination(&planet.a);
+            planet.escape_velocity = escape_vel(&planet.mass, &planet.radius);
+            planet.surface_accel = acceleration(&planet.mass, &planet.radius);
+            planet.rms_velocity = rms_vel(&MOLECULAR_NITROGEN, &planet.a);
+            planet.molecule_weight = molecule_limit(&planet.mass, &planet.radius);
+
+            if planet.gas_giant {
+                planet.surface_grav = INCREDIBLY_LARGE_NUMBER;
+                planet.greenhouse_effect = false;
+                planet.volatile_gas_inventory = INCREDIBLY_LARGE_NUMBER;
+                planet.surface_pressure = INCREDIBLY_LARGE_NUMBER;
+                planet.boil_point = INCREDIBLY_LARGE_NUMBER;
+                planet.hydrosphere = INCREDIBLY_LARGE_NUMBER;
+                planet.albedo = about(GAS_GIANT_ALBEDO, 0.1);
+                planet.surface_temp = INCREDIBLY_LARGE_NUMBER;
+            } else {
+                planet.surface_grav = gravity(&planet.surface_accel);
+                planet.greenhouse_effect = greenhouse(
+                    &planet.a,
+                    &planet.orbit_zone,
+                    &planet.surface_pressure,
+                    &self.ecosphere.1,
+                );
+                planet.volatile_gas_inventory = vol_inventory(
+                    &planet.mass,
+                    &planet.escape_velocity,
+                    &planet.rms_velocity,
+                    &self.stellar_mass,
+                    &planet.orbit_zone,
+                    &planet.greenhouse_effect,
+                );
+                planet.surface_pressure = pressure(
+                    &planet.volatile_gas_inventory,
+                    &planet.radius,
+                    &planet.surface_grav,
+                );
+                if planet.surface_pressure == 0.0 {
+                    planet.boil_point = 0.0;
+                } else {
+                    planet.boil_point = boiling_point(&planet.surface_pressure);
+                    iterate_surface_temp(planet, &self.ecosphere.1);
+                }
+            }
         }
     }
 }

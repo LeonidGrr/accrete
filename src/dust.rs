@@ -46,7 +46,14 @@ pub fn accrete_dust(
         new_mass = 0.0;
 
         for d in dust_bands.iter_mut() {
-            new_mass += collect_dust(planetismal, crit_mass, d, cloud_eccentricity, dust_density, k);
+            new_mass += collect_dust(
+                planetismal,
+                crit_mass,
+                d,
+                cloud_eccentricity,
+                dust_density,
+                k,
+            );
         }
 
         if !(new_mass - planetismal.mass > 0.0001 * planetismal.mass) {
