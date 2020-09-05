@@ -1,47 +1,4 @@
-// function getSmallestMolecularWeight(m) {
-//     if (m < MOLECULAR_HYDROGEN)
-// 	return ("H2");
-//     else if (m < HELIUM)
-// 	return ("He");
-//     else if (m < METHANE)
-// 	return ("CH4");
-//     else if (m < AMMONIA)
-// 	return ("NH3");
-//     else if (m < WATER_VAPOR)
-// 	return ("H2O");
-//     else if (m < NEON)
-// 	return ("Ne");
-//     else if (m < MOLECULAR_NITROGEN)
-// 	return ("N2");
-//     else if (m < CARBON_MONOXIDE)
-// 	return ("CO");
-//     else if (m < NITRIC_OXIDE)
-// 	return ("NO");
-//     else if (m < MOLECULAR_OXYGEN)
-// 	return ("O2");
-//     else if (m < HYDROGEN_SULPHIDE)
-// 	return ("H2S");
-//     else if (m < ARGON)
-// 	return ("Ar");
-//     else if (m < CARBON_DIOXIDE)
-// 	return ("CO2");
-//     else if (m < NITROUS_OXIDE)
-// 	return ("N2O");
-//     else if (m < NITROGEN_DIOXIDE)
-// 	return ("NO2");
-//     else if (m < OZONE)
-// 	return ("O3");
-//     else if (m < SULPHUR_DIOXIDE)
-// 	return ("SO2");
-//     else if (m < SULPHUR_TRIOXIDE)
-// 	return ("SO3");
-//     else if (m < KRYPTON)
-// 	return ("Kr");
-//     else if (m < XENON)
-// 	return ("Xe");
-//     else
-// 	return ("OTHER");
-// }
+
 
 // var systemToJSON = function(headPointer) {
 

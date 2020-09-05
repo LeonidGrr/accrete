@@ -1,4 +1,4 @@
-use crate::consts::{ALPHA, N};
+use crate::consts::*;
 use rand::prelude::*;
 
 pub fn about(value: f64, variation: f64) -> f64 {
@@ -61,4 +61,55 @@ pub fn _perihelion_distance(radius: &f64, eccentricity: &f64) -> f64 {
 // The distance between the orbiting body and the sun at it's furthest approach.
 pub fn _aphelion_distance(radius: &f64, eccentricity: &f64) -> f64 {
     radius * (1.0 + eccentricity)
+}
+
+pub fn smallest_molecular_weight(m: f64) -> String 
+{
+    let mut s = String::new();
+    
+    if m < MOLECULAR_HYDROGEN {
+        s = "H2".to_owned();
+    } else if m < HELIUM {
+        s = "He".to_owned();
+    } else if m < METHANE {
+        s = "CH4".to_owned();
+    } else if m < AMMONIA {
+        s = "NH3".to_owned();
+    } else if m < WATER_VAPOR {
+        s = "H2O".to_owned();
+    } else if m < NEON {
+        s = "Ne".to_owned();
+    } else if m < MOLECULAR_NITROGEN {
+        s = "N2".to_owned();
+    } else if m < CARBON_MONOXIDE {
+        s = "CO".to_owned();
+    } else if m < NITRIC_OXIDE {
+        s = "NO".to_owned();
+    } else if m < MOLECULAR_OXYGEN {
+        s = "O2".to_owned();
+    } else if m < HYDROGEN_SULPHIDE {
+        s = "H2S".to_owned();
+    } else if m < ARGON {
+        s = "Ar".to_owned();
+    } else if m < CARBON_DIOXIDE {
+        s = "CO2".to_owned();
+    } else if m < NITROUS_OXIDE {
+        s = "N2O".to_owned();
+    } else if m < NITROGEN_DIOXIDE {
+        s = "NO2".to_owned();
+    } else if m < OZONE {
+        s = "O3".to_owned();
+    } else if m < SULPHUR_DIOXIDE {
+        s = "SO2".to_owned();
+    } else if m < SULPHUR_TRIOXIDE {
+        s = "SO3".to_owned();
+    } else if m < KRYPTON {
+        s = "Kr".to_owned();
+    } else if m < XENON {
+        s = "Xe".to_owned();
+    } else {
+        s = "OTHER".to_owned();
+    }
+
+    s
 }

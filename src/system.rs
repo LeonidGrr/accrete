@@ -1,9 +1,5 @@
 use crate::consts::PROTOPLANET_MASS;
 use crate::consts::*;
-/// BIBLIOGRAPHY
-/// Dole, Stephen H.
-/// "Formation of Planetary Systems by Aggregation: a Computer Simulation"
-/// October 1969, Rand  Corporation Paper P-4226.
 use crate::dust::*;
 use crate::enviro::*;
 use crate::planetismal::*;
