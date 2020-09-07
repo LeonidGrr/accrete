@@ -1,4 +1,4 @@
-use crate::consts::{EARTH_MASSES_PER_SOLAR_MASS, PROTOPLANET_MASS};
+use crate::consts::PROTOPLANET_MASS;
 use crate::utils::*;
 use rand::prelude::*;
 use serde::Serialize;
@@ -55,6 +55,17 @@ pub struct Planetismal {
     // fraction of surface covered
     pub ice_cover: f64,
     pub moons: Vec<Planetismal>,
+    /// Display info
+    pub earth_mass: f64,
+    pub smallest_molecular_weight: String,
+    pub boiling_point_celsium: f64,
+    pub surface_pressure_bar: f64,
+    pub surface_temp_celsium: f64,
+    pub hydrosphere_percentage: f64,
+    pub cloud_cover_percentage: f64,
+    pub ice_cover_percentage: f64,
+    pub length_of_year: f64,
+    pub escape_velocity_km_per_sec: f64
 }
 
 impl Planetismal {
@@ -95,11 +106,17 @@ impl Planetismal {
             cloud_cover: 0.0,
             ice_cover: 0.0,
             moons: Vec::new(),
+            earth_mass: 0.0,
+            smallest_molecular_weight: String::new(),
+            boiling_point_celsium: 0.0,
+            surface_pressure_bar: 0.0,
+            surface_temp_celsium: 0.0,
+            hydrosphere_percentage: 0.0,
+            cloud_cover_percentage: 0.0,
+            ice_cover_percentage: 0.0,
+            length_of_year: 0.0,
+            escape_velocity_km_per_sec: 0.0,
         }
-    }
-
-    pub fn get_earth_mass(&self) -> f64 {
-        self.mass * EARTH_MASSES_PER_SOLAR_MASS
     }
 }
 

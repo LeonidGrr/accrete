@@ -23,6 +23,10 @@ pub struct System {
     pub planets_limit: Option<usize>,
     pub k: f64,
     pub b: f64,
+    pub spectral_class: SpectralClass,
+    pub color: String,
+    pub surface_temp: f64,
+    pub absolute_magnitude: f64,
 }
 
 impl System {
@@ -35,11 +39,11 @@ impl System {
         b: f64,
         _with_moons: bool,
     ) -> Self {
-        let stellar_luminosity = luminosity(&stellar_mass);
-        let planetismal_inner_bound = innermost_planet(&stellar_mass);
-        let planetismal_outer_bound = outermost_planet(&stellar_mass);
+        let stellar_luminosity = luminosity(stellar_mass);
+        let planetismal_inner_bound = innermost_planet(stellar_mass);
+        let planetismal_outer_bound = outermost_planet(stellar_mass);
 
-        let main_seq_life = main_sequence_age(&stellar_mass, &stellar_luminosity);
+        let main_seq_life = main_sequence_age(stellar_mass, stellar_luminosity);
 
         let mut rng = rand::thread_rng();
         let age = match main_seq_life >= 6.0E9 {
@@ -47,6 +51,7 @@ impl System {
             false => rng.gen_range(1.0E9, main_seq_life),
         };
         let ecosphere = ecosphere(&stellar_luminosity);
+        let spectral_class = get_spectral_class(stellar_mass);
 
         Self {
             stellar_mass,
@@ -64,6 +69,7 @@ impl System {
             cloud_eccentricity,
             planetismal_inner_bound,
             planetismal_outer_bound,
+            spectral_class,
         }
     }
 
@@ -202,6 +208,17 @@ impl System {
                     iterate_surface_temp(planet, &self.ecosphere.1);
                 }
             }
+
+            planet.earth_mass = get_earth_mass(planet.mass);
+            planet.smallest_molecular_weight = get_smallest_molecular_weight(planet.molecule_weight);
+            planet.boiling_point_celsium = planet.boil_point - KELVIN_CELCIUS_DIFFERENCE;
+            planet.surface_pressure_bar = planet.surface_pressure / 1000.0;
+            planet.surface_temp_celsium = planet.surface_temp - KELVIN_CELCIUS_DIFFERENCE;
+            planet.hydrosphere_percentage =  planet.hydrosphere * 100.0;
+            planet.cloud_cover_percentage =  planet.cloud_cover * 100.0;
+            planet.ice_cover_percentage =  planet.ice_cover * 100.0;
+            planet.length_of_year =  planet.orbital_period / 365.25;
+            planet.escape_velocity_km_per_sec = planet.escape_velocity / CM_PER_KM;
         }
     }
 }

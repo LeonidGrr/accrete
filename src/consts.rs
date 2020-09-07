@@ -88,7 +88,7 @@ pub const B: f64 = 1.2E-5;
 
 /// "A" in Dole's paper
 /// Dole's paper tests ranges between 0.00125 and 0.0015
-/// Binary stars produced by increasing coeff of dust density in cloud (Formation of Planetary Systems by Aggregation: A Computer Simulation by Stephen H. Dole)
+/// Binary stars produced by increasing coeff of dust density in cloud (Formation of Planetary Systems by Aggregation: A Computer Simulation )
 pub const DUST_DENSITY_COEFF: f64 = 1.5E-3;
 
 /// Negative exponential coefficient used in calculating dust density - alpha in Dole's paper
@@ -102,8 +102,7 @@ pub const J: f64 = 1.46E-19;
 
 pub const INCREDIBLY_LARGE_NUMBER: f64 = 9.9999E37;
 
-/// Now for a few molecular weights (used for RMS velocity calcs):
-/// This table is from Dole's book "Habitable Planets for Man", p. 38
+/// Molecular weights (used for RMS velocity calcs) ("Habitable Planets for Man" by Stephen H. Dole, p. 38)
 pub const ATOMIC_HYDROGEN: f64 = 1.0; /* H */
 pub const MOLECULAR_HYDROGEN: f64 = 2.0; /* H2 */
 pub const HELIUM: f64 = 4.0; /* He */
@@ -221,3 +220,9 @@ pub const OMEGA: f64 = PI / 2.01;
 pub const CHANGE_IN_EARTH_ANG_VEL: f64 = -1.3e-15;
 
 pub const RADIANS_PER_ROTATION: f64 = 2.0 * PI;
+
+// /// Stefan–Boltzmann constant, W⋅m−2⋅K−4
+// pub const SIGMA: f64 = 5.670374419e-8;
+
+// /// Watt per 1 solar luminosity
+// pub const WATT_PER_SOLAR_LUMINOSITY: f64 = 3.828e26;

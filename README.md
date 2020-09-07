@@ -1,8 +1,10 @@
 Accrete.rs
 ========================
-This is rust port of Accrete - planetary system accretion algorithm by H. Dole. Various sources from github were used to reproduce Accrete functionality.
+Accrete is planetary system generation program.
+During last 50 years this code was reimplemented many times with many improvements ([good overview here](https://github.com/zakski/accrete-starform-stargen), also brief history below).
+While this particular version is not supposed to be used as accurate scientific modelling tool, it can be used for procedural generation of plausible planetary system.
+This Rust port of accrete hopefully will include most of old features of this wonderful program and maybe even some extended functionality.
 
-This implemetation do not pretend to be accurate scientific modelling tool, but produce plausible planetary systems.
 
 ## Example
 ```rust
