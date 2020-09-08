@@ -1,4 +1,4 @@
-use crate::consts::PI;
+use crate::consts::*;
 use crate::planetismal::*;
 use crate::utils::*;
 
@@ -178,4 +178,16 @@ pub fn compress_dust_lanes(dust_bands: &mut Vec<DustBand>) {
             }
             acc
         });
+}
+
+pub fn stellar_dust_limit(stellar_mass_ratio: &f64) -> f64 {
+    200.0 * stellar_mass_ratio.powf(0.33)
+}
+
+pub fn mass_density(k: &f64, dust_density: &f64, critical_mass: &f64, mass: &f64) -> f64 {
+    k * dust_density / (1.0 + (critical_mass / mass).sqrt() * (k - 1.0))
+}
+
+pub fn dust_density(dust_density_coeff: &f64, stellar_mass: &f64, oribital_radius: &f64) -> f64 {
+    dust_density_coeff * stellar_mass.sqrt() * (-ALPHA * oribital_radius.powf(1.0 / N)).exp()
 }

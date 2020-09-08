@@ -2,64 +2,6 @@ use crate::consts::*;
 use crate::planetismal::Planetismal;
 use crate::utils::*;
 
-/// Get star luminosity from mass
-pub fn luminosity(mass: f64) -> f64 {
-    let n = match mass < 1.0 {
-        true => 1.75 * (mass - 0.1) + 3.325,
-        false => 0.5 * (2.0 - mass) + 4.4,
-    };
-    mass.powf(n)
-}
-
-/// Get star min-max ecosphere
-pub fn ecosphere(luminosity: f64) -> (f64, f64) {
-    let min_ecosphere_radius = (luminosity / 1.51).sqrt();
-    let max_ecosphere_radius = (luminosity / 0.48).sqrt();
-    (min_ecosphere_radius, max_ecosphere_radius)
-}
-
-/// Main sequence star age
-pub fn main_sequence_age(stellar_mass: f64, stellar_luminosity: f64) -> f64 {
-    1.0e10 * stellar_mass / stellar_luminosity
-}
-
-/// Star classifier
-/// https://en.wikipedia.org/wiki/Stellar_classification
-/// https://www.enchantedlearning.com/subjects/astronomy/stars/startypes.shtml
-#[derive(Debug, Clone)]
-pub enum SpectralClass {
-    O,
-    B,
-    A,
-    F,
-    G,
-    K,
-    M,
-    BrownDwarf,
-}
-
-/// Main sequnce star spectral class from mass luminosity
-pub fn get_spectral_class(stellar_mass: f64) -> SpectralClass {
-    if stellar_mass >= 16.0 {
-        return SpectralClass::O;
-    } else if stellar_mass >= 2.1 {
-        return SpectralClass::B;
-    } else if stellar_mass > 1.4 {
-        return SpectralClass::A;
-    } else if stellar_mass > 1.04 {
-        return SpectralClass::F;
-    } else if stellar_mass > 0.8 {
-        return SpectralClass::G;
-    } else if stellar_mass > 0.45 {
-        return SpectralClass::K;
-    } else if stellar_mass > 0.08 {
-        return SpectralClass::M;
-    }
-    SpectralClass::BrownDwarf
-}
-
-
-
 /// This function, given the orbital radius of a planet in AU, returns the orbital 'zone' of the particle.
 pub fn orbital_zone(luminosity: &f64, orb_radius: &f64) -> i32 {
     if *orb_radius < (4.0 * luminosity.sqrt()) {

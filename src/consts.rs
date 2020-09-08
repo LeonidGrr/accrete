@@ -13,6 +13,9 @@ pub const PROTOPLANET_MASS: f64 = 1.0E-15;
 pub const SOLAR_MASS_IN_GRAMS: f64 = 1.989E33;
 pub const EARTH_MASS_IN_GRAMS: f64 = 5.977E27;
 
+/// Units of AU
+pub const SOLAR_RADIUS: f64 = 0.00465047;
+
 /// Units of cm
 pub const EARTH_RADIUS: f64 = 6.378E6;
 
@@ -67,6 +70,7 @@ pub const CM_PER_AU: f64 = 1.495978707E13;
 pub const CM_PER_KM: f64 = 1.0E5;
 pub const KM_PER_AU: f64 = CM_PER_AU / CM_PER_KM;
 pub const CM_PER_METER: f64 = 100.0;
+pub const M_PER_AU: f64 = CM_PER_AU / CM_PER_METER;
 pub const MILLIBARS_PER_BAR: f64 = 1000.0;
 
 pub const KELVIN_CELCIUS_DIFFERENCE: f64 = 273.0;
@@ -221,8 +225,8 @@ pub const CHANGE_IN_EARTH_ANG_VEL: f64 = -1.3e-15;
 
 pub const RADIANS_PER_ROTATION: f64 = 2.0 * PI;
 
-// /// Stefan–Boltzmann constant, W⋅m−2⋅K−4
-// pub const SIGMA: f64 = 5.670374419e-8;
+/// Stefan–Boltzmann constant, W⋅m−2⋅K−4
+pub const SIGMA: f64 = 5.670374419e-8;
 
-// /// Watt per 1 solar luminosity
-// pub const WATT_PER_SOLAR_LUMINOSITY: f64 = 3.828e26;
+/// Watt per 1 solar luminosity
+pub const WATT_PER_SOLAR_LUMINOSITY: f64 = 3.828e26;
