@@ -54,7 +54,8 @@ pub fn kothari_radius(mass: &f64, giant: &bool, zone: &i32) -> f64 {
     }
 
     let mut temp = atomic_weight * atomic_num;
-    temp = 2.0 * BETA_20 * SOLAR_MASS_IN_GRAMS.powf(1.0/3.0) / (A1_20 * (temp as f64).powf(1.0/3.0));
+    temp = 2.0 * BETA_20 * SOLAR_MASS_IN_GRAMS.powf(1.0 / 3.0)
+        / (A1_20 * (temp as f64).powf(1.0 / 3.0));
 
     let mut temp2 = A2_20 * atomic_weight.powf(4.0 / 3.0) * SOLAR_MASS_IN_GRAMS.powf(2.0 / 3.0);
     temp2 = temp2 * mass.powf(2.0 / 3.0);

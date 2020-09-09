@@ -65,7 +65,7 @@ pub struct Planetismal {
     pub cloud_cover_percentage: f64,
     pub ice_cover_percentage: f64,
     pub length_of_year: f64,
-    pub escape_velocity_km_per_sec: f64
+    pub escape_velocity_km_per_sec: f64,
 }
 
 impl Planetismal {
@@ -184,4 +184,3 @@ pub fn coalesce_two_planets(a: &Planetismal, b: &Planetismal) -> Planetismal {
     coalesced.gas_giant = a.gas_giant || b.gas_giant;
     coalesced
 }
-
