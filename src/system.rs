@@ -31,6 +31,8 @@ pub struct System {
     pub stellar_surface_temp: f64,
     pub stellar_radius: f64,
     pub spectral_class: SpectralClass,
+    pub bv_color_index: f64,
+    pub color: String,
     pub main_seq_life: f64,
     pub age: f64,
     pub ecosphere: (f64, f64),
@@ -42,8 +44,6 @@ pub struct System {
     pub planets_limit: Option<usize>,
     pub k: f64,
     pub b: f64,
-    // pub color: String,
-    // pub absolute_magnitude: f64,
 }
 
 impl System {
@@ -59,7 +59,6 @@ impl System {
         let stellar_luminosity = luminosity(stellar_mass);
         let planetismal_inner_bound = innermost_planet(stellar_mass);
         let planetismal_outer_bound = outermost_planet(stellar_mass);
-
         let main_seq_life = main_sequence_age(stellar_mass, stellar_luminosity);
 
         let mut rng = rand::thread_rng();
@@ -67,6 +66,7 @@ impl System {
             true => rng.gen_range(1.0E9, 6.0E9),
             false => rng.gen_range(1.0E9, main_seq_life),
         };
+
         let ecosphere = ecosphere(stellar_luminosity);
         let stellar_radius = stellar_radius(stellar_mass);
         let stellar_surface_temp = stellar_surface_temp(stellar_radius, stellar_luminosity);
@@ -83,6 +83,9 @@ impl System {
             t if t >= 550.0 && t < 1300.0 => SpectralClass::T,
             _ => SpectralClass::Y,
         };
+
+        let bv_color_index = bv_color_index(stellar_surface_temp);
+        let color = bv_to_rgb(bv_color_index);
 
         Self {
             stellar_mass,
@@ -103,6 +106,8 @@ impl System {
             stellar_surface_temp,
             stellar_radius,
             spectral_class,
+            bv_color_index,
+            color,
         }
     }
 
@@ -324,12 +329,14 @@ pub fn stellar_surface_temp(radius: f64, luminosity: f64) -> f64 {
     (luminosity_watt / (4.0 * PI * radius_meters.powf(2.0) * SIGMA)).powf(0.25)
 }
 
-/// Star B-V filter magnitude
-pub fn bv_magnitude(stellar_surface_temp: f64) -> f64 {
+/// Star B-V color index
+pub fn bv_color_index(stellar_surface_temp: f64) -> f64 {
     (5601.0 / stellar_surface_temp).powf(1.5) - 0.4
 }
 
-/// Star RGB color from magnitude
+/// Star RGB color from color index
+/// [Reference table](http://www.vendian.org/mncharity/dir3/starcolor/details.html)
+/// [StackOverflow](https://stackoverflow.com/questions/21977786/star-b-v-color-index-to-apparent-rgb-color)
 pub fn bv_to_rgb(bv: f64) -> String {
     let mut r = 0.0;
     let mut g = 0.0;
@@ -340,9 +347,11 @@ pub fn bv_to_rgb(bv: f64) -> String {
     if bv < -0.4 {
         bv = -0.4;
     }
+
     if bv > 2.0 {
         bv = 2.0;
     }
+
     if bv >= -0.40 && bv < 0.00 {
         t = (bv + 0.40) / 0.40;
         r = 0.61 + (0.11 * t) + (0.1 * t * t);
@@ -378,9 +387,9 @@ pub fn bv_to_rgb(bv: f64) -> String {
     }
 
     let mut hex = vec![
-        format!("{:x}", r as u16 * 255),
-        format!("{:x}", g as u16 * 255),
-        format!("{:x}", b as u16 * 255),
+        format!("{:x}", (r * 255.0) as u16),
+        format!("{:x}", (g * 255.0) as u16),
+        format!("{:x}", (b * 255.0) as u16),
     ];
 
     for h in hex.iter_mut() {
@@ -391,6 +400,7 @@ pub fn bv_to_rgb(bv: f64) -> String {
 
     format!("#{}{}{}", hex[0], hex[1], hex[2])
 }
+
 /// Orbital radius is in AU, eccentricity is unitless, and the stellar luminosity ratio is with respect to the sun.
 /// The value returned is the mass at which the planet begins to accrete gas as well as dust, and is in units of solar masses.
 pub fn critical_limit(
@@ -445,14 +455,14 @@ mod tests {
     }
 
     #[test]
-    fn check_sun_bv_magnitude() {
-        let bv_sun = bv_magnitude(5601.0);
+    fn check_sun_bv() {
+        let bv_sun = bv_color_index(5601.0);
         assert_eq!(0.6, bv_sun);
     }
 
     #[test]
     fn check_sun_color() {
         let color_sun = bv_to_rgb(0.6);
-        assert_eq!("".to_owned(), color_sun);
+        assert_eq!("#fff3ea", color_sun);
     }
 }
