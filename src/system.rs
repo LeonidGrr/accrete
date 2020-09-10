@@ -67,7 +67,6 @@ impl System {
             false => rng.gen_range(1.0E9, main_seq_life),
         };
 
-        let ecosphere = ecosphere(stellar_luminosity);
         let stellar_radius = stellar_radius(stellar_mass);
         let stellar_surface_temp = stellar_surface_temp(stellar_radius, stellar_luminosity);
         let spectral_class = match stellar_surface_temp {
@@ -86,6 +85,8 @@ impl System {
 
         let bv_color_index = bv_color_index(stellar_surface_temp);
         let color = bv_to_rgb(bv_color_index);
+
+        let ecosphere = ecosphere(&stellar_luminosity, &spectral_class);
 
         Self {
             stellar_mass,
@@ -271,41 +272,31 @@ pub fn luminosity(mass: f64) -> f64 {
     mass.powf(n)
 }
 
-/// Star min-max ecosphere
-// // "normalized solar flux factor"
-// // http://www.solstation.com/habitable.htm
-// const SeffInner = new Map<StarType, number>([
-//     [StarType.M, 1.05],
-//     [StarType.K, 1.05],
-//     [StarType.G, 1.41],
-//     [StarType.F, 1.9],
-//     [StarType.A, 0],
-//     [StarType.B, 0],
-//     [StarType.O, 0],
-//   ]);
+/// Star min-max habitable zone
+/// [Normalized solar flux factor](http://www.solstation.com/habitable.html)
+/// [Red dwarfs habitable zone 1](https://en.wikipedia.org/wiki/Habitability_of_red_dwarf_systems)
+/// [Planetary_habitability](https://en.wikipedia.org/wiki/Planetary_habitability)
+pub fn ecosphere(luminosity: &f64, spectral_class: &SpectralClass) -> (f64, f64) {
+    let (
+        outer_normalized_flux_factor,inner_normalized_flux_factor,
+    ) = match spectral_class {
+        // For Y, L , T approzimation is used
+        SpectralClass::Y => (0.0, 0.0),
+        SpectralClass::T => (0.05, 0.2),
+        SpectralClass::L => (0.16, 0.7),
 
-//   const SeffOuter = new Map<StarType, number>([
-//     [StarType.M, 0.27],
-//     [StarType.K, 0.27],
-//     [StarType.G, 0.36],
-//     [StarType.F, 0.46],
-//     [StarType.A, 0],
-//     [StarType.B, 0],
-//     [StarType.O, 0],
-//   ]);
-
-//   function computeHZBoundary(luminosity: number, seff: number): number {
-//     return 1 * Math.pow(luminosity / seff, 0.5);
-//   }
-
-//   export function computeHabitableZone(t: StarType, luminosity: number): [number, number] {
-//     return [
-//         computeHZBoundary(luminosity, SeffInner.get(t)!),
-//         computeHZBoundary(luminosity, SeffOuter.get(t)!)]
-//   }
-pub fn ecosphere(luminosity: f64) -> (f64, f64) {
-    let min_ecosphere_radius = (luminosity / 1.51).sqrt();
-    let max_ecosphere_radius = (luminosity / 0.48).sqrt();
+        SpectralClass::M => (0.27, 1.05),
+        SpectralClass::K => (0.27, 1.05),
+        // Original values
+        // SpectralClass::G => (0.48, 1.51),
+        SpectralClass::G => (0.36, 1.41),
+        SpectralClass::F => (0.46, 1.9),
+        SpectralClass::A => (0.0, 0.0),
+        SpectralClass::B => (0.0, 0.0),
+        SpectralClass::O => (0.0, 0.0),
+    };
+    let min_ecosphere_radius = (luminosity / inner_normalized_flux_factor).sqrt();
+    let max_ecosphere_radius = (luminosity / outer_normalized_flux_factor).sqrt();
     (min_ecosphere_radius, max_ecosphere_radius)
 }
 
