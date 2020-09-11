@@ -28,7 +28,7 @@ pub enum AccreteOutput {
 /// }
 /// ```
 ///
-/// Simple way to variate output is to change stellar mass. This accrete implementation is capable of generating planetary system for any stellar mass, but better (most realistic) results achieved for main sequqnce star class with primary star mass of 0.6 - 1.3 solar masses.
+/// Simple way to variate output is to change stellar mass. This accrete implementation is capable of generating planetary system for any stellar mass, but better (most realistic) results achieved for main sequence star class with primary star mass of 0.6 - 1.3 solar masses.
 ///
 /// Configuration:
 ///
