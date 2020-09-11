@@ -19,7 +19,7 @@ pub enum AccreteOutput {
 
 /// Generate planetary system.
 ///
-/// # Default:
+/// Default:
 /// ```rust
 /// use accrete;
 ///

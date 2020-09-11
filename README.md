@@ -7,7 +7,7 @@ This Rust port of accrete hopefully will include most of old features of this wo
 
 ## Generate planetary system.
 
-# Default:
+### Default:
 ```rust
 use accrete;
 
@@ -18,7 +18,7 @@ fn main() {
 
 Simple way to variate output is to change stellar mass. This accrete implementation is capable of generating planetary system for any stellar mass, but better (most realistic) results achieved for main sequqnce star class with primary star mass of 0.6 - 1.3 solar masses.
 
-# Configuration:
+### Configuration:
 planets_limit - Limit number of planets.
 Default: None
 
