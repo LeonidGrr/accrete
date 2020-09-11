@@ -19,40 +19,43 @@ pub enum AccreteOutput {
 
 /// Generate planetary system.
 ///
-/// # Arguments
+/// # Default:
+/// ```rust
+/// use accrete;
 ///
-/// planets_limit -
-/// Limit number of planets
+/// fn main() {
+///     let planets = accrete::run(None, None, None, None, None, None, false, false);
+/// }
+/// ```
 ///
-/// stellar_mass -
-/// Preconfigured stellar mass
+/// Simple way to variate output is to change stellar mass. This accrete implementation is capable of generating planetary system for any stellar mass, but better (most realistic) results achieved for main sequqnce star class with primary star mass of 0.6 - 1.3 solar masses.
 ///
-/// dust_density_coeff -
-/// "A" in Dole's paper
-/// Dole's paper tests ranges between 0.00125 and 0.0015
-/// Binary stars produced by increasing coeff of dust density in cloud (Formation of Planetary Systems by Aggregation: A Computer Simulation by Stephen H. Dole)
-/// Range: 0.00125-0.0015
+/// Configuration:
+///
+/// planets_limit - Limit number of planets.
+/// Default: None
+///
+/// stellar_mass - Primary star mass in solar masses.
+/// Default: random f64 in a range of 0.6-1.3 (corresponds main sequence spectral classes of F-G-K)
+///
+/// dust_density_coeff - "A" in Dole's paper, recommended range according to Dole's paper is 0.00125-0.0015, aslo noted that binary stars produced by increasing coeff of dust density in cloud (Formation of Planetary Systems by Aggregation: A Computer Simulation by Stephen H. Dole)
 /// Default: 0.0015
 ///
-/// k -
-/// The dust-to-gas ratio 50-100 (dust/gas = K), gas = hydrogen and helium, dust = other
-/// Range: 50.0-100.0
+/// k - The dust-to-gas ratio 50-100 (dust/gas = K), gas = hydrogen and helium, dust = other. Recommended range: 50.0-100.0
 /// Default: 50.0
 ///
-/// cloud_eccentricity -
-/// Range: 0.15-0.25
+/// cloud_eccentricity - Initial dust cloud cloud_eccentricity. Recommended range: 0.15-0.25.
 /// Default: 0.20
 ///
-/// b -
-/// Crit_mass coeff
-/// Range: 1.0e-5 - 1.2e-5
+/// b - Crit_mass coeff is used as threshold for planet to become gas giant. Recommended range: 1.0e-5 - 1.2e-5
 /// Default: 1.2e-5
 ///
-/// with_moons -
-/// Enable moon generation by accretion and collision
+/// with_moons - Enable moon generation by accretion and collision.
+/// Default: false
 ///
-/// to_json -
-/// Return json instead of structs
+/// to_json - Output as JSON string. 
+/// Default: false
+///
 pub fn run(
     planets_limit: Option<usize>,
     stellar_mass: Option<f64>,
@@ -103,6 +106,46 @@ mod tests {
     #[test]
     fn run_with_default_config() {
         run(None, None, None, None, None, None, false, false);
+    }
+
+    #[test]
+    fn run_with_o_spectral_class() {
+        run(None, Some(60.0), None, None, None, None, false, false);
+    }
+
+    #[test]    
+    fn run_with_b_spectral_class() {
+        run(None, Some(18.0), None, None, None, None, false, false);
+    }
+
+    #[test]
+    fn run_with_a_spectral_class() {
+        run(None, Some(2.1), None, None, None, None, false, false);
+    }
+
+    #[test]
+    fn run_with_f_spectral_class() {
+        run(None, Some(1.3), None, None, None, None, false, false);
+    }
+
+    #[test]
+    fn run_with_g_spectral_class() {
+        run(None, Some(1.0), None, None, None, None, false, false);
+    }
+
+    #[test]
+    fn run_with_k_spectral_class() {
+        run(None, Some(0.8), None, None, None, None, false, false);
+    }
+
+    #[test]
+    fn run_with_m_spectral_class() {
+        run(None, Some(0.3), None, None, None, None, false, false);
+    }
+
+    #[test]
+    fn run_with_brown_dwarf() {
+        run(None, Some(0.1), None, None, None, None, false, false);
     }
 
     #[test]

@@ -4,7 +4,6 @@ use crate::dust::*;
 use crate::enviro::*;
 use crate::planetismal::*;
 use crate::utils::*;
-use rand::prelude::*;
 
 /// [Star classifier by Harvard system](https://en.wikipedia.org/wiki/Stellar_classification)
 /// [Additional info](https://www.enchantedlearning.com/subjects/astronomy/stars/startypes.shtml)
@@ -29,12 +28,12 @@ pub struct System {
     pub stellar_mass: f64,
     pub stellar_luminosity: f64,
     pub stellar_surface_temp: f64,
-    pub stellar_radius: f64,
+    pub stellar_radius_au: f64,
     pub spectral_class: SpectralClass,
     pub bv_color_index: f64,
     pub color: String,
     pub main_seq_life: f64,
-    pub age: f64,
+    // pub age: f64,
     pub ecosphere: (f64, f64),
     pub planets: Vec<Planetismal>,
     pub cloud_eccentricity: f64,
@@ -61,27 +60,9 @@ impl System {
         let planetismal_outer_bound = outermost_planet(stellar_mass);
         let main_seq_life = main_sequence_age(stellar_mass, stellar_luminosity);
 
-        let mut rng = rand::thread_rng();
-        let age = match main_seq_life >= 6.0E9 {
-            true => rng.gen_range(1.0E9, 6.0E9),
-            false => rng.gen_range(1.0E9, main_seq_life),
-        };
-
-        let stellar_radius = stellar_radius(stellar_mass);
-        let stellar_surface_temp = stellar_surface_temp(stellar_radius, stellar_luminosity);
-        let spectral_class = match stellar_surface_temp {
-            t if t >= 30000.0 => SpectralClass::O,
-            t if t >= 10000.0 && t < 30000.0 => SpectralClass::B,
-            t if t >= 7500.0 && t < 10000.0 => SpectralClass::A,
-            t if t >= 6000.0 && t < 7500.0 => SpectralClass::F,
-            t if t >= 5200.0 && t < 6000.0 => SpectralClass::G,
-            t if t >= 3700.0 && t < 5200.0 => SpectralClass::K,
-            t if t >= 2400.0 && t < 3700.0 => SpectralClass::M,
-            t if t >= 1300.0 && t < 2400.0 => SpectralClass::L,
-            t if t >= 550.0 && t < 1300.0 => SpectralClass::L,
-            t if t >= 550.0 && t < 1300.0 => SpectralClass::T,
-            _ => SpectralClass::Y,
-        };
+        let stellar_radius_au = stellar_radius_au(stellar_mass);
+        let stellar_surface_temp = stellar_surface_temp(stellar_radius_au, stellar_luminosity);
+        let spectral_class = spectral_class(&stellar_surface_temp);
 
         let bv_color_index = bv_color_index(stellar_surface_temp);
         let color = bv_to_rgb(bv_color_index);
@@ -92,7 +73,7 @@ impl System {
             stellar_mass,
             stellar_luminosity,
             main_seq_life,
-            age,
+            // age,
             ecosphere,
             with_moons: false,
             with_rings: false,
@@ -105,7 +86,7 @@ impl System {
             planetismal_inner_bound,
             planetismal_outer_bound,
             stellar_surface_temp,
-            stellar_radius,
+            stellar_radius_au,
             spectral_class,
             bv_color_index,
             color,
@@ -263,20 +244,16 @@ impl System {
     }
 }
 
-/// Star luminosity from mass
-pub fn luminosity(mass: f64) -> f64 {
-    let n = match mass < 1.0 {
-        true => 1.75 * (mass - 0.1) + 3.325,
-        false => 0.5 * (2.0 - mass) + 4.4,
-    };
-    mass.powf(n)
+/// Approximated luminosity from mass
+fn luminosity(mass: f64) -> f64 {
+    mass.powf(3.5)
 }
 
 /// Star min-max habitable zone
 /// [Normalized solar flux factor](http://www.solstation.com/habitable.html)
 /// [Red dwarfs habitable zone 1](https://en.wikipedia.org/wiki/Habitability_of_red_dwarf_systems)
 /// [Planetary_habitability](https://en.wikipedia.org/wiki/Planetary_habitability)
-pub fn ecosphere(luminosity: &f64, spectral_class: &SpectralClass) -> (f64, f64) {
+fn ecosphere(luminosity: &f64, spectral_class: &SpectralClass) -> (f64, f64) {
     let (
         outer_normalized_flux_factor,inner_normalized_flux_factor,
     ) = match spectral_class {
@@ -301,12 +278,12 @@ pub fn ecosphere(luminosity: &f64, spectral_class: &SpectralClass) -> (f64, f64)
 }
 
 /// Main sequence star age
-pub fn main_sequence_age(stellar_mass: f64, stellar_luminosity: f64) -> f64 {
+fn main_sequence_age(stellar_mass: f64, stellar_luminosity: f64) -> f64 {
     1.0e10 * stellar_mass / stellar_luminosity
 }
 
 /// Empirical star radius from mass (for main sequence only)
-pub fn stellar_radius(mass: f64) -> f64 {
+fn stellar_radius_au(mass: f64) -> f64 {
     if mass <= 1.66 {
         return 1.06 * mass.powf(0.945) * SOLAR_RADIUS;
     }
@@ -314,21 +291,21 @@ pub fn stellar_radius(mass: f64) -> f64 {
 }
 
 /// Star surface temperature in Kelvin, derived from [Stefan–Boltzmann law](https://en.wikipedia.org/wiki/Stefan%E2%80%93Boltzmann_law)
-pub fn stellar_surface_temp(radius: f64, luminosity: f64) -> f64 {
+fn stellar_surface_temp(radius: f64, luminosity: f64) -> f64 {
     let luminosity_watt = luminosity * WATT_PER_SOLAR_LUMINOSITY;
     let radius_meters = radius * M_PER_AU;
     (luminosity_watt / (4.0 * PI * radius_meters.powf(2.0) * SIGMA)).powf(0.25)
 }
 
 /// Star B-V color index
-pub fn bv_color_index(stellar_surface_temp: f64) -> f64 {
+fn bv_color_index(stellar_surface_temp: f64) -> f64 {
     (5601.0 / stellar_surface_temp).powf(1.5) - 0.4
 }
 
 /// Star RGB color from color index
 /// [Reference table](http://www.vendian.org/mncharity/dir3/starcolor/details.html)
 /// [StackOverflow](https://stackoverflow.com/questions/21977786/star-b-v-color-index-to-apparent-rgb-color)
-pub fn bv_to_rgb(bv: f64) -> String {
+fn bv_to_rgb(bv: f64) -> String {
     let mut r = 0.0;
     let mut g = 0.0;
     let mut b = 0.0;
@@ -392,9 +369,26 @@ pub fn bv_to_rgb(bv: f64) -> String {
     format!("#{}{}{}", hex[0], hex[1], hex[2])
 }
 
+/// Spectral class from temperature
+fn spectral_class(stellar_surface_temp: &f64) -> SpectralClass {
+    match *stellar_surface_temp {
+        t if t >= 30000.0 => SpectralClass::O,
+        t if t >= 10000.0 && t < 30000.0 => SpectralClass::B,
+        t if t >= 7500.0 && t < 10000.0 => SpectralClass::A,
+        t if t >= 6000.0 && t < 7500.0 => SpectralClass::F,
+        t if t >= 5200.0 && t < 6000.0 => SpectralClass::G,
+        t if t >= 3700.0 && t < 5200.0 => SpectralClass::K,
+        t if t >= 2400.0 && t < 3700.0 => SpectralClass::M,
+        t if t >= 1300.0 && t < 2400.0 => SpectralClass::L,
+        t if t >= 550.0 && t < 1300.0 => SpectralClass::L,
+        t if t >= 550.0 && t < 1300.0 => SpectralClass::T,
+        _ => SpectralClass::Y,
+    }
+}
+
 /// Orbital radius is in AU, eccentricity is unitless, and the stellar luminosity ratio is with respect to the sun.
 /// The value returned is the mass at which the planet begins to accrete gas as well as dust, and is in units of solar masses.
-pub fn critical_limit(
+fn critical_limit(
     b: &f64,
     orbital_radius: &f64,
     eccentricity: &f64,
@@ -440,7 +434,7 @@ mod tests {
 
     #[test]
     fn check_sun_temperature() {
-        let sun_radius = stellar_radius(1.0);
+        let sun_radius = stellar_radius_au(1.0);
         let sun_temp = stellar_surface_temp(sun_radius, 1.0);
         assert_eq!(5606, sun_temp as usize);
     }
