@@ -22,7 +22,7 @@ pub enum SpectralClass {
 }
 
 #[derive(Debug, Clone)]
-pub struct System {
+pub struct PrimaryStar {
     pub with_moons: bool,
     pub with_rings: bool,
     pub stellar_mass: f64,
@@ -45,7 +45,7 @@ pub struct System {
     pub b: f64,
 }
 
-impl System {
+impl PrimaryStar {
     pub fn set_initial_conditions(
         planets_limit: Option<usize>,
         stellar_mass: f64,
@@ -183,8 +183,8 @@ impl System {
                 planet.density = volume_density(&planet.mass, &planet.radius);
             }
 
-            planet.orbital_period = period(&planet.a, &planet.mass, &self.stellar_mass);
-            planet.day = day_length(planet, &self.stellar_mass, &self.main_seq_life);
+            planet.orbital_period_days = period(&planet.a, &planet.mass, &self.stellar_mass);
+            planet.day_hours = day_length(planet, &self.stellar_mass, &self.main_seq_life);
             planet.axial_tilt = inclination(&planet.a);
             planet.escape_velocity = escape_vel(&planet.mass, &planet.radius);
             planet.surface_accel = acceleration(&planet.mass, &planet.radius);
@@ -195,17 +195,17 @@ impl System {
                 planet.surface_grav = INCREDIBLY_LARGE_NUMBER;
                 planet.greenhouse_effect = false;
                 planet.volatile_gas_inventory = INCREDIBLY_LARGE_NUMBER;
-                planet.surface_pressure = INCREDIBLY_LARGE_NUMBER;
-                planet.boil_point = INCREDIBLY_LARGE_NUMBER;
+                planet.surface_pressure_millibar = INCREDIBLY_LARGE_NUMBER;
+                planet.boiling_point_kelvin = INCREDIBLY_LARGE_NUMBER;
                 planet.hydrosphere = INCREDIBLY_LARGE_NUMBER;
                 planet.albedo = about(GAS_GIANT_ALBEDO, 0.1);
-                planet.surface_temp = INCREDIBLY_LARGE_NUMBER;
+                planet.surface_temp_kelvin = INCREDIBLY_LARGE_NUMBER;
             } else {
                 planet.surface_grav = gravity(&planet.surface_accel);
                 planet.greenhouse_effect = greenhouse(
                     &planet.a,
                     &planet.orbit_zone,
-                    &planet.surface_pressure,
+                    &planet.surface_pressure_millibar,
                     &self.ecosphere.1,
                 );
                 planet.volatile_gas_inventory = vol_inventory(
@@ -216,29 +216,26 @@ impl System {
                     &planet.orbit_zone,
                     &planet.greenhouse_effect,
                 );
-                planet.surface_pressure = pressure(
+                planet.surface_pressure_millibar = pressure(
                     &planet.volatile_gas_inventory,
                     &planet.radius,
                     &planet.surface_grav,
                 );
-                if planet.surface_pressure == 0.0 {
-                    planet.boil_point = 0.0;
+                if planet.surface_pressure_millibar == 0.0 {
+                    planet.boiling_point_kelvin = 0.0;
                 } else {
-                    planet.boil_point = boiling_point(&planet.surface_pressure);
+                    planet.boiling_point_kelvin = boiling_point_kelvin(&planet.surface_pressure_millibar);
                     iterate_surface_temp(planet, &self.ecosphere.1);
                 }
             }
 
-            planet.earth_mass = get_earth_mass(planet.mass);
+            planet.earth_masses = get_earth_mass(planet.mass);
             planet.smallest_molecular_weight =
                 get_smallest_molecular_weight(planet.molecule_weight);
-            planet.boiling_point_celsium = planet.boil_point - KELVIN_CELCIUS_DIFFERENCE;
-            planet.surface_pressure_bar = planet.surface_pressure / 1000.0;
-            planet.surface_temp_celsium = planet.surface_temp - KELVIN_CELCIUS_DIFFERENCE;
-            planet.hydrosphere_percentage = planet.hydrosphere * 100.0;
-            planet.cloud_cover_percentage = planet.cloud_cover * 100.0;
-            planet.ice_cover_percentage = planet.ice_cover * 100.0;
-            planet.length_of_year = planet.orbital_period / 365.25;
+            planet.boiling_point_celsium = planet.boiling_point_kelvin - KELVIN_CELCIUS_DIFFERENCE;
+            planet.surface_pressure_bar = planet.surface_pressure_millibar / 1000.0;
+            planet.surface_temp_celsium = planet.surface_temp_kelvin - KELVIN_CELCIUS_DIFFERENCE;
+            planet.length_of_year = planet.orbital_period_days / 365.25;
             planet.escape_velocity_km_per_sec = planet.escape_velocity / CM_PER_KM;
         }
     }
@@ -428,6 +425,18 @@ fn critical_limit(
     chance of specifically having a gas giant, we want about a 35%
     chance of a planet being a gas giant.
 */
+
+// rom observation," Braben said, "we know the temperature of some stars. We know the size of that star, and we know something called its metallicity," or the types of periodic elements that make up the star’s composition. "Some of the older stars actually have very low metallicity, and we factor that into the elements that are there in that specific star system."
+
+
+/// hasNebulae
+/// Stars greater than 8 solar masses (M⊙) will likely end their lives in dramatic supernovae explosions, while planetary nebulae seemingly only occur at the end of the lives of intermediate and low mass stars between 0.8 M⊙ to 8.0 M⊙.[26] Progenitor stars that form planetary nebulae will spend most of their lifetimes converting their hydrogen into helium in the star's core by nuclear fusion at about 15 million K. This generated energy creates outward pressure from fusion reactions in the core, balancing the crushing inward pressures of the star's gravity.[27] This state of equilibrium is known as the main sequence, which can last for tens of millions to billions of years, depending on the mass.
+
+// When the hydrogen source in the core starts to diminish, gravity starts compressing the core, causing a rise in temperature to about 100 million K.[28] Such higher core temperatures then make the star's cooler outer layers expand to create much larger red giant stars. This end phase causes a dramatic rise in stellar luminosity, where the released energy is distributed over a much larger surface area, which in fact causes the average surface temperature to be lower. In stellar evolution terms, stars undergoing such increases in luminosity are known as asymptotic giant branch stars (AGB).[28] During this phase, the star can lose 50 to 70% of its total mass from its stellar wind.[29]
+
+// For the more massive asymptotic giant branch stars that form planetary nebulae, whose progenitors exceed about 3M⊙, their cores will continue to contract. When temperatures reach about 100 million K, the available helium nuclei fuse into carbon and oxygen, so that the star again resumes radiating energy, temporarily stopping the core's contraction. This new helium burning phase (fusion of helium nuclei) forms a growing inner core of inert carbon and oxygen. Above it is a thin helium-burning shell, surrounded in turn by a hydrogen-burning shell. However, this new phase lasts only 20,000 years or so, a very short period compared to the entire lifetime of the star.
+
+// The venting of atmosphere continues unabated into interstellar space, but when the outer surface of the exposed core reaches temperatures exceeding about 30,000 K, there are enough emitted ultraviolet photons to ionize the ejected atmosphere, causing the gas to shine as a planetary nebula.[28] 
 #[cfg(test)]
 mod tests {
     use super::*;

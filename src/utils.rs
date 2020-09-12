@@ -38,3 +38,7 @@ pub fn _perihelion_distance(radius: &f64, eccentricity: &f64) -> f64 {
 pub fn _aphelion_distance(radius: &f64, eccentricity: &f64) -> f64 {
     radius * (1.0 + eccentricity)
 }
+
+pub fn random_eccentricity(random: f64, cloud_eccentricity: &f64) -> f64 {
+    1.0 - random.powf(*cloud_eccentricity)
+}

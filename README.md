@@ -2,10 +2,10 @@ Accrete.rs
 ========================
 Accrete is planetary system generation program.
 During last 50 years this code was reimplemented many times with many improvements ([good overview here](https://github.com/zakski/accrete-starform-stargen), also brief history below).
-While this particular version is not supposed to be used as accurate scientific modelling tool, it can be used for procedural generation of plausible planetary system.
+While this particular version is not supposed to be used as an accurate scientific modelling tool, it can be used for procedural generation of plausible planetary system.
 This Rust port of accrete hopefully will include most of old features of this wonderful program and maybe even some extended functionality.
 
-## Generate planetary system.
+## Generate planetary system
 
 ### Default:
 ```rust
@@ -22,26 +22,31 @@ Simple way to variate output is to change stellar mass. This accrete implementat
 planets_limit - Limit number of planets.
 Default: None
 
-stellar_mass - Primary star mass in solar masses.
-Default: random f64 in a range of 0.6-1.3 (corresponds main sequence spectral classes of F-G-K)
+Configuration:
 
-dust_density_coeff - "A" in Dole's paper, recommended range according to Dole's paper is 0.00125-0.0015, aslo noted that binary stars produced by increasing coeff of dust density in cloud (Formation of Planetary Systems by Aggregation: A Computer Simulation by Stephen H. Dole)
-Default: 0.0015
+**planets_limit** - Limit number of planets.
+*Default: None*
 
-k - The dust-to-gas ratio 50-100 (dust/gas = K), gas = hydrogen and helium, dust = other. Recommended range: 50.0-100.0
-Default: 50.0
+**stellar_mass** - Primary star mass in solar masses.
+*Default: random f64 in a range of 0.6-1.3 (corresponds main sequence spectral classes of F-G-K)*
 
-cloud_eccentricity - Initial dust cloud cloud_eccentricity. Recommended range: 0.15-0.25.
-Default: 0.20
+**dust_density_coeff** - "A" in Dole's paper, recommended range according to Dole's paper is 0.00125-0.0015, aslo noted that binary stars produced by increasing coeff of dust density in cloud (Formation of Planetary Systems by Aggregation: A Computer Simulation by Stephen H. Dole).
+*Default: 0.0015*
 
-b - Crit_mass coeff is used as threshold for planet to become gas giant. Recommended range: 1.0e-5 - 1.2e-5
-Default: 1.2e-5
+**k** - The dust-to-gas ratio 50-100 (dust/gas = K), gas = hydrogen and helium, dust = other. Recommended range: 50.0-100.0
+*Default: 50.0*
 
-with_moons - Enable moon generation by accretion and collision.
-Default: false
+**cloud_eccentricity** - Initial dust cloud cloud_eccentricity. Recommended range: 0.15-0.25.
+*Default: 0.20*
 
-to_json - Output as JSON string. 
-Default: false
+**b** - Crit_mass coeff is used as threshold for planet to become gas giant. Recommended range: 1.0e-5 - 1.2e-5
+*Default: 1.2e-5*
+
+**with_moons** - Enable moon generation by accretion and collision.
+*Default: false*
+
+**to_json** - Output as JSON string. 
+*Default: false*
 
 ## Brief history
 >Accrete's origin dates back to the late 60's when Stephen H. Dole published "Formation of Planetary Systems by Aggregation: A Computer Simulation". 

@@ -9,7 +9,7 @@ use consts::*;
 use planetismal::Planetismal;
 use rand::prelude::*;
 use serde_json::json;
-use system::System;
+use system::PrimaryStar;
 
 #[derive(Debug)]
 pub enum AccreteOutput {
@@ -17,9 +17,9 @@ pub enum AccreteOutput {
     Json(String),
 }
 
-/// Generate planetary system.
+/// ## Generate planetary system.
 ///
-/// Default:
+/// ### Default:
 /// ```rust
 /// use accrete;
 ///
@@ -30,31 +30,31 @@ pub enum AccreteOutput {
 ///
 /// Simple way to variate output is to change stellar mass. This accrete implementation is capable of generating planetary system for any stellar mass, but better (most realistic) results achieved for main sequence star class with primary star mass of 0.6 - 1.3 solar masses.
 ///
-/// Configuration:
+/// ### Configuration:
 ///
-/// planets_limit - Limit number of planets.
-/// Default: None
+/// **planets_limit** - Limit number of planets.
+/// *Default: None*
 ///
-/// stellar_mass - Primary star mass in solar masses.
-/// Default: random f64 in a range of 0.6-1.3 (corresponds main sequence spectral classes of F-G-K)
+/// **stellar_mass** - Primary star mass in solar masses.
+/// *Default: random f64 in a range of 0.6-1.3 (corresponds main sequence spectral classes of F-G-K)*
 ///
-/// dust_density_coeff - "A" in Dole's paper, recommended range according to Dole's paper is 0.00125-0.0015, aslo noted that binary stars produced by increasing coeff of dust density in cloud (Formation of Planetary Systems by Aggregation: A Computer Simulation by Stephen H. Dole)
-/// Default: 0.0015
+/// **dust_density_coeff** - "A" in Dole's paper, recommended range according to Dole's paper is 0.00125-0.0015, aslo noted that binary stars produced by increasing coeff of dust density in cloud (Formation of Planetary Systems by Aggregation: A Computer Simulation by Stephen H. Dole).
+/// *Default: 0.0015*
 ///
-/// k - The dust-to-gas ratio 50-100 (dust/gas = K), gas = hydrogen and helium, dust = other. Recommended range: 50.0-100.0
-/// Default: 50.0
+/// **k** - The dust-to-gas ratio 50-100 (dust/gas = K), gas = hydrogen and helium, dust = other. Recommended range: 50.0-100.0
+/// *Default: 50.0*
 ///
-/// cloud_eccentricity - Initial dust cloud cloud_eccentricity. Recommended range: 0.15-0.25.
-/// Default: 0.20
+/// **cloud_eccentricity** - Initial dust cloud cloud_eccentricity. Recommended range: 0.15-0.25.
+/// *Default: 0.20*
 ///
-/// b - Crit_mass coeff is used as threshold for planet to become gas giant. Recommended range: 1.0e-5 - 1.2e-5
-/// Default: 1.2e-5
+/// **b** - Crit_mass coeff is used as threshold for planet to become gas giant. Recommended range: 1.0e-5 - 1.2e-5
+/// *Default: 1.2e-5*
 ///
-/// with_moons - Enable moon generation by accretion and collision.
-/// Default: false
+/// **with_moons** - Enable moon generation by accretion and collision.
+/// *Default: false*
 ///
-/// to_json - Output as JSON string. 
-/// Default: false
+/// **to_json** - Output as JSON string. 
+/// *Default: false*
 ///
 pub fn run(
     planets_limit: Option<usize>,
@@ -75,7 +75,7 @@ pub fn run(
     let cloud_eccentricity = cloud_eccentricity.unwrap_or(0.2);
     let b = b.unwrap_or(B);
 
-    let mut planetary_system = System::set_initial_conditions(
+    let mut planetary_system = PrimaryStar::set_initial_conditions(
         planets_limit,
         stellar_mass,
         dust_density_coeff,
