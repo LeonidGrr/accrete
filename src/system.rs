@@ -171,7 +171,7 @@ impl PrimaryStar {
         }
     }
 
-    pub fn process_all_planets(&mut self) {
+    pub fn process_planets(&mut self) {
         let PrimaryStar {
             stellar_luminosity,
             stellar_mass,
