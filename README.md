@@ -12,7 +12,7 @@ This Rust port of accrete hopefully will include most of old features of this wo
 use accrete;
 
 fn main() {
-    let planets = accrete::run(None, None, None, None, None, None, false, false);
+    let planets = accrete::run(None, None, None, None, None, None, false);
 }
 ```
 
@@ -41,9 +41,6 @@ Configuration:
 
 **b** - Crit_mass coeff is used as threshold for planet to become gas giant. Recommended range: 1.0e-5 - 1.2e-5
 *Default: 1.2e-5*
-
-**with_moons** - Enable moon generation by accretion and collision.
-*Default: false*
 
 **to_json** - Output as JSON string. 
 *Default: false*

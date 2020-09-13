@@ -3,10 +3,10 @@ use crate::planetismal::Planetismal;
 use crate::utils::*;
 
 /// This function, given the orbital radius of a planet in AU, returns the orbital 'zone' of the particle.
-pub fn orbital_zone(luminosity: &f64, orb_radius: &f64) -> i32 {
-    if *orb_radius < (4.0 * luminosity.sqrt()) {
+pub fn orbital_zone(luminosity: &f64, distance_to_primary_star: f64) -> i32 {
+    if distance_to_primary_star < (4.0 * luminosity.sqrt()) {
         return 1;
-    } else if *orb_radius < (15.0 * luminosity.sqrt()) {
+    } else if distance_to_primary_star < (15.0 * luminosity.sqrt()) {
         return 2;
     }
     3
@@ -72,12 +72,12 @@ pub fn kothari_radius(mass: &f64, giant: &bool, zone: &i32) -> f64 {
 /// The mass passed in is in units of solar masses, and the orbital radius is in units of AU. The density is returned in units of grams/cc.
 pub fn empirical_density(
     mass: &f64,
-    orb_radius: &f64,
+    distance_to_primary_star: &f64,
     ecosphere_radius: &f64,
     gas_giant: &bool,
 ) -> f64 {
     let mut density = (mass * EARTH_MASSES_PER_SOLAR_MASS).powf(1.0 / 8.0);
-    density = density * (ecosphere_radius / orb_radius).powf(0.25);
+    density = density * (ecosphere_radius / distance_to_primary_star).powf(0.25);
 
     match gas_giant {
         true => density * 1.2,
@@ -186,13 +186,13 @@ pub fn gravity(acceleration: &f64) -> f64 {
 
 /// Note that if the orbital radius of the planet is greater than or equal to R_inner, 99% of it's volatiles are assumed to have been deposited in surface reservoirs (otherwise, it suffers from the greenhouse effect).
 pub fn greenhouse(
-    orbital_radius: &f64,
+    distance_to_primary_star: &f64,
     orbit_zone: &i32,
-    surface_pressure_millibar: &f64,
+    surface_pressure_bar: &f64,
     ecosphere_radius: &f64,
 ) -> bool {
     let greenhouse_radius = ecosphere_radius * GREENHOUSE_EFFECT_CONST;
-    *orbital_radius < greenhouse_radius && *orbit_zone == 1 && *surface_pressure_millibar > 0.0
+    *distance_to_primary_star < greenhouse_radius && *orbit_zone == 1 && *surface_pressure_bar > 0.0
 }
 
 /// This implements Fogg's eq.17. The 'inventory' returned is unitless.
@@ -228,17 +228,15 @@ pub fn vol_inventory(
     temp2 / 100.0
 }
 
-/// This implements Fogg's eq.18. The pressure returned is in units of millibars (mb). The gravity is in units of Earth gravities, the radius in units of kilometers.
+/// This implements Fogg's eq.18. The pressure returned is in units of bars. The gravity is in units of Earth gravities, the radius in units of kilometers.
 pub fn pressure(volatile_gas_inventory: &f64, equatorial_radius: &f64, gravity: &f64) -> f64 {
     let equatorial_radius = EARTH_RADIUS_IN_KM / equatorial_radius;
-    volatile_gas_inventory * gravity / equatorial_radius.powf(2.0)
+    (volatile_gas_inventory * gravity / equatorial_radius.powf(2.0)) / EARTH_SURF_PRES_IN_MILLIBARS
 }
 
-/// This function returns the boiling point of water in an atmosphere of pressure 'surface_pressure_millibar', given in millibars. The boiling point is returned in units of Kelvin. This is Fogg's eq.21.
-pub fn boiling_point_kelvin(surface_pressure_millibar: &f64) -> f64 {
-    let surface_pressure_in_bars = surface_pressure_millibar / MILLIBARS_PER_BAR;
-
-    1.0 / (surface_pressure_in_bars.log(std::f64::consts::E) / -5050.5 + 1.0 / 373.0)
+/// This function returns the boiling point of water in an atmosphere of pressure 'surface_pressure_bar', given in bars. The boiling point is returned in units of Kelvin. This is Fogg's eq.21.
+pub fn boiling_point_kelvin(surface_pressure_bar: &f64) -> f64 {
+    1.0 / (surface_pressure_bar.log(std::f64::consts::E) / -5050.5 + 1.0 / 373.0)
 }
 
 /// This function is Fogg's eq.22. Given the volatile gas inventory and planetary radius of a planet (in Km), this function returns the fraction of the planet covered with water.
@@ -308,9 +306,9 @@ pub fn eff_temp(ecosphere_radius: &f64, orbital_radius: &f64, albedo: &f64) -> f
 }
 
 /// This is Fogg's eq.20, and is also Hart's eq.20 in his "Evolution of Earth's Atmosphere" article. The effective temperature given is in units of Kelvin, as is the rise in temperature produced by the greenhouse effect, which is returned.
-pub fn green_rise(optical_depth: f64, effective_temp: f64, surface_pressure_millibar: f64) -> f64 {
-    let convection_factor =
-        EARTH_CONVECTION_FACTOR * (surface_pressure_millibar / EARTH_SURF_PRES_IN_MILLIBARS).powf(0.25);
+pub fn green_rise(optical_depth: f64, effective_temp: f64, surface_pressure_bar: f64) -> f64 {
+    let convection_factor = EARTH_CONVECTION_FACTOR
+        * surface_pressure_bar.powf(0.25);
 
     ((1.0 + 0.75 * optical_depth).powf(0.25) - 1.0) * effective_temp * convection_factor
 }
@@ -321,7 +319,7 @@ pub fn planet_albedo(
     water_fraction: &f64,
     cloud_fraction: &f64,
     ice_fraction: &f64,
-    surface_pressure_millibar: &f64,
+    surface_pressure_bar: &f64,
 ) -> f64 {
     let mut rock_fraction = 1.0 - *water_fraction - *ice_fraction;
     let mut components = 0.0;
@@ -356,7 +354,7 @@ pub fn planet_albedo(
 
     let cloud_contribution = *cloud_fraction * about(CLOUD_ALBEDO, 0.2);
     let water_contribution = water_fraction * about(WATER_ALBEDO, 0.2);
-    let (rock_contribution, ice_contribution) = match *surface_pressure_millibar == 0.0 {
+    let (rock_contribution, ice_contribution) = match *surface_pressure_bar == 0.0 {
         true => (
             rock_fraction * about(AIRLESS_ROCKY_ALBEDO, 0.3),
             ice_fraction * about(AIRLESS_ICE_ALBEDO, 0.4),
@@ -371,7 +369,7 @@ pub fn planet_albedo(
 }
 
 /// This function returns the dimensionless quantity of optical depth, which is useful in determining the amount of greenhouse effect on a planet.
-pub fn opacity(molecular_weight: f64, surface_pressure_millibar: f64) -> f64 {
+pub fn opacity(molecular_weight: f64, surface_pressure_bar: f64) -> f64 {
     let mut optical_depth = 0.0;
 
     if molecular_weight >= 0.0 && molecular_weight < 10.0 {
@@ -390,15 +388,15 @@ pub fn opacity(molecular_weight: f64, surface_pressure_millibar: f64) -> f64 {
         optical_depth += 0.05;
     }
 
-    if surface_pressure_millibar >= 70.0 * EARTH_SURF_PRES_IN_MILLIBARS {
+    if surface_pressure_bar >= 0.07 {
         optical_depth = optical_depth * 8.333;
-    } else if surface_pressure_millibar >= 50.0 * EARTH_SURF_PRES_IN_MILLIBARS {
+    } else if surface_pressure_bar >= 0.05 {
         optical_depth = optical_depth * 6.666;
-    } else if surface_pressure_millibar >= 30.0 * EARTH_SURF_PRES_IN_MILLIBARS {
+    } else if surface_pressure_bar >= 0.03 {
         optical_depth = optical_depth * 3.333;
-    } else if surface_pressure_millibar >= 10.0 * EARTH_SURF_PRES_IN_MILLIBARS {
+    } else if surface_pressure_bar >= 0.01 {
         optical_depth = optical_depth * 2.0;
-    } else if surface_pressure_millibar >= 5.0 * EARTH_SURF_PRES_IN_MILLIBARS {
+    } else if surface_pressure_bar >= 0.05 {
         optical_depth = optical_depth * 1.5;
     }
 
@@ -417,25 +415,40 @@ pub fn iterate_surface_temp(planet: &mut Planetismal, ecosphere_radius: &f64) ->
     let mut clouds = 0.0;
     let mut ice = 0.0;
 
-    let mut optical_depth = opacity(planet.molecule_weight, planet.surface_pressure_millibar);
+    let mut optical_depth = opacity(planet.molecule_weight, planet.surface_pressure_bar);
     let mut effective_temp = eff_temp(ecosphere_radius, &planet.a, &EARTH_ALBEDO);
-    let mut greenhouse_rise = green_rise(optical_depth, effective_temp, planet.surface_pressure_millibar);
+    let mut greenhouse_rise = green_rise(
+        optical_depth,
+        effective_temp,
+        planet.surface_pressure_bar,
+    );
     let mut surface_temp_kelvin = effective_temp + greenhouse_rise;
     let mut previous_temp = surface_temp_kelvin - 5.0;
 
     while (surface_temp_kelvin - previous_temp).abs() > 1.0 {
         previous_temp = surface_temp_kelvin;
         water = hydrosphere_fraction(&planet.volatile_gas_inventory, &planet.radius);
-        clouds = cloud_fraction(surface_temp_kelvin, planet.molecule_weight, planet.radius, water);
+        clouds = cloud_fraction(
+            surface_temp_kelvin,
+            planet.molecule_weight,
+            planet.radius,
+            water,
+        );
         ice = ice_fraction(&water, &surface_temp_kelvin);
 
-        if surface_temp_kelvin >= planet.boiling_point_kelvin || surface_temp_kelvin <= FREEZING_POINT_OF_WATER {
+        if surface_temp_kelvin >= planet.boiling_point_kelvin
+            || surface_temp_kelvin <= FREEZING_POINT_OF_WATER
+        {
             water = 0.0;
         }
-        albedo = planet_albedo(&water, &clouds, &ice, &planet.surface_pressure_millibar);
-        optical_depth = opacity(planet.molecule_weight, planet.surface_pressure_millibar);
+        albedo = planet_albedo(&water, &clouds, &ice, &planet.surface_pressure_bar);
+        optical_depth = opacity(planet.molecule_weight, planet.surface_pressure_bar);
         effective_temp = eff_temp(ecosphere_radius, &planet.a, &albedo);
-        greenhouse_rise = green_rise(optical_depth, effective_temp, planet.surface_pressure_millibar);
+        greenhouse_rise = green_rise(
+            optical_depth,
+            effective_temp,
+            planet.surface_pressure_bar,
+        );
         surface_temp_kelvin = effective_temp + greenhouse_rise;
     }
     planet.hydrosphere = water;
@@ -446,89 +459,10 @@ pub fn iterate_surface_temp(planet: &mut Planetismal, ecosphere_radius: &f64) ->
     surface_temp_kelvin
 }
 
+pub fn check_tidal_lock(day_length: f64, orbital_period: f64) -> bool {
+    day_length == orbital_period * 24.0
+}
 
-// /*
-//  *	calculates the number of years it takes for 1/e of a gas to escape
-//  *	from a planet's atmosphere. 
-//  *	Taken from Dole p. 34. He cites Jeans (1916) & Jones (1923)
-//  */
-//  long double gas_life(long double molecular_weight, 
-//     planet_pointer planet)
-// {
-// long double v = rms_vel(molecular_weight, planet->exospheric_temp);
-// long double g = planet->surf_grav * EARTH_ACCELERATION;
-// long double r = (planet->radius * CM_PER_KM);
-// long double t = (pow3(v) / (2.0 * pow2(g) * r)) * exp((3.0 * g * r) / pow2(v));
-// long double years = t / (SECONDS_PER_HOUR * 24.0 * DAYS_IN_A_YEAR);
-
-// //	long double ve = planet->esc_velocity;
-// //	long double k = 2;
-// //	long double t2 = ((k * pow3(v) * r) / pow4(ve)) * exp((3.0 * pow2(ve)) / (2.0 * pow2(v)));
-// //	long double years2 = t2 / (SECONDS_PER_HOUR * 24.0 * DAYS_IN_A_YEAR);
-
-// //	if (flag_verbose & 0x0040)
-// //		fprintf (stderr, "gas_life: %LGs, V ratio: %Lf\n", 
-// //				years, ve / v);
-
-// if (years > 2.0E10)
-// years = INCREDIBLY_LARGE_NUMBER;
-
-// return years;
-// }
-
-// long double min_molec_weight (planet_pointer planet)
-// {
-// long double mass    = planet->mass;
-// long double radius  = planet->radius;
-// long double temp    = planet->exospheric_temp;
-// long double target  = 5.0E9;
-
-// long double guess_1 = molecule_limit (mass, radius, temp);
-// long double	guess_2 = guess_1;
-
-// long double life = gas_life(guess_1, planet);
-
-// int	loops = 0;
-
-// if (NULL != planet->sun)
-// {
-// target = planet->sun->age;
-// }
-
-// if (life > target)
-// {
-// while ((life > target) && (loops++ < 25))
-// {
-// guess_1 = guess_1 / 2.0;
-// life 	= gas_life(guess_1, planet);
-// }
-// }
-// else
-// {
-// while ((life < target) && (loops++ < 25))
-// {
-// guess_2 = guess_2 * 2.0;
-// life 	= gas_life(guess_2, planet);
-// }
-// }
-
-// loops = 0;
-
-// while (((guess_2 - guess_1) > 0.1) && (loops++ < 25))
-// {
-// long double guess_3 = (guess_1 + guess_2) / 2.0;
-// life			 	= gas_life(guess_3, planet);
-
-// if (life < target)
-// guess_1 = guess_3;
-// else
-// guess_2 = guess_3;
-// }
-
-// life = gas_life(guess_2, planet);
-
-// return (guess_2);
-// }
 pub fn get_smallest_molecular_weight(m: f64) -> String {
     if m < MOLECULAR_HYDROGEN {
         return "H2".to_owned();
@@ -574,196 +508,3 @@ pub fn get_smallest_molecular_weight(m: f64) -> String {
         return "OTHER".to_owned();
     }
 }
-
-
-// MIn max temp
-// /* function for 'soft limiting' temperatures */
-
-// long double lim(long double x)
-// {
-//   return x / sqrt(sqrt(1 + x*x*x*x));
-// }
-
-// long double soft(long double v, long double max, long double min)
-// {
-//   long double dv = v - min;
-//   long double dm = max - min;
-//   return (lim(2*dv/dm-1)+1)/2 * dm + min;
-// }
-
-// void set_temp_range(planet_pointer planet)
-// {
-//   long double pressmod = 1 / sqrt(1 + 20 * planet->surf_pressure/1000.0);
-//   long double ppmod    = 1 / sqrt(10 + 5 * planet->surf_pressure/1000.0);
-//   long double tiltmod  = fabs(cos(planet->axial_tilt * PI/180) * pow(1 + planet->e, 2));
-//   long double daymod   = 1 / (200/planet->day + 1);
-//   long double mh = pow(1 + daymod, pressmod);
-//   long double ml = pow(1 - daymod, pressmod);
-//   long double hi = mh * planet->surf_temp;
-//   long double lo = ml * planet->surf_temp;
-//   long double sh = hi + pow((100+hi) * tiltmod, sqrt(ppmod));
-//   long double wl = lo - pow((150+lo) * tiltmod, sqrt(ppmod));
-//   long double max = planet->surf_temp + sqrt(planet->surf_temp) * 10;
-//   long double min = planet->surf_temp / sqrt(planet->day + 24);
-
-//   if (lo < min) lo = min;
-//   if (wl < 0)   wl = 0;
-
-//   planet->high_temp = soft(hi, max, min);
-//   planet->low_temp  = soft(lo, max, min);
-//   planet->max_temp  = soft(sh, max, min);
-//   planet->min_temp  = soft(wl, max, min);
-// }
-
-
-// void calculate_gases(sun*			sun,
-//     planet_pointer	planet,
-//     char*			planet_id)
-// {
-// if (planet->surf_pressure > 0)
-// {
-// long double	*amount = (long double*)calloc((max_gas+1), sizeof(long double));
-// long double	totamount = 0;
-// long double pressure  = planet->surf_pressure/MILLIBARS_PER_BAR;
-// int			n         = 0;
-// int			i;
-
-// for (i = 0; i < max_gas; i++)
-// {
-// long double yp = gases[i].boil /
-//             (373. * ((log((pressure) + 0.001) / -5050.5) + 
-//                     (1.0 / 373.)));
-
-// if ((yp >= 0 && yp < planet->low_temp)
-// && (gases[i].weight >= planet->molec_weight))
-// {
-// long double	vrms	= rms_vel(gases[i].weight, planet->exospheric_temp);
-// long double	pvrms	= pow(1 / (1 + vrms / planet->esc_velocity), sun->age / 1e9);
-// long double	abund	= gases[i].abunds; 				/* gases[i].abunde */
-// long double react	= 1.0;
-// long double fract	= 1.0;
-// long double pres2	= 1.0;
-
-// if (strcmp(gases[i].symbol, "Ar") == 0)
-// {
-//    react = .15 * sun->age/4e9;
-// }
-// else if (strcmp(gases[i].symbol, "He") == 0)
-// {
-//    abund = abund * (0.001 + (planet->gas_mass / planet->mass));
-//    pres2 = (0.75 + pressure);
-//    react = pow(1 / (1 + gases[i].reactivity), 
-//                sun->age/2e9 * pres2);
-// }
-// else if ((strcmp(gases[i].symbol, "O") == 0 ||
-//          strcmp(gases[i].symbol, "O2") == 0) && 
-//         sun->age > 2e9 &&
-//         planet->surf_temp > 270 && planet->surf_temp < 400)
-// {
-// /*	pres2 = (0.65 + pressure/2);			Breathable - M: .55-1.4 	*/
-//    pres2 = (0.89 + pressure/4);		/*	Breathable - M: .6 -1.8 	*/
-//    react = pow(1 / (1 + gases[i].reactivity), 
-//                pow(sun->age/2e9, 0.25) * pres2);
-// }
-// else if (strcmp(gases[i].symbol, "CO2") == 0 && 
-//         sun->age > 2e9 &&
-//         planet->surf_temp > 270 && planet->surf_temp < 400)
-// {
-//    pres2 = (0.75 + pressure);
-//    react = pow(1 / (1 + gases[i].reactivity), 
-//                pow(sun->age/2e9, 0.5) * pres2);
-//    react *= 1.5;
-// }
-// else 
-// {
-//    pres2 = (0.75 + pressure);
-//    react = pow(1 / (1 + gases[i].reactivity), 
-//                sun->age/2e9 * pres2);
-// }
-
-// fract = (1 - (planet->molec_weight / gases[i].weight));
-
-// amount[i] = abund * pvrms * react * fract;
-
-// if ((flag_verbose & 0x4000) &&
-//    (strcmp(gases[i].symbol, "O") == 0 ||
-//     strcmp(gases[i].symbol, "N") == 0 ||
-//     strcmp(gases[i].symbol, "Ar") == 0 ||
-//     strcmp(gases[i].symbol, "He") == 0 ||
-//     strcmp(gases[i].symbol, "CO2") == 0))
-// {
-//    fprintf (stderr, "%-5.2Lf %-3.3s, %-5.2Lf = a %-5.2Lf * p %-5.2Lf * r %-5.2Lf * p2 %-5.2Lf * f %-5.2Lf\t(%.3Lf%%)\n",
-//              planet->mass * SUN_MASS_IN_EARTH_MASSES,
-//              gases[i].symbol,
-//              amount[i],
-//              abund,
-//              pvrms,
-//              react,
-//              pres2,
-//              fract,
-//              100.0 * (planet->gas_mass / planet->mass)
-//             );
-// }
-
-// totamount += amount[i];
-// if (amount[i] > 0.0)
-//    n++;
-// }
-// else
-// amount[i] = 0.0;
-// }
-
-// if (n > 0)
-// {
-// planet->gases = n;
-// planet->atmosphere = (gas*)calloc(n, sizeof(gas));
-
-// for (i = 0, n = 0; i < max_gas; i++)
-// {
-// if (amount[i] > 0.0)
-// {
-//    planet->atmosphere[n].num = gases[i].num;
-//    planet->atmosphere[n].surf_pressure = planet->surf_pressure 
-//                                        * amount[i] / totamount;
-
-//    if (flag_verbose & 0x2000)
-//    {
-//        if ((planet->atmosphere[n].num == AN_O) &&
-//            inspired_partial_pressure (planet->surf_pressure,
-//                                       planet->atmosphere[n].surf_pressure)
-//            > gases[i].max_ipp)
-//        {
-//            fprintf (stderr, "%s\t Poisoned by O2\n",
-//                     planet_id);
-//        }
-//    }
-   
-//    n++;
-// }
-// }
-
-// qsort(planet->atmosphere, 
-//  planet->gases, 
-//  sizeof(gas), 
-//  diminishing_pressure);
-
-// if (flag_verbose & 0x0010)
-// {
-// fprintf (stderr, "\n%s (%5.1Lf AU) gases:\n",
-//        planet_id, planet->a);
-
-// for (i = 0; i < planet->gases; i++)
-// {
-//    fprintf (stderr, "%3d: %6.1Lf, %11.7Lf%%\n",
-//            planet->atmosphere[i].num,
-//            planet->atmosphere[i].surf_pressure,
-//            100. * (planet->atmosphere[i].surf_pressure /
-//                    planet->surf_pressure)
-//            );
-// }
-// }
-// }
-
-// free(amount);
-// }
-// }

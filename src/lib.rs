@@ -24,7 +24,7 @@ pub enum AccreteOutput {
 /// use accrete;
 ///
 /// fn main() {
-///     let planets = accrete::run(None, None, None, None, None, None, false, false);
+///     let planets = accrete::run(None, None, None, None, None, None, false);
 /// }
 /// ```
 ///
@@ -50,10 +50,7 @@ pub enum AccreteOutput {
 /// **b** - Crit_mass coeff is used as threshold for planet to become gas giant. Recommended range: 1.0e-5 - 1.2e-5
 /// *Default: 1.2e-5*
 ///
-/// **with_moons** - Enable moon generation by accretion and collision.
-/// *Default: false*
-///
-/// **to_json** - Output as JSON string. 
+/// **to_json** - Output as JSON string.
 /// *Default: false*
 ///
 pub fn run(
@@ -63,7 +60,6 @@ pub fn run(
     k: Option<f64>,
     cloud_eccentricity: Option<f64>,
     b: Option<f64>,
-    with_moons: bool,
     to_json: bool,
 ) -> AccreteOutput {
     let mut rng = rand::thread_rng();
@@ -82,16 +78,15 @@ pub fn run(
         k,
         cloud_eccentricity,
         b,
-        with_moons,
     );
     planetary_system.distribute_planetary_masses();
-    planetary_system.generate_planetary_environment();
+    planetary_system.process_planets();
 
     if to_json {
         let s = json!({
             // "stellar_mass": stellar_mass,
             // "stellar_luminosity": stellar_luminosity,
-            "planets": planetary_system.planets,
+            // "planets": planetary_system.planets,
         })
         .to_string();
         return AccreteOutput::Json(s);
@@ -105,71 +100,76 @@ mod tests {
     use super::*;
     #[test]
     fn run_with_default_config() {
-        run(None, None, None, None, None, None, false, false);
+        run(None, None, None, None, None, None, false);
     }
 
     #[test]
     fn run_with_o_spectral_class() {
-        run(None, Some(60.0), None, None, None, None, false, false);
+        run(None, Some(60.0), None, None, None, None, false);
     }
 
-    #[test]    
+    #[test]
     fn run_with_b_spectral_class() {
-        run(None, Some(18.0), None, None, None, None, false, false);
+        run(None, Some(18.0), None, None, None, None, false);
     }
 
     #[test]
     fn run_with_a_spectral_class() {
-        run(None, Some(2.1), None, None, None, None, false, false);
+        run(None, Some(2.1), None, None, None, None, false);
     }
 
     #[test]
     fn run_with_f_spectral_class() {
-        run(None, Some(1.3), None, None, None, None, false, false);
+        run(None, Some(1.3), None, None, None, None, false);
     }
 
     #[test]
     fn run_with_g_spectral_class() {
-        run(None, Some(1.0), None, None, None, None, false, false);
+        run(None, Some(1.0), None, None, None, None, false);
     }
 
     #[test]
     fn run_with_k_spectral_class() {
-        run(None, Some(0.8), None, None, None, None, false, false);
+        run(None, Some(0.8), None, None, None, None, false);
     }
 
     #[test]
     fn run_with_m_spectral_class() {
-        run(None, Some(0.3), None, None, None, None, false, false);
+        run(None, Some(0.3), None, None, None, None, false);
     }
 
     #[test]
     fn run_with_brown_dwarf() {
-        run(None, Some(0.1), None, None, None, None, false, false);
+        run(None, Some(0.1), None, None, None, None, false);
+    }
+
+    #[test]
+    fn run_with_rogue_planet() {
+        run(None, Some(0.0005), None, None, None, None, false);
     }
 
     #[test]
     fn planets_limit() {
-        run(Some(2), None, None, None, None, None, false, false);
+        run(Some(2), None, None, None, None, None, false);
     }
 
     #[test]
     fn low_density_dust() {
-        run(None, None, Some(0.00125), None, None, None, false, false);
+        run(None, None, Some(0.00125), None, None, None, false);
     }
 
     #[test]
     fn high_density_dust() {
-        run(None, None, Some(0.05), None, None, None, false, false);
+        run(None, None, Some(0.05), None, None, None, false);
     }
 
     #[test]
     fn massive_star() {
-        run(None, Some(1.3), None, None, None, None, false, false);
+        run(None, Some(1.3), None, None, None, None, false);
     }
 
     #[test]
     fn small_star() {
-        run(None, Some(0.3), None, None, None, None, false, false);
+        run(None, Some(0.3), None, None, None, None, false);
     }
 }
