@@ -101,7 +101,7 @@ pub const ALPHA: f64 = 5.0;
 /// Used in calculating dust density (as the nth root of the radius, r)
 pub const N: f64 = 3.0;
 
-/// Used in day-length calcs (cm2/sec2 g)
+/// Used in day_hours-length calcs (cm2/sec2 g)
 pub const J: f64 = 1.46E-19;
 
 pub const INCREDIBLY_LARGE_NUMBER: f64 = 9.9999E37;

@@ -1,29 +1,28 @@
 use crate::consts::PROTOPLANET_MASS;
 use crate::utils::*;
+use crate::enviro::*;
+use crate::consts::*;
+use crate::ring::Ring;
 use rand::prelude::*;
 use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Planetismal {
-    // Axis in AU
+    // axis, AU
     pub a: f64,
-    // eccentricity of the orbit
+    // eccentricity of the orbit, unitless
     pub e: f64,
-    // mass (in solar masses)
+    pub distance_to_primary_star: f64,
     pub mass: f64,
-    // if the planet is a gas giant
+    pub mass_with_moons: f64,
+    pub earth_masses: f64,
     pub gas_giant: bool,
-    // the 'zone' of the planet
     pub orbit_zone: i32,
-    // equatorial radius (in km)
+    // equatorial radius, km
     pub radius: f64,
-    // density (in g/cc)
+    pub earth_radii: f64,
+    // density, g/cc
     pub density: f64,
-    // length of the local year (days)
-    pub orbital_period: f64,
-    // length of the local day (hours)
-    pub day: f64,
-    // TRUE if in resonant rotation
     pub resonant_period: bool,
     // units of degrees
     pub axial_tilt: f64,
@@ -35,37 +34,26 @@ pub struct Planetismal {
     pub surface_grav: f64,
     // units of cm/sec
     pub rms_velocity: f64,
-    // smallest molecular weight retained
+    pub escape_velocity_km_per_sec: f64,
+    pub orbital_period_days: f64,
+    pub day_hours: f64,
+    pub length_of_year: f64,
     pub molecule_weight: f64,
+    pub smallest_molecular_weight: String,
     pub volatile_gas_inventory: f64,
-    // units of millibars (mb)
-    pub surface_pressure: f64,
-    // runaway greenhouse effect?
     pub greenhouse_effect: bool,
-    // the boiling point of water (Kelvin)
-    pub boil_point: f64,
-    // albedo of the planet
     pub albedo: f64,
-    // surface temperature in Kelvin
-    pub surface_temp: f64,
-    // fraction of surface covered
+    pub is_tidally_locked: bool,
+    pub surface_pressure_bar: f64,
+    pub surface_temp_kelvin: f64,
+    pub boiling_point_kelvin: f64,
     pub hydrosphere: f64,
-    // fraction of surface covered
     pub cloud_cover: f64,
-    // fraction of surface covered
     pub ice_cover: f64,
     pub moons: Vec<Planetismal>,
-    /// Display info
-    pub earth_mass: f64,
-    pub smallest_molecular_weight: String,
-    pub boiling_point_celsium: f64,
-    pub surface_pressure_bar: f64,
-    pub surface_temp_celsium: f64,
-    pub hydrosphere_percentage: f64,
-    pub cloud_cover_percentage: f64,
-    pub ice_cover_percentage: f64,
-    pub length_of_year: f64,
-    pub escape_velocity_km_per_sec: f64,
+    pub rings: Vec<Ring>,
+    pub is_moon: bool,
+    pub is_spherical: bool,
 }
 
 impl Planetismal {
@@ -82,13 +70,17 @@ impl Planetismal {
         Planetismal {
             a,
             e,
+            distance_to_primary_star: a,
             mass: PROTOPLANET_MASS,
+            mass_with_moons: PROTOPLANET_MASS,
+            earth_masses: 0.0,
             gas_giant,
             orbit_zone: 0,
             radius: 0.0,
+            earth_radii: 0.0,
             density: 0.0,
-            orbital_period: 0.0,
-            day: 0.0,
+            orbital_period_days: 0.0,
+            day_hours: 0.0,
             resonant_period: false,
             axial_tilt: 0.0,
             escape_velocity: 0.0,
@@ -97,90 +89,98 @@ impl Planetismal {
             rms_velocity: 0.0,
             molecule_weight: 0.0,
             volatile_gas_inventory: 0.0,
-            surface_pressure: 0.0,
             greenhouse_effect: false,
-            boil_point: 0.0,
             albedo: 0.0,
-            surface_temp: 0.0,
+            surface_temp_kelvin: 0.0,
+            surface_pressure_bar: 0.0,
+            boiling_point_kelvin: 0.0,
             hydrosphere: 0.0,
             cloud_cover: 0.0,
             ice_cover: 0.0,
             moons: Vec::new(),
-            earth_mass: 0.0,
+            rings: Vec::new(),
             smallest_molecular_weight: String::new(),
-            boiling_point_celsium: 0.0,
-            surface_pressure_bar: 0.0,
-            surface_temp_celsium: 0.0,
-            hydrosphere_percentage: 0.0,
-            cloud_cover_percentage: 0.0,
-            ice_cover_percentage: 0.0,
             length_of_year: 0.0,
             escape_velocity_km_per_sec: 0.0,
+            is_tidally_locked: false,
+            is_moon: false,
+            is_spherical: false,
         }
     }
-}
 
-fn random_eccentricity(random: f64, cloud_eccentricity: &f64) -> f64 {
-    1.0 - random.powf(*cloud_eccentricity)
-}
-
-pub fn coalesce_planetismals(planets: &mut Vec<Planetismal>, cloud_eccentricity: &f64) {
-    let mut next_planets = Vec::new();
-    for (i, p) in planets.iter().enumerate() {
-        if i == 0 {
-            next_planets.push(p.clone());
+    pub fn derive_planetary_environment(
+        &mut self,
+        stellar_luminosity: &f64,
+        stellar_mass: &f64,
+        main_seq_life: &f64,        
+        ecosphere: &mut (f64, f64),
+    ) {
+        self.orbit_zone = orbital_zone(stellar_luminosity, self.a);
+        if self.gas_giant {
+            self.density = empirical_density(
+                &self.mass,
+                &self.distance_to_primary_star,
+                &ecosphere.1,
+                &self.gas_giant,
+            );
+            self.radius = volume_radius(&self.mass, &self.density);
         } else {
-            if let Some(prev_p) = next_planets.last_mut() {
-                let dist = prev_p.a - p.a;
-                let (dist1, dist2) = match dist > 0.0 {
-                    true => {
-                        let dist1 =
-                            outer_effect_limit(&p.a, &p.e, &p.mass, cloud_eccentricity) - p.a;
-                        let dist2 = prev_p.a
-                            - inner_effect_limit(
-                                &prev_p.a,
-                                &prev_p.e,
-                                &prev_p.mass,
-                                cloud_eccentricity,
-                            );
-                        (dist1, dist2)
-                    }
-                    false => {
-                        let dist1 =
-                            p.a - inner_effect_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
-                        let dist2 = outer_effect_limit(
-                            &prev_p.a,
-                            &prev_p.e,
-                            &prev_p.mass,
-                            cloud_eccentricity,
-                        ) - prev_p.a;
-                        (dist1, dist2)
-                    }
-                };
+            self.radius = kothari_radius(&self.mass, &self.gas_giant, &self.orbit_zone);
+            self.density = volume_density(&self.mass, &self.radius);
+        }
+        self.orbital_period_days = period(&self.a, &self.mass, &stellar_mass);
+        self.day_hours = day_length(self, &stellar_mass, main_seq_life);
+        self.axial_tilt = inclination(&self.a);
+        self.escape_velocity = escape_vel(&self.mass, &self.radius);
+        self.surface_accel = acceleration(&self.mass, &self.radius);
+        self.rms_velocity = rms_vel(&MOLECULAR_NITROGEN, &self.a);
+        self.molecule_weight = molecule_limit(&self.mass, &self.radius);
 
-                if dist.abs() < dist1.abs() || dist.abs() < dist2.abs() {
-                    *prev_p = coalesce_two_planets(&prev_p, &p);
-                } else {
-                    next_planets.push(p.clone());
-                }
+        if self.gas_giant {
+            self.surface_grav = INCREDIBLY_LARGE_NUMBER;
+            self.greenhouse_effect = false;
+            self.volatile_gas_inventory = INCREDIBLY_LARGE_NUMBER;
+            self.surface_pressure_bar = INCREDIBLY_LARGE_NUMBER;
+            self.boiling_point_kelvin = INCREDIBLY_LARGE_NUMBER;
+            self.hydrosphere = INCREDIBLY_LARGE_NUMBER;
+            self.albedo = about(GAS_GIANT_ALBEDO, 0.1);
+            self.surface_temp_kelvin = INCREDIBLY_LARGE_NUMBER;
+        } else {
+            self.surface_grav = gravity(&self.surface_accel);
+            self.greenhouse_effect = greenhouse(
+                &self.distance_to_primary_star,
+                &self.orbit_zone,
+                &self.surface_pressure_bar,
+                &ecosphere.1,
+            );
+            self.volatile_gas_inventory = vol_inventory(
+                &self.mass,
+                &self.escape_velocity,
+                &self.rms_velocity,
+                stellar_mass,
+                &self.orbit_zone,
+                &self.greenhouse_effect,
+            );
+            self.surface_pressure_bar = pressure(
+                &self.volatile_gas_inventory,
+                &self.radius,
+                &self.surface_grav,
+            );
+            if self.surface_pressure_bar == 0.0 {
+                self.boiling_point_kelvin = 0.0;
+            } else {
+                self.boiling_point_kelvin =
+                    boiling_point_kelvin(&self.surface_pressure_bar);
+                iterate_surface_temp(self, &ecosphere.1);
             }
         }
-    }
-    *planets = next_planets;
-}
 
-pub fn coalesce_two_planets(a: &Planetismal, b: &Planetismal) -> Planetismal {
-    let new_mass = a.mass + b.mass;
-    let new_axis = new_mass / (a.mass / a.a + b.mass / b.a);
-    let term1 = a.mass * (a.a * (1.0 - a.e.powf(2.0))).sqrt();
-    let term2 = b.mass * (b.a * (1.0 - b.e.powf(2.0))).sqrt();
-    let term3 = (term1 + term2) / (new_mass * new_axis.sqrt());
-    let term4 = 1.0 - term3.powf(2.0);
-    let new_eccn = term4.abs().sqrt();
-    let mut coalesced = a.clone();
-    coalesced.mass = new_mass;
-    coalesced.a = new_axis;
-    coalesced.e = new_eccn;
-    coalesced.gas_giant = a.gas_giant || b.gas_giant;
-    coalesced
+        self.earth_masses = get_earth_mass(self.mass);
+        self.earth_radii = self.radius / EARTH_RADIUS_IN_KM;
+        self.smallest_molecular_weight =
+            get_smallest_molecular_weight(self.molecule_weight);
+        self.length_of_year = self.orbital_period_days / 365.25;
+        self.escape_velocity_km_per_sec = self.escape_velocity / CM_PER_KM;
+        self.is_tidally_locked = check_tidal_lock(self.day_hours, self.orbital_period_days);
+    }
 }

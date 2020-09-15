@@ -4,11 +4,13 @@ use crate::dust::*;
 use crate::enviro::*;
 use crate::planetismal::*;
 use crate::utils::*;
+use rand::prelude::*;
 
 /// [Star classifier by Harvard system](https://en.wikipedia.org/wiki/Stellar_classification)
 /// [Additional info](https://www.enchantedlearning.com/subjects/astronomy/stars/startypes.shtml)
 #[derive(Debug, Clone)]
 pub enum SpectralClass {
+    ROGUE,
     Y,
     T,
     L,
@@ -22,9 +24,7 @@ pub enum SpectralClass {
 }
 
 #[derive(Debug, Clone)]
-pub struct System {
-    pub with_moons: bool,
-    pub with_rings: bool,
+pub struct PrimaryStar {
     pub stellar_mass: f64,
     pub stellar_luminosity: f64,
     pub stellar_surface_temp: f64,
@@ -43,9 +43,10 @@ pub struct System {
     pub planets_limit: Option<usize>,
     pub k: f64,
     pub b: f64,
+    has_nebulae: bool,
 }
 
-impl System {
+impl PrimaryStar {
     pub fn set_initial_conditions(
         planets_limit: Option<usize>,
         stellar_mass: f64,
@@ -53,7 +54,6 @@ impl System {
         k: f64,
         cloud_eccentricity: f64,
         b: f64,
-        _with_moons: bool,
     ) -> Self {
         let stellar_luminosity = luminosity(stellar_mass);
         let planetismal_inner_bound = innermost_planet(stellar_mass);
@@ -75,8 +75,6 @@ impl System {
             main_seq_life,
             // age,
             ecosphere,
-            with_moons: false,
-            with_rings: false,
             planets: Vec::new(),
             k,
             b,
@@ -90,6 +88,7 @@ impl System {
             spectral_class,
             bv_color_index,
             color,
+            has_nebulae: false,
         }
     }
 
@@ -124,7 +123,11 @@ impl System {
             let inside_range = inner_effect_limit(&p.a, &p.e, &p.mass, &cloud_eccentricity);
             let outside_range = outer_effect_limit(&p.a, &p.e, &p.mass, &cloud_eccentricity);
 
-            if dust_availible(&dust_bands, &inside_range, &outside_range) {
+            if dust_availible(
+                &dust_bands,
+                &inside_range,
+                &outside_range,
+            ) {
                 let dust_density = dust_density(&dust_density_coeff, &stellar_mass, &p.a);
                 let crit_mass = critical_limit(&b, &p.a, &p.e, &stellar_luminosity);
                 accrete_dust(
@@ -145,9 +148,10 @@ impl System {
                     if p.mass > crit_mass {
                         p.gas_giant = true;
                     }
+                    p.mass_with_moons = p.mass;
                     planets.push(p);
                     planets.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
-                    coalesce_planetismals(planets, &cloud_eccentricity);
+                    coalesce_planetismals(stellar_luminosity, planets, &cloud_eccentricity);
                 } else {
                     // belt?
                     // console.debug(sprintf(".. failed due to large neighbor.\n"));
@@ -167,79 +171,31 @@ impl System {
         }
     }
 
-    pub fn generate_planetary_environment(&mut self) {
-        for planet in self.planets.iter_mut() {
-            planet.orbit_zone = orbital_zone(&self.stellar_luminosity, &planet.a);
-            if planet.gas_giant {
-                planet.density = empirical_density(
-                    &planet.mass,
-                    &planet.a,
-                    &self.ecosphere.1,
-                    &planet.gas_giant,
-                );
-                planet.radius = volume_radius(&planet.mass, &planet.density);
-            } else {
-                planet.radius = kothari_radius(&planet.mass, &planet.gas_giant, &planet.orbit_zone);
-                planet.density = volume_density(&planet.mass, &planet.radius);
-            }
+    pub fn process_planets(&mut self) {
+        let PrimaryStar {
+            stellar_luminosity,
+            stellar_mass,
+            main_seq_life,
+            ecosphere,
+            planets,
+            ..
+        } = self;
+        for planet in planets.iter_mut() {
+            planet.derive_planetary_environment(
+                stellar_luminosity,
+                stellar_mass,
+                main_seq_life,
+                ecosphere,
+            );
 
-            planet.orbital_period = period(&planet.a, &planet.mass, &self.stellar_mass);
-            planet.day = day_length(planet, &self.stellar_mass, &self.main_seq_life);
-            planet.axial_tilt = inclination(&planet.a);
-            planet.escape_velocity = escape_vel(&planet.mass, &planet.radius);
-            planet.surface_accel = acceleration(&planet.mass, &planet.radius);
-            planet.rms_velocity = rms_vel(&MOLECULAR_NITROGEN, &planet.a);
-            planet.molecule_weight = molecule_limit(&planet.mass, &planet.radius);
-
-            if planet.gas_giant {
-                planet.surface_grav = INCREDIBLY_LARGE_NUMBER;
-                planet.greenhouse_effect = false;
-                planet.volatile_gas_inventory = INCREDIBLY_LARGE_NUMBER;
-                planet.surface_pressure = INCREDIBLY_LARGE_NUMBER;
-                planet.boil_point = INCREDIBLY_LARGE_NUMBER;
-                planet.hydrosphere = INCREDIBLY_LARGE_NUMBER;
-                planet.albedo = about(GAS_GIANT_ALBEDO, 0.1);
-                planet.surface_temp = INCREDIBLY_LARGE_NUMBER;
-            } else {
-                planet.surface_grav = gravity(&planet.surface_accel);
-                planet.greenhouse_effect = greenhouse(
-                    &planet.a,
-                    &planet.orbit_zone,
-                    &planet.surface_pressure,
-                    &self.ecosphere.1,
-                );
-                planet.volatile_gas_inventory = vol_inventory(
-                    &planet.mass,
-                    &planet.escape_velocity,
-                    &planet.rms_velocity,
-                    &self.stellar_mass,
-                    &planet.orbit_zone,
-                    &planet.greenhouse_effect,
-                );
-                planet.surface_pressure = pressure(
-                    &planet.volatile_gas_inventory,
-                    &planet.radius,
-                    &planet.surface_grav,
-                );
-                if planet.surface_pressure == 0.0 {
-                    planet.boil_point = 0.0;
-                } else {
-                    planet.boil_point = boiling_point(&planet.surface_pressure);
-                    iterate_surface_temp(planet, &self.ecosphere.1);
-                }
-            }
-
-            planet.earth_mass = get_earth_mass(planet.mass);
-            planet.smallest_molecular_weight =
-                get_smallest_molecular_weight(planet.molecule_weight);
-            planet.boiling_point_celsium = planet.boil_point - KELVIN_CELCIUS_DIFFERENCE;
-            planet.surface_pressure_bar = planet.surface_pressure / 1000.0;
-            planet.surface_temp_celsium = planet.surface_temp - KELVIN_CELCIUS_DIFFERENCE;
-            planet.hydrosphere_percentage = planet.hydrosphere * 100.0;
-            planet.cloud_cover_percentage = planet.cloud_cover * 100.0;
-            planet.ice_cover_percentage = planet.ice_cover * 100.0;
-            planet.length_of_year = planet.orbital_period / 365.25;
-            planet.escape_velocity_km_per_sec = planet.escape_velocity / CM_PER_KM;
+            // for moon in planet.moons.iter_mut() {
+            //     moon.derive_planetary_environment(
+            //         stellar_luminosity,
+            //         stellar_mass,
+            //         main_seq_life,
+            //         ecosphere,
+            //     );
+            // }
         }
     }
 }
@@ -254,14 +210,13 @@ fn luminosity(mass: f64) -> f64 {
 /// [Red dwarfs habitable zone 1](https://en.wikipedia.org/wiki/Habitability_of_red_dwarf_systems)
 /// [Planetary_habitability](https://en.wikipedia.org/wiki/Planetary_habitability)
 fn ecosphere(luminosity: &f64, spectral_class: &SpectralClass) -> (f64, f64) {
-    let (
-        outer_normalized_flux_factor,inner_normalized_flux_factor,
-    ) = match spectral_class {
-        // For Y, L , T approzimation is used
+    let (outer_normalized_flux_factor, inner_normalized_flux_factor) = match spectral_class {
+        // BrownDwarfs. For Y, L , T approzimation is used
+        SpectralClass::ROGUE => (0.0, 0.0),
         SpectralClass::Y => (0.0, 0.0),
         SpectralClass::T => (0.05, 0.2),
         SpectralClass::L => (0.16, 0.7),
-
+        // Main seq sun-like classes
         SpectralClass::M => (0.27, 1.05),
         SpectralClass::K => (0.27, 1.05),
         // Original values
@@ -380,9 +335,9 @@ fn spectral_class(stellar_surface_temp: &f64) -> SpectralClass {
         t if t >= 3700.0 && t < 5200.0 => SpectralClass::K,
         t if t >= 2400.0 && t < 3700.0 => SpectralClass::M,
         t if t >= 1300.0 && t < 2400.0 => SpectralClass::L,
-        t if t >= 550.0 && t < 1300.0 => SpectralClass::L,
         t if t >= 550.0 && t < 1300.0 => SpectralClass::T,
-        _ => SpectralClass::Y,
+        t if t >= 273.15 && t < 550.0 => SpectralClass::Y,
+        _ => SpectralClass::ROGUE,
     }
 }
 
@@ -397,6 +352,137 @@ fn critical_limit(
     let perihelion_dist = orbital_radius - orbital_radius * eccentricity;
     let temp = perihelion_dist * stellar_luminosity_ratio.sqrt();
     b * temp.powf(-0.75)
+}
+
+/// Check planetismal coalescence
+pub fn coalesce_planetismals(primary_star_luminosity: &f64, planets: &mut Vec<Planetismal>, cloud_eccentricity: &f64) {
+    let mut next_planets = Vec::new();
+    for (i, p) in planets.iter().enumerate() {
+        if i == 0 {
+            next_planets.push(p.clone());
+        } else {
+            if let Some(prev_p) = next_planets.last_mut() {
+                let dist = prev_p.a - p.a;
+                let (dist1, dist2) = match dist > 0.0 {
+                    true => {
+                        let dist1 =
+                            outer_effect_limit(&p.a, &p.e, &p.mass_with_moons, cloud_eccentricity) - p.a;
+                        let dist2 = prev_p.a
+                            - inner_effect_limit(
+                                &prev_p.a,
+                                &prev_p.e,
+                                &prev_p.mass_with_moons,
+                                cloud_eccentricity,
+                            );
+                        (dist1, dist2)
+                    }
+                    false => {
+                        let dist1 =
+                            p.a - inner_effect_limit(&p.a, &p.e, &p.mass_with_moons, cloud_eccentricity);
+                        let dist2 = outer_effect_limit(
+                            &prev_p.a,
+                            &prev_p.e,
+                            &prev_p.mass_with_moons,
+                            cloud_eccentricity,
+                        ) - prev_p.a;
+                        (dist1, dist2)
+                    }
+                };
+
+                // Check for larger/smaller planetismal
+                let (mut larger, mut smaller) = match p.mass >= prev_p.mass {
+                    true => (p.clone(), prev_p.clone()),
+                    false => (prev_p.clone(), p.clone()),
+                };
+                
+                // Recalculate current radius ad density of bodies
+                larger.orbit_zone = orbital_zone(primary_star_luminosity, larger.distance_to_primary_star);
+                larger.radius = kothari_radius(&larger.mass, &larger.gas_giant, &larger.orbit_zone);
+
+                smaller.orbit_zone = orbital_zone(primary_star_luminosity, smaller.distance_to_primary_star);
+                smaller.radius = kothari_radius(&smaller.mass, &smaller.gas_giant, &smaller.orbit_zone);
+                
+                // Check if planetismals whithin effective zone of each other
+                if dist.abs() < dist1.abs() || dist.abs() < dist2.abs() {
+                    if dist.abs() < (larger.radius + smaller.radius) / KM_PER_AU {
+                        *prev_p = coalesce_two_planets(&prev_p, &p);
+                    } else {
+                        *prev_p = capture_moon(&larger, &smaller);
+                    }
+                } else {
+                    next_planets.push(p.clone());
+                }
+            }
+        }
+    }
+    *planets = next_planets;
+}
+
+/// Two planetismals collide and form one planet
+pub fn coalesce_two_planets(a: &Planetismal, b: &Planetismal) -> Planetismal {
+    let new_mass = a.mass + b.mass;
+    let new_axis = new_mass / (a.mass / a.a + b.mass / b.a);
+    let term1 = a.mass * (a.a * (1.0 - a.e.powf(2.0))).sqrt();
+    let term2 = b.mass * (b.a * (1.0 - b.e.powf(2.0))).sqrt();
+    let term3 = (term1 + term2) / (new_mass * new_axis.sqrt());
+    let term4 = 1.0 - term3.powf(2.0);
+    let new_eccn = term4.abs().sqrt();
+    let mut coalesced = a.clone();
+    coalesced.mass = new_mass;
+    coalesced.a = new_axis;
+    coalesced.e = new_eccn;
+    coalesced.gas_giant = a.gas_giant || b.gas_giant;
+    coalesced
+}
+
+/// Larger planetsimal capture smaller as moon
+pub fn capture_moon(larger: &Planetismal, smaller: &Planetismal) -> Planetismal {
+    let mut planet = larger.clone();
+    let mut moon = smaller.clone();
+    moon.is_moon = true;
+
+    // Recalcualte combined mass of planet-moons system and planetary axis
+    let new_mass = planet.mass_with_moons + moon.mass_with_moons;
+    let new_axis = new_mass / (planet.mass_with_moons / planet.a + moon.mass_with_moons / moon.a);
+    let term1 = planet.mass_with_moons * (planet.a * (1.0 - planet.e.powf(2.0))).sqrt();
+    let term2 = moon.mass_with_moons * (moon.a * (1.0 - moon.e.powf(2.0))).sqrt();
+    let term3 = (term1 + term2) / (new_mass * new_axis.sqrt());
+    let term4 = 1.0 - term3.powf(2.0);
+    let new_eccn = term4.abs().sqrt();
+    planet.a = new_axis;
+    planet.e = new_eccn;
+    planet.distance_to_primary_star = new_axis;
+
+    // Add moon to planetary moons, recalculate disturbed orbits of moons
+    let mut rng = rand::thread_rng();
+    planet.moons.append(&mut moon.moons);
+    planet.moons.push(moon);
+
+    for m in planet.moons.iter_mut() {
+        let hill_sphere = hill_sphere_au(
+            &planet.a,
+            &planet.e,
+            &planet.mass,
+            &m.mass,
+        );
+        let roche_limit = roche_limit_au(
+            &planet.mass,
+            &m.mass,
+            &m.radius,
+        );
+        m.a = rng.gen_range(0.0, hill_sphere);
+
+        if m.a <= roche_limit {
+            println!("Ringgggg!");
+        }
+
+        m.distance_to_primary_star = planet.a;
+        planet.mass_with_moons += m.mass;
+        m.mass_with_moons = m.mass;
+    }
+
+    // Check collisions between moons
+    planet
 }
 
 // /*
@@ -428,6 +514,17 @@ fn critical_limit(
     chance of specifically having a gas giant, we want about a 35%
     chance of a planet being a gas giant.
 */
+
+// rom observation," Braben said, "we know the temperature of some stars. We know the size of that star, and we know something called its metallicity," or the types of periodic elements that make up the star’s composition. "Some of the older stars actually have very low metallicity, and we factor that into the elements that are there in that specific star system."
+
+/// hasNebulae
+/// Stars greater than 8 solar masses (M⊙) will likely end their lives in dramatic supernovae explosions, while planetary nebulae seemingly only occur at the end of the lives of intermediate and low mass stars between 0.8 M⊙ to 8.0 M⊙.[26] Progenitor stars that form planetary nebulae will spend most of their lifetimes converting their hydrogen into helium in the star's core by nuclear fusion at about 15 million K. This generated energy creates outward pressure from fusion reactions in the core, balancing the crushing inward pressures of the star's gravity.[27] This state of equilibrium is known as the main sequence, which can last for tens of millions to billions of years, depending on the mass.
+
+// When the hydrogen source in the core starts to diminish, gravity starts compressing the core, causing a rise in temperature to about 100 million K.[28] Such higher core temperatures then make the star's cooler outer layers expand to create much larger red giant stars. This end phase causes a dramatic rise in stellar luminosity, where the released energy is distributed over a much larger surface area, which in fact causes the average surface temperature to be lower. In stellar evolution terms, stars undergoing such increases in luminosity are known as asymptotic giant branch stars (AGB).[28] During this phase, the star can lose 50 to 70% of its total mass from its stellar wind.[29]
+
+// For the more massive asymptotic giant branch stars that form planetary nebulae, whose progenitors exceed about 3M⊙, their cores will continue to contract. When temperatures reach about 100 million K, the available helium nuclei fuse into carbon and oxygen, so that the star again resumes radiating energy, temporarily stopping the core's contraction. This new helium burning phase (fusion of helium nuclei) forms a growing inner core of inert carbon and oxygen. Above it is a thin helium-burning shell, surrounded in turn by a hydrogen-burning shell. However, this new phase lasts only 20,000 years or so, a very short period compared to the entire lifetime of the star.
+
+// The venting of atmosphere continues unabated into interstellar space, but when the outer surface of the exposed core reaches temperatures exceeding about 30,000 K, there are enough emitted ultraviolet photons to ionize the ejected atmosphere, causing the gas to shine as a planetary nebula.[28]
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -3,10 +3,10 @@ use crate::planetismal::Planetismal;
 use crate::utils::*;
 
 /// This function, given the orbital radius of a planet in AU, returns the orbital 'zone' of the particle.
-pub fn orbital_zone(luminosity: &f64, orb_radius: &f64) -> i32 {
-    if *orb_radius < (4.0 * luminosity.sqrt()) {
+pub fn orbital_zone(luminosity: &f64, distance_to_primary_star: f64) -> i32 {
+    if distance_to_primary_star < (4.0 * luminosity.sqrt()) {
         return 1;
-    } else if *orb_radius < (15.0 * luminosity.sqrt()) {
+    } else if distance_to_primary_star < (15.0 * luminosity.sqrt()) {
         return 2;
     }
     3
@@ -72,12 +72,12 @@ pub fn kothari_radius(mass: &f64, giant: &bool, zone: &i32) -> f64 {
 /// The mass passed in is in units of solar masses, and the orbital radius is in units of AU. The density is returned in units of grams/cc.
 pub fn empirical_density(
     mass: &f64,
-    orb_radius: &f64,
+    distance_to_primary_star: &f64,
     ecosphere_radius: &f64,
     gas_giant: &bool,
 ) -> f64 {
     let mut density = (mass * EARTH_MASSES_PER_SOLAR_MASS).powf(1.0 / 8.0);
-    density = density * (ecosphere_radius / orb_radius).powf(0.25);
+    density = density * (ecosphere_radius / distance_to_primary_star).powf(0.25);
 
     match gas_giant {
         true => density * 1.2,
@@ -105,7 +105,7 @@ pub fn period(separation: &f64, small_mass: &f64, large_mass: &f64) -> f64 {
 pub fn day_length(planet: &mut Planetismal, stellar_mass: &f64, main_sequence_age: &f64) -> f64 {
     let planet_mass_in_grams = planet.mass * SOLAR_MASS_IN_GRAMS;
     let equatorial_radius_in_cm = planet.radius * CM_PER_KM;
-    let year_in_hours = planet.orbital_period;
+    let year_in_hours = planet.orbital_period_days;
 
     let k2 = match planet.gas_giant {
         true => 0.24,
@@ -186,13 +186,13 @@ pub fn gravity(acceleration: &f64) -> f64 {
 
 /// Note that if the orbital radius of the planet is greater than or equal to R_inner, 99% of it's volatiles are assumed to have been deposited in surface reservoirs (otherwise, it suffers from the greenhouse effect).
 pub fn greenhouse(
-    orbital_radius: &f64,
+    distance_to_primary_star: &f64,
     orbit_zone: &i32,
-    surface_pressure: &f64,
+    surface_pressure_bar: &f64,
     ecosphere_radius: &f64,
 ) -> bool {
     let greenhouse_radius = ecosphere_radius * GREENHOUSE_EFFECT_CONST;
-    *orbital_radius < greenhouse_radius && *orbit_zone == 1 && *surface_pressure > 0.0
+    *distance_to_primary_star < greenhouse_radius && *orbit_zone == 1 && *surface_pressure_bar > 0.0
 }
 
 /// This implements Fogg's eq.17. The 'inventory' returned is unitless.
@@ -228,17 +228,15 @@ pub fn vol_inventory(
     temp2 / 100.0
 }
 
-/// This implements Fogg's eq.18. The pressure returned is in units of millibars (mb). The gravity is in units of Earth gravities, the radius in units of kilometers.
+/// This implements Fogg's eq.18. The pressure returned is in units of bars. The gravity is in units of Earth gravities, the radius in units of kilometers.
 pub fn pressure(volatile_gas_inventory: &f64, equatorial_radius: &f64, gravity: &f64) -> f64 {
     let equatorial_radius = EARTH_RADIUS_IN_KM / equatorial_radius;
-    volatile_gas_inventory * gravity / equatorial_radius.powf(2.0)
+    (volatile_gas_inventory * gravity / equatorial_radius.powf(2.0)) / EARTH_SURF_PRES_IN_MILLIBARS
 }
 
-/// This function returns the boiling point of water in an atmosphere of pressure 'surface_pressure', given in millibars. The boiling point is returned in units of Kelvin. This is Fogg's eq.21.
-pub fn boiling_point(surface_pressure: &f64) -> f64 {
-    let surface_pressure_in_bars = surface_pressure / MILLIBARS_PER_BAR;
-
-    1.0 / (surface_pressure_in_bars.log(std::f64::consts::E) / -5050.5 + 1.0 / 373.0)
+/// This function returns the boiling point of water in an atmosphere of pressure 'surface_pressure_bar', given in bars. The boiling point is returned in units of Kelvin. This is Fogg's eq.21.
+pub fn boiling_point_kelvin(surface_pressure_bar: &f64) -> f64 {
+    1.0 / (surface_pressure_bar.log(std::f64::consts::E) / -5050.5 + 1.0 / 373.0)
 }
 
 /// This function is Fogg's eq.22. Given the volatile gas inventory and planetary radius of a planet (in Km), this function returns the fraction of the planet covered with water.
@@ -259,7 +257,7 @@ pub fn hydrosphere_fraction(volatile_gas_inventory: &f64, planetary_radius: &f64
 /// Glass's book "Introduction to Planetary Geology", p.46.
 /// The 'CLOUD_COVERAGE_FACTOR' is the amount of surface area on Earth covered by one Kg. of cloud.
 pub fn cloud_fraction(
-    surface_temp: f64,
+    surface_temp_kelvin: f64,
     smallest_mw_retained: f64,
     equatorial_radius: f64,
     hydrosphere_fraction: f64,
@@ -271,7 +269,7 @@ pub fn cloud_fraction(
     let surface_area = 4.0 * PI * equatorial_radius.powf(2.0);
     let hydrosphere_mass = hydrosphere_fraction * surface_area * EARTH_WATER_MASS_PER_AREA;
     let water_vapor_in_kg =
-        (0.00000001 * hydrosphere_mass) * (Q2_36 * (surface_temp - 288.0)).exp();
+        (0.00000001 * hydrosphere_mass) * (Q2_36 * (surface_temp_kelvin - 288.0)).exp();
     let mut fraction = CLOUD_COVERAGE_FACTOR * water_vapor_in_kg / surface_area;
 
     if fraction >= 1.0 {
@@ -282,12 +280,12 @@ pub fn cloud_fraction(
 }
 
 /// Given the surface temperature of a planet (in Kelvin), this function returns the fraction of the planet's surface covered by ice. This is Fogg's eq.24. See Hart[24] in Icarus vol.33, p.28 for an explanation.
-pub fn ice_fraction(hydrosphere_fraction: &f64, surface_temp: &f64) -> f64 {
-    let surface_temp = match *surface_temp > 328.0 {
+pub fn ice_fraction(hydrosphere_fraction: &f64, surface_temp_kelvin: &f64) -> f64 {
+    let surface_temp_kelvin = match *surface_temp_kelvin > 328.0 {
         true => 328.0,
-        false => *surface_temp,
+        false => *surface_temp_kelvin,
     };
-    let mut temp = ((328.0 - surface_temp) / 70.0).powf(5.0);
+    let mut temp = ((328.0 - surface_temp_kelvin) / 70.0).powf(5.0);
 
     if temp > 1.5 * hydrosphere_fraction {
         temp = 1.5 * hydrosphere_fraction;
@@ -308,9 +306,9 @@ pub fn eff_temp(ecosphere_radius: &f64, orbital_radius: &f64, albedo: &f64) -> f
 }
 
 /// This is Fogg's eq.20, and is also Hart's eq.20 in his "Evolution of Earth's Atmosphere" article. The effective temperature given is in units of Kelvin, as is the rise in temperature produced by the greenhouse effect, which is returned.
-pub fn green_rise(optical_depth: f64, effective_temp: f64, surface_pressure: f64) -> f64 {
-    let convection_factor =
-        EARTH_CONVECTION_FACTOR * (surface_pressure / EARTH_SURF_PRES_IN_MILLIBARS).powf(0.25);
+pub fn green_rise(optical_depth: f64, effective_temp: f64, surface_pressure_bar: f64) -> f64 {
+    let convection_factor = EARTH_CONVECTION_FACTOR
+        * surface_pressure_bar.powf(0.25);
 
     ((1.0 + 0.75 * optical_depth).powf(0.25) - 1.0) * effective_temp * convection_factor
 }
@@ -321,7 +319,7 @@ pub fn planet_albedo(
     water_fraction: &f64,
     cloud_fraction: &f64,
     ice_fraction: &f64,
-    surface_pressure: &f64,
+    surface_pressure_bar: &f64,
 ) -> f64 {
     let mut rock_fraction = 1.0 - *water_fraction - *ice_fraction;
     let mut components = 0.0;
@@ -356,7 +354,7 @@ pub fn planet_albedo(
 
     let cloud_contribution = *cloud_fraction * about(CLOUD_ALBEDO, 0.2);
     let water_contribution = water_fraction * about(WATER_ALBEDO, 0.2);
-    let (rock_contribution, ice_contribution) = match *surface_pressure == 0.0 {
+    let (rock_contribution, ice_contribution) = match *surface_pressure_bar == 0.0 {
         true => (
             rock_fraction * about(AIRLESS_ROCKY_ALBEDO, 0.3),
             ice_fraction * about(AIRLESS_ICE_ALBEDO, 0.4),
@@ -371,7 +369,7 @@ pub fn planet_albedo(
 }
 
 /// This function returns the dimensionless quantity of optical depth, which is useful in determining the amount of greenhouse effect on a planet.
-pub fn opacity(molecular_weight: f64, surface_pressure: f64) -> f64 {
+pub fn opacity(molecular_weight: f64, surface_pressure_bar: f64) -> f64 {
     let mut optical_depth = 0.0;
 
     if molecular_weight >= 0.0 && molecular_weight < 10.0 {
@@ -390,15 +388,15 @@ pub fn opacity(molecular_weight: f64, surface_pressure: f64) -> f64 {
         optical_depth += 0.05;
     }
 
-    if surface_pressure >= 70.0 * EARTH_SURF_PRES_IN_MILLIBARS {
+    if surface_pressure_bar >= 0.07 {
         optical_depth = optical_depth * 8.333;
-    } else if surface_pressure >= 50.0 * EARTH_SURF_PRES_IN_MILLIBARS {
+    } else if surface_pressure_bar >= 0.05 {
         optical_depth = optical_depth * 6.666;
-    } else if surface_pressure >= 30.0 * EARTH_SURF_PRES_IN_MILLIBARS {
+    } else if surface_pressure_bar >= 0.03 {
         optical_depth = optical_depth * 3.333;
-    } else if surface_pressure >= 10.0 * EARTH_SURF_PRES_IN_MILLIBARS {
+    } else if surface_pressure_bar >= 0.01 {
         optical_depth = optical_depth * 2.0;
-    } else if surface_pressure >= 5.0 * EARTH_SURF_PRES_IN_MILLIBARS {
+    } else if surface_pressure_bar >= 0.05 {
         optical_depth = optical_depth * 1.5;
     }
 
@@ -417,33 +415,52 @@ pub fn iterate_surface_temp(planet: &mut Planetismal, ecosphere_radius: &f64) ->
     let mut clouds = 0.0;
     let mut ice = 0.0;
 
-    let mut optical_depth = opacity(planet.molecule_weight, planet.surface_pressure);
+    let mut optical_depth = opacity(planet.molecule_weight, planet.surface_pressure_bar);
     let mut effective_temp = eff_temp(ecosphere_radius, &planet.a, &EARTH_ALBEDO);
-    let mut greenhouse_rise = green_rise(optical_depth, effective_temp, planet.surface_pressure);
-    let mut surface_temp = effective_temp + greenhouse_rise;
-    let mut previous_temp = surface_temp - 5.0;
+    let mut greenhouse_rise = green_rise(
+        optical_depth,
+        effective_temp,
+        planet.surface_pressure_bar,
+    );
+    let mut surface_temp_kelvin = effective_temp + greenhouse_rise;
+    let mut previous_temp = surface_temp_kelvin - 5.0;
 
-    while (surface_temp - previous_temp).abs() > 1.0 {
-        previous_temp = surface_temp;
+    while (surface_temp_kelvin - previous_temp).abs() > 1.0 {
+        previous_temp = surface_temp_kelvin;
         water = hydrosphere_fraction(&planet.volatile_gas_inventory, &planet.radius);
-        clouds = cloud_fraction(surface_temp, planet.molecule_weight, planet.radius, water);
-        ice = ice_fraction(&water, &surface_temp);
+        clouds = cloud_fraction(
+            surface_temp_kelvin,
+            planet.molecule_weight,
+            planet.radius,
+            water,
+        );
+        ice = ice_fraction(&water, &surface_temp_kelvin);
 
-        if surface_temp >= planet.boil_point || surface_temp <= FREEZING_POINT_OF_WATER {
+        if surface_temp_kelvin >= planet.boiling_point_kelvin
+            || surface_temp_kelvin <= FREEZING_POINT_OF_WATER
+        {
             water = 0.0;
         }
-        albedo = planet_albedo(&water, &clouds, &ice, &planet.surface_pressure);
-        optical_depth = opacity(planet.molecule_weight, planet.surface_pressure);
+        albedo = planet_albedo(&water, &clouds, &ice, &planet.surface_pressure_bar);
+        optical_depth = opacity(planet.molecule_weight, planet.surface_pressure_bar);
         effective_temp = eff_temp(ecosphere_radius, &planet.a, &albedo);
-        greenhouse_rise = green_rise(optical_depth, effective_temp, planet.surface_pressure);
-        surface_temp = effective_temp + greenhouse_rise;
+        greenhouse_rise = green_rise(
+            optical_depth,
+            effective_temp,
+            planet.surface_pressure_bar,
+        );
+        surface_temp_kelvin = effective_temp + greenhouse_rise;
     }
     planet.hydrosphere = water;
     planet.cloud_cover = clouds;
     planet.ice_cover = ice;
     planet.albedo = albedo;
-    planet.surface_temp = surface_temp;
-    surface_temp
+    planet.surface_temp_kelvin = surface_temp_kelvin;
+    surface_temp_kelvin
+}
+
+pub fn check_tidal_lock(day_length: f64, orbital_period: f64) -> bool {
+    day_length == orbital_period * 24.0
 }
 
 pub fn get_smallest_molecular_weight(m: f64) -> String {
