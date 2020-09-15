@@ -2,6 +2,7 @@ use crate::consts::PROTOPLANET_MASS;
 use crate::utils::*;
 use crate::enviro::*;
 use crate::consts::*;
+use crate::ring::Ring;
 use rand::prelude::*;
 use serde::Serialize;
 
@@ -50,7 +51,9 @@ pub struct Planetismal {
     pub cloud_cover: f64,
     pub ice_cover: f64,
     pub moons: Vec<Planetismal>,
+    pub rings: Vec<Ring>,
     pub is_moon: bool,
+    pub is_spherical: bool,
 }
 
 impl Planetismal {
@@ -95,11 +98,13 @@ impl Planetismal {
             cloud_cover: 0.0,
             ice_cover: 0.0,
             moons: Vec::new(),
+            rings: Vec::new(),
             smallest_molecular_weight: String::new(),
             length_of_year: 0.0,
             escape_velocity_km_per_sec: 0.0,
             is_tidally_locked: false,
             is_moon: false,
+            is_spherical: false,
         }
     }
 
@@ -107,7 +112,7 @@ impl Planetismal {
         &mut self,
         stellar_luminosity: &f64,
         stellar_mass: &f64,
-        main_seq_life: &f64,
+        main_seq_life: &f64,        
         ecosphere: &mut (f64, f64),
     ) {
         self.orbit_zone = orbital_zone(stellar_luminosity, self.a);
@@ -123,7 +128,6 @@ impl Planetismal {
             self.radius = kothari_radius(&self.mass, &self.gas_giant, &self.orbit_zone);
             self.density = volume_density(&self.mass, &self.radius);
         }
-
         self.orbital_period_days = period(&self.a, &self.mass, &stellar_mass);
         self.day_hours = day_length(self, &stellar_mass, main_seq_life);
         self.axial_tilt = inclination(&self.a);

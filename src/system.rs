@@ -187,6 +187,15 @@ impl PrimaryStar {
                 main_seq_life,
                 ecosphere,
             );
+
+            // for moon in planet.moons.iter_mut() {
+            //     moon.derive_planetary_environment(
+            //         stellar_luminosity,
+            //         stellar_mass,
+            //         main_seq_life,
+            //         ecosphere,
+            //     );
+            // }
         }
     }
 }
@@ -386,12 +395,13 @@ pub fn coalesce_planetismals(primary_star_luminosity: &f64, planets: &mut Vec<Pl
                     false => (prev_p.clone(), p.clone()),
                 };
                 
-                // Recalculate current radius of
+                // Recalculate current radius ad density of bodies
                 larger.orbit_zone = orbital_zone(primary_star_luminosity, larger.distance_to_primary_star);
                 larger.radius = kothari_radius(&larger.mass, &larger.gas_giant, &larger.orbit_zone);
-                smaller.orbit_zone = orbital_zone(primary_star_luminosity, smaller.distance_to_primary_star);
-                smaller.radius = kothari_radius(&smaller.mass, &smaller.gas_giant, &prev_p.orbit_zone);
 
+                smaller.orbit_zone = orbital_zone(primary_star_luminosity, smaller.distance_to_primary_star);
+                smaller.radius = kothari_radius(&smaller.mass, &smaller.gas_giant, &smaller.orbit_zone);
+                
                 // Check if planetismals whithin effective zone of each other
                 if dist.abs() < dist1.abs() || dist.abs() < dist2.abs() {
                     if dist.abs() < (larger.radius + smaller.radius) / KM_PER_AU {
@@ -432,10 +442,11 @@ pub fn capture_moon(larger: &Planetismal, smaller: &Planetismal) -> Planetismal 
     moon.is_moon = true;
 
     // Recalcualte combined mass of planet-moons system and planetary axis
-    let new_axis = planet.mass_with_moons / (planet.mass / planet.a + moon.mass / moon.a);
-    let term1 = planet.mass * (planet.a * (1.0 - planet.e.powf(2.0))).sqrt();
-    let term2 = moon.mass * (moon.a * (1.0 - moon.e.powf(2.0))).sqrt();
-    let term3 = (term1 + term2) / (planet.mass_with_moons * new_axis.sqrt());
+    let new_mass = planet.mass_with_moons + moon.mass_with_moons;
+    let new_axis = new_mass / (planet.mass_with_moons / planet.a + moon.mass_with_moons / moon.a);
+    let term1 = planet.mass_with_moons * (planet.a * (1.0 - planet.e.powf(2.0))).sqrt();
+    let term2 = moon.mass_with_moons * (moon.a * (1.0 - moon.e.powf(2.0))).sqrt();
+    let term3 = (term1 + term2) / (new_mass * new_axis.sqrt());
     let term4 = 1.0 - term3.powf(2.0);
     let new_eccn = term4.abs().sqrt();
     planet.a = new_axis;
@@ -446,7 +457,6 @@ pub fn capture_moon(larger: &Planetismal, smaller: &Planetismal) -> Planetismal 
     let mut rng = rand::thread_rng();
     planet.moons.append(&mut moon.moons);
     planet.moons.push(moon);
-    planet.mass_with_moons = planet.mass;
 
     for m in planet.moons.iter_mut() {
         let hill_sphere = hill_sphere_au(
@@ -455,16 +465,23 @@ pub fn capture_moon(larger: &Planetismal, smaller: &Planetismal) -> Planetismal 
             &planet.mass,
             &m.mass,
         );
-        
-        // Check roche limit - if moon turns into ring
-
+        let roche_limit = roche_limit_au(
+            &planet.mass,
+            &m.mass,
+            &m.radius,
+        );
         m.a = rng.gen_range(0.0, hill_sphere);
+
+        if m.a <= roche_limit {
+            println!("Ringgggg!");
+        }
+
         m.distance_to_primary_star = planet.a;
         planet.mass_with_moons += m.mass;
+        m.mass_with_moons = m.mass;
     }
 
     // Check collisions between moons
-
     planet
 }
 

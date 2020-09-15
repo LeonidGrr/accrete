@@ -2,6 +2,7 @@ mod consts;
 mod dust;
 mod enviro;
 mod planetismal;
+mod ring;
 mod system;
 mod utils;
 
