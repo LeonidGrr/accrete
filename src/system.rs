@@ -337,7 +337,9 @@ fn spectral_class(stellar_surface_temp: &f64) -> SpectralClass {
         t if t >= 1300.0 && t < 2400.0 => SpectralClass::L,
         t if t >= 550.0 && t < 1300.0 => SpectralClass::T,
         t if t >= 273.15 && t < 550.0 => SpectralClass::Y,
-        _ => SpectralClass::
+        _ => SpectralClass:: ROGUE,
+    }
+}
 
 // /*
 //   https://arxiv.org/pdf/1511.07438.pdf
