@@ -308,7 +308,6 @@ pub fn eff_temp(ecosphere_radius: &f64, orbital_radius: &f64, albedo: &f64) -> f
 /// This is Fogg's eq.20, and is also Hart's eq.20 in his "Evolution of Earth's Atmosphere" article. The effective temperature given is in units of Kelvin, as is the rise in temperature produced by the greenhouse effect, which is returned.
 pub fn green_rise(optical_depth: f64, effective_temp: f64, surface_pressure_bar: f64) -> f64 {
     let convection_factor = EARTH_CONVECTION_FACTOR * surface_pressure_bar.powf(0.25);
-
     ((1.0 + 0.75 * optical_depth).powf(0.25) - 1.0) * effective_temp * convection_factor
 }
 

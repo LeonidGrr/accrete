@@ -112,7 +112,7 @@ impl Planetismal {
         &mut self,
         stellar_luminosity: &f64,
         stellar_mass: &f64,
-        main_seq_life: &f64,
+        main_seq_life: &f64,        
         ecosphere: &mut (f64, f64),
     ) {
         self.orbit_zone = orbital_zone(stellar_luminosity, self.a);
@@ -169,26 +169,37 @@ impl Planetismal {
             if self.surface_pressure_bar == 0.0 {
                 self.boiling_point_kelvin = 0.0;
             } else {
-                self.boiling_point_kelvin = boiling_point_kelvin(&self.surface_pressure_bar);
+                self.boiling_point_kelvin =
+                    boiling_point_kelvin(&self.surface_pressure_bar);
                 iterate_surface_temp(self, &ecosphere.1);
             }
         }
 
         self.earth_masses = get_earth_mass(self.mass);
         self.earth_radii = self.radius / EARTH_RADIUS_IN_KM;
-        self.smallest_molecular_weight = get_smallest_molecular_weight(self.molecule_weight);
+        self.smallest_molecular_weight =
+            get_smallest_molecular_weight(self.molecule_weight);
         self.length_of_year = self.orbital_period_days / 365.25;
         self.escape_velocity_km_per_sec = self.escape_velocity / CM_PER_KM;
         self.is_tidally_locked = check_tidal_lock(self.day_hours, self.orbital_period_days);
     }
 }
 
+/// Orbital radius is in AU, eccentricity is unitless, and the stellar luminosity ratio is with respect to the sun.
+/// The value returned is the mass at which the planet begins to accrete gas as well as dust, and is in units of solar masses.
+pub fn critical_limit(
+    b: &f64,
+    orbital_radius: &f64,
+    eccentricity: &f64,
+    stellar_luminosity_ratio: &f64,
+) -> f64 {
+    let perihelion_dist = orbital_radius - orbital_radius * eccentricity;
+    let temp = perihelion_dist * stellar_luminosity_ratio.sqrt();
+    b * temp.powf(-0.75)
+}
+
 /// Check planetismal coalescence
-pub fn coalesce_planetismals(
-    primary_star_luminosity: &f64,
-    planets: &mut Vec<Planetismal>,
-    cloud_eccentricity: &f64,
-) {
+pub fn coalesce_planetismals(primary_star_luminosity: &f64, planets: &mut Vec<Planetismal>, cloud_eccentricity: &f64) {
     let mut next_planets = Vec::new();
     for (i, p) in planets.iter().enumerate() {
         if i == 0 {
@@ -199,8 +210,7 @@ pub fn coalesce_planetismals(
                 let (dist1, dist2) = match dist > 0.0 {
                     true => {
                         let dist1 =
-                            outer_effect_limit(&p.a, &p.e, &p.mass_with_moons, cloud_eccentricity)
-                                - p.a;
+                            outer_effect_limit(&p.a, &p.e, &p.mass_with_moons, cloud_eccentricity) - p.a;
                         let dist2 = prev_p.a
                             - inner_effect_limit(
                                 &prev_p.a,
@@ -211,13 +221,8 @@ pub fn coalesce_planetismals(
                         (dist1, dist2)
                     }
                     false => {
-                        let dist1 = p.a
-                            - inner_effect_limit(
-                                &p.a,
-                                &p.e,
-                                &p.mass_with_moons,
-                                cloud_eccentricity,
-                            );
+                        let dist1 =
+                            p.a - inner_effect_limit(&p.a, &p.e, &p.mass_with_moons, cloud_eccentricity);
                         let dist2 = outer_effect_limit(
                             &prev_p.a,
                             &prev_p.e,
@@ -227,29 +232,34 @@ pub fn coalesce_planetismals(
                         (dist1, dist2)
                     }
                 };
-
-                // Check for larger/smaller planetismal
-                let (mut larger, mut smaller) = match p.mass >= prev_p.mass {
-                    true => (p.clone(), prev_p.clone()),
-                    false => (prev_p.clone(), p.clone()),
-                };
-
-                // Recalculate current radius ad density of bodies
-                larger.orbit_zone =
-                    orbital_zone(primary_star_luminosity, larger.distance_to_primary_star);
-                larger.radius = kothari_radius(&larger.mass, &larger.gas_giant, &larger.orbit_zone);
-
-                smaller.orbit_zone =
-                    orbital_zone(primary_star_luminosity, smaller.distance_to_primary_star);
-                smaller.radius =
-                    kothari_radius(&smaller.mass, &smaller.gas_giant, &smaller.orbit_zone);
-
+                
                 // Check if planetismals whithin effective zone of each other
                 if dist.abs() < dist1.abs() || dist.abs() < dist2.abs() {
-                    if dist.abs() < (larger.radius + smaller.radius) / KM_PER_AU {
+                    // Moon not likely to capture other moon
+                    if p.is_moon {
                         *prev_p = coalesce_two_planets(&prev_p, &p);
                     } else {
-                        *prev_p = capture_moon(&larger, &smaller);
+                        // Check for larger/smaller planetismal
+                        let (mut larger, mut smaller) = match p.mass >= prev_p.mass {
+                            true => (p.clone(), prev_p.clone()),
+                            false => (prev_p.clone(), p.clone()),
+                        };
+                
+                        // Recalculate current radius ad density of bodies
+                        larger.orbit_zone = orbital_zone(primary_star_luminosity, larger.distance_to_primary_star);
+                        larger.radius = kothari_radius(&larger.mass, &larger.gas_giant, &larger.orbit_zone);
+
+                        smaller.orbit_zone = orbital_zone(primary_star_luminosity, smaller.distance_to_primary_star);
+                        smaller.radius = kothari_radius(&smaller.mass, &smaller.gas_giant, &smaller.orbit_zone);
+                        
+                        // Planetismals collide or one capture another
+                        if dist.abs() < (larger.radius + smaller.radius) / KM_PER_AU {
+                            *prev_p = coalesce_two_planets(&prev_p, &p);
+                        } else {
+                            *prev_p = capture_moon(&larger, &smaller);
+                            prev_p.moons.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
+                            coalesce_planetismals(primary_star_luminosity, &mut prev_p.moons, cloud_eccentricity);
+                        }
                     }
                 } else {
                     next_planets.push(p.clone());
@@ -258,6 +268,23 @@ pub fn coalesce_planetismals(
         }
     }
     *planets = next_planets;
+}
+
+/// Two planetismals collide and form one planet
+pub fn coalesce_two_planets(a: &Planetismal, b: &Planetismal) -> Planetismal {
+    let new_mass = a.mass + b.mass;
+    let new_axis = new_mass / (a.mass / a.a + b.mass / b.a);
+    let term1 = a.mass * (a.a * (1.0 - a.e.powf(2.0))).sqrt();
+    let term2 = b.mass * (b.a * (1.0 - b.e.powf(2.0))).sqrt();
+    let term3 = (term1 + term2) / (new_mass * new_axis.sqrt());
+    let term4 = 1.0 - term3.powf(2.0);
+    let new_eccn = term4.abs().sqrt();
+    let mut coalesced = a.clone();
+    coalesced.mass = new_mass;
+    coalesced.a = new_axis;
+    coalesced.e = new_eccn;
+    coalesced.gas_giant = a.gas_giant || b.gas_giant;
+    coalesced
 }
 
 /// Larger planetsimal capture smaller as moon
@@ -284,8 +311,17 @@ pub fn capture_moon(larger: &Planetismal, smaller: &Planetismal) -> Planetismal 
     planet.moons.push(moon);
 
     for m in planet.moons.iter_mut() {
-        let hill_sphere = hill_sphere_au(&planet.a, &planet.e, &planet.mass, &m.mass);
-        let roche_limit = roche_limit_au(&planet.mass, &m.mass, &m.radius);
+        let hill_sphere = hill_sphere_au(
+            &planet.a,
+            &planet.e,
+            &planet.mass,
+            &m.mass,
+        );
+        let roche_limit = roche_limit_au(
+            &planet.mass,
+            &m.mass,
+            &m.radius,
+        );
         m.a = rng.gen_range(0.0, hill_sphere);
 
         if m.a <= roche_limit {
@@ -300,21 +336,4 @@ pub fn capture_moon(larger: &Planetismal, smaller: &Planetismal) -> Planetismal 
 
     // Check collisions between moons
     planet
-}
-
-/// Two planetismals collide and form one planet
-pub fn coalesce_two_planets(a: &Planetismal, b: &Planetismal) -> Planetismal {
-    let new_mass = a.mass + b.mass;
-    let new_axis = new_mass / (a.mass / a.a + b.mass / b.a);
-    let term1 = a.mass * (a.a * (1.0 - a.e.powf(2.0))).sqrt();
-    let term2 = b.mass * (b.a * (1.0 - b.e.powf(2.0))).sqrt();
-    let term3 = (term1 + term2) / (new_mass * new_axis.sqrt());
-    let term4 = 1.0 - term3.powf(2.0);
-    let new_eccn = term4.abs().sqrt();
-    let mut coalesced = a.clone();
-    coalesced.mass = new_mass;
-    coalesced.a = new_axis;
-    coalesced.e = new_eccn;
-    coalesced.gas_giant = a.gas_giant || b.gas_giant;
-    coalesced
 }

@@ -84,34 +84,6 @@ impl PrimaryStar {
         }
     }
 
-    pub fn process_planets(&mut self) {
-        let PrimaryStar {
-            stellar_luminosity,
-            stellar_mass,
-            main_seq_life,
-            ecosphere,
-            planets,
-            ..
-        } = self;
-        for planet in planets.iter_mut() {
-            planet.derive_planetary_environment(
-                stellar_luminosity,
-                stellar_mass,
-                main_seq_life,
-                ecosphere,
-            );
-
-            // for moon in planet.moons.iter_mut() {
-            //     moon.derive_planetary_environment(
-            //         stellar_luminosity,
-            //         stellar_mass,
-            //         main_seq_life,
-            //         ecosphere,
-            //     );
-            // }
-        }
-    }
-
     pub fn distribute_planetary_masses(&mut self) {
         let Self {
             stellar_mass,
@@ -143,7 +115,11 @@ impl PrimaryStar {
             let inside_range = inner_effect_limit(&p.a, &p.e, &p.mass, &cloud_eccentricity);
             let outside_range = outer_effect_limit(&p.a, &p.e, &p.mass, &cloud_eccentricity);
 
-            if dust_availible(&dust_bands, &inside_range, &outside_range) {
+            if dust_availible(
+                &dust_bands,
+                &inside_range,
+                &outside_range,
+            ) {
                 let dust_density = dust_density(&dust_density_coeff, &stellar_mass, &p.a);
                 let crit_mass = critical_limit(&b, &p.a, &p.e, &stellar_luminosity);
                 accrete_dust(
@@ -165,11 +141,6 @@ impl PrimaryStar {
                         p.gas_giant = true;
                     }
                     p.mass_with_moons = p.mass;
-
-                    for m in p.moons.iter() {
-                        p.mass_with_moons += m.mass;
-                    }
-
                     planets.push(p);
                     planets.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
                     coalesce_planetismals(stellar_luminosity, planets, &cloud_eccentricity);
@@ -189,6 +160,34 @@ impl PrimaryStar {
                 Some(limit) => planets.len() < *limit && dust_still_left,
                 None => dust_still_left,
             };
+        }
+    }
+
+    pub fn process_planets(&mut self) {
+        let PrimaryStar {
+            stellar_luminosity,
+            stellar_mass,
+            main_seq_life,
+            ecosphere,
+            planets,
+            ..
+        } = self;
+        for planet in planets.iter_mut() {
+            planet.derive_planetary_environment(
+                stellar_luminosity,
+                stellar_mass,
+                main_seq_life,
+                ecosphere,
+            );
+
+            // for moon in planet.moons.iter_mut() {
+            //     moon.derive_planetary_environment(
+            //         stellar_luminosity,
+            //         stellar_mass,
+            //         main_seq_life,
+            //         ecosphere,
+            //     );
+            // }
         }
     }
 }
@@ -330,7 +329,7 @@ fn spectral_class(stellar_surface_temp: &f64) -> SpectralClass {
         t if t >= 1300.0 && t < 2400.0 => SpectralClass::L,
         t if t >= 550.0 && t < 1300.0 => SpectralClass::T,
         t if t >= 273.15 && t < 550.0 => SpectralClass::Y,
-        _ => SpectralClass::ROGUE,
+        _ => SpectralClass:: ROGUE,
     }
 }
 

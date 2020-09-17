@@ -10,7 +10,7 @@ use consts::*;
 use planetismal::*;
 use rand::prelude::*;
 use serde_json::json;
-use system::*;
+use system::PrimaryStar;
 
 #[derive(Debug)]
 pub enum AccreteOutput {
