@@ -1,7 +1,5 @@
 use serde::Serialize;
-use rand::prelude::*;
 use crate::planetismal::Planetismal;
-use crate::consts::*;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Ring {
