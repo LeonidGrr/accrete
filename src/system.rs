@@ -21,7 +21,6 @@ pub enum SpectralClass {
     O,
 }
 
-
 #[derive(Debug, Clone)]
 pub struct PrimaryStar {
     pub stellar_mass: f64,
@@ -101,7 +100,7 @@ impl PrimaryStar {
                 main_seq_life,
                 ecosphere,
             );
-    
+
             // for moon in planet.moons.iter_mut() {
             //     moon.derive_planetary_environment(
             //         stellar_luminosity,
@@ -133,22 +132,18 @@ impl PrimaryStar {
         let mut dust_bands = Vec::new();
         dust_bands.push(dust_band);
         let mut dust_left = true;
-    
+
         while dust_left {
             let mut p = Planetismal::new(
                 &planetismal_inner_bound,
                 &planetismal_outer_bound,
                 &cloud_eccentricity,
             );
-    
+
             let inside_range = inner_effect_limit(&p.a, &p.e, &p.mass, &cloud_eccentricity);
             let outside_range = outer_effect_limit(&p.a, &p.e, &p.mass, &cloud_eccentricity);
-    
-            if dust_availible(
-                &dust_bands,
-                &inside_range,
-                &outside_range,
-            ) {
+
+            if dust_availible(&dust_bands, &inside_range, &outside_range) {
                 let dust_density = dust_density(&dust_density_coeff, &stellar_mass, &p.a);
                 let crit_mass = critical_limit(&b, &p.a, &p.e, &stellar_luminosity);
                 accrete_dust(
@@ -159,12 +154,12 @@ impl PrimaryStar {
                     &cloud_eccentricity,
                     &k,
                 );
-    
+
                 let min = inner_effect_limit(&p.a, &p.e, &p.mass, &cloud_eccentricity);
                 let max = outer_effect_limit(&p.a, &p.e, &p.mass, &cloud_eccentricity);
                 update_dust_lanes(&mut dust_bands, min, max, &p.mass, &crit_mass);
                 compress_dust_lanes(&mut dust_bands);
-    
+
                 if p.mass != 0.0 && p.mass != PROTOPLANET_MASS {
                     if p.mass > crit_mass {
                         p.gas_giant = true;
@@ -174,7 +169,7 @@ impl PrimaryStar {
                     for m in p.moons.iter() {
                         p.mass_with_moons += m.mass;
                     }
-            
+
                     planets.push(p);
                     planets.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
                     coalesce_planetismals(stellar_luminosity, planets, &cloud_eccentricity);
@@ -183,13 +178,13 @@ impl PrimaryStar {
                     // console.debug(sprintf(".. failed due to large neighbor.\n"));
                 }
             }
-    
+
             let dust_still_left = dust_availible(
                 &dust_bands,
                 &planetismal_inner_bound,
                 &planetismal_outer_bound,
             );
-    
+
             dust_left = match planets_limit {
                 Some(limit) => planets.len() < *limit && dust_still_left,
                 None => dust_still_left,

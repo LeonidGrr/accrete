@@ -8,9 +8,9 @@ mod utils;
 
 use consts::*;
 use planetismal::*;
-use system::*;
 use rand::prelude::*;
 use serde_json::json;
+use system::*;
 
 #[derive(Debug)]
 pub enum AccreteOutput {
@@ -96,7 +96,7 @@ pub fn run(
     for (i, p) in planetary_system.planets.iter().enumerate() {
         println!("Planet {}", i);
         println!("mass {}", p.mass);
-        println!("a {}", p.a);        
+        println!("a {}", p.a);
         println!("Moons: {}", p.moons.len());
         println!("------------------");
     }

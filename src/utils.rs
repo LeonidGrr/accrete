@@ -1,5 +1,5 @@
-use rand::prelude::*;
 use crate::consts::*;
+use rand::prelude::*;
 
 pub fn about(value: f64, variation: f64) -> f64 {
     let mut rng = rand::thread_rng();
@@ -40,7 +40,12 @@ pub fn roche_limit_au(planet_mass: &f64, moon_mass: &f64, moon_radius: &f64) -> 
     moon_radius / KM_PER_AU * (2.0 * (planet_mass / moon_mass)).powf(1.0 / 3.0)
 }
 
-pub fn hill_sphere_au(planet_axis: &f64, planet_eccn: &f64, planet_mass: &f64, moon_mass: &f64) -> f64 {
+pub fn hill_sphere_au(
+    planet_axis: &f64,
+    planet_eccn: &f64,
+    planet_mass: &f64,
+    moon_mass: &f64,
+) -> f64 {
     planet_axis * (1.0 - planet_eccn) * (moon_mass / (3.0 * planet_mass)).powf(1.0 / 3.0)
 }
 
