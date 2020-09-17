@@ -257,7 +257,8 @@ pub fn coalesce_planetismals(primary_star_luminosity: &f64, planets: &mut Vec<Pl
                             *prev_p = coalesce_two_planets(&prev_p, &p);
                         } else {
                             *prev_p = capture_moon(&larger, &smaller);
-                            coalesce_planetismals(primary_star_luminosity, prev.p.moons, cloud_eccentricity);
+                            prev_p.moons.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
+                            coalesce_planetismals(primary_star_luminosity, prev_p.moons, cloud_eccentricity);
                         }
                     }
                 } else {
