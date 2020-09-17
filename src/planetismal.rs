@@ -185,10 +185,6 @@ impl Planetismal {
     }
 }
 
-ROGUE,
-    }
-}
-
 /// Orbital radius is in AU, eccentricity is unitless, and the stellar luminosity ratio is with respect to the sun.
 /// The value returned is the mass at which the planet begins to accrete gas as well as dust, and is in units of solar masses.
 fn critical_limit(
