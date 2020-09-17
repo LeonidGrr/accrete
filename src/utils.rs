@@ -1,25 +1,17 @@
-use rand::prelude::*;
 use crate::consts::*;
+use rand::prelude::*;
 
 pub fn about(value: f64, variation: f64) -> f64 {
     let mut rng = rand::thread_rng();
     rng.gen_range(value - variation, value + variation)
 }
 
-pub fn innermost_planet(stellar_mass_ratio: f64) -> f64 {
+pub fn innermost_planet(stellar_mass_ratio: &f64) -> f64 {
     0.3 * stellar_mass_ratio.powf(0.33)
 }
 
-pub fn outermost_planet(stellar_mass_ratio: f64) -> f64 {
+pub fn outermost_planet(stellar_mass_ratio: &f64) -> f64 {
     50.0 * stellar_mass_ratio.powf(0.33)
-}
-
-pub fn _innermost_moon(planetary_mass: &f64) -> f64 {
-    0.001 * planetary_mass.powf(0.33)
-}
-
-pub fn _outermost_moon(planetary_mass: &f64) -> f64 {
-    4.0 * planetary_mass.powf(0.33)
 }
 
 pub fn inner_effect_limit(a: &f64, e: &f64, mass: &f64, cloud_eccentricity: &f64) -> f64 {

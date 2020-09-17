@@ -1,10 +1,8 @@
 use crate::consts::PROTOPLANET_MASS;
 use crate::consts::*;
 use crate::dust::*;
-use crate::enviro::*;
 use crate::planetismal::*;
 use crate::utils::*;
-use rand::prelude::*;
 
 /// [Star classifier by Harvard system](https://en.wikipedia.org/wiki/Stellar_classification)
 /// [Additional info](https://www.enchantedlearning.com/subjects/astronomy/stars/startypes.shtml)
@@ -41,7 +39,7 @@ pub struct PrimaryStar {
     pub planets_limit: Option<usize>,
     pub k: f64,
     pub b: f64,
-    has_nebulae: bool,
+    pub has_nebulae: bool,
 }
 
 impl PrimaryStar {

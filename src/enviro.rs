@@ -307,9 +307,7 @@ pub fn eff_temp(ecosphere_radius: &f64, orbital_radius: &f64, albedo: &f64) -> f
 
 /// This is Fogg's eq.20, and is also Hart's eq.20 in his "Evolution of Earth's Atmosphere" article. The effective temperature given is in units of Kelvin, as is the rise in temperature produced by the greenhouse effect, which is returned.
 pub fn green_rise(optical_depth: f64, effective_temp: f64, surface_pressure_bar: f64) -> f64 {
-    let convection_factor = EARTH_CONVECTION_FACTOR
-        * surface_pressure_bar.powf(0.25);
-
+    let convection_factor = EARTH_CONVECTION_FACTOR * surface_pressure_bar.powf(0.25);
     ((1.0 + 0.75 * optical_depth).powf(0.25) - 1.0) * effective_temp * convection_factor
 }
 
@@ -417,11 +415,8 @@ pub fn iterate_surface_temp(planet: &mut Planetismal, ecosphere_radius: &f64) ->
 
     let mut optical_depth = opacity(planet.molecule_weight, planet.surface_pressure_bar);
     let mut effective_temp = eff_temp(ecosphere_radius, &planet.a, &EARTH_ALBEDO);
-    let mut greenhouse_rise = green_rise(
-        optical_depth,
-        effective_temp,
-        planet.surface_pressure_bar,
-    );
+    let mut greenhouse_rise =
+        green_rise(optical_depth, effective_temp, planet.surface_pressure_bar);
     let mut surface_temp_kelvin = effective_temp + greenhouse_rise;
     let mut previous_temp = surface_temp_kelvin - 5.0;
 
@@ -444,11 +439,7 @@ pub fn iterate_surface_temp(planet: &mut Planetismal, ecosphere_radius: &f64) ->
         albedo = planet_albedo(&water, &clouds, &ice, &planet.surface_pressure_bar);
         optical_depth = opacity(planet.molecule_weight, planet.surface_pressure_bar);
         effective_temp = eff_temp(ecosphere_radius, &planet.a, &albedo);
-        greenhouse_rise = green_rise(
-            optical_depth,
-            effective_temp,
-            planet.surface_pressure_bar,
-        );
+        greenhouse_rise = green_rise(optical_depth, effective_temp, planet.surface_pressure_bar);
         surface_temp_kelvin = effective_temp + greenhouse_rise;
     }
     planet.hydrosphere = water;

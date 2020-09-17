@@ -1,22 +1,19 @@
 use serde::Serialize;
+use crate::planetismal::Planetismal;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Ring {
     pub a: f64,
     pub mass: f64,
-    pub composition: f64,
-    pub color: f64,
     pub width: f64,
 }
 
 impl Ring {
-    pub fn new() -> Self {
+    pub fn new(roche_limit: f64, moon: &Planetismal) -> Self {
         Ring {
-            a: 0.0,
-            mass: 0.0,
-            composition: 0.0,
-            color: 0.0,
-            width: 0.0,
+            a: roche_limit,
+            mass: moon.mass,
+            width: moon.radius * 2.0,
         }
     }
 }

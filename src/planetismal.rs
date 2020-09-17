@@ -1,8 +1,8 @@
 use crate::consts::PROTOPLANET_MASS;
-use crate::utils::*;
-use crate::enviro::*;
 use crate::consts::*;
+use crate::enviro::*;
 use crate::ring::Ring;
+use crate::utils::*;
 use rand::prelude::*;
 use serde::Serialize;
 
@@ -187,7 +187,7 @@ impl Planetismal {
 
 /// Orbital radius is in AU, eccentricity is unitless, and the stellar luminosity ratio is with respect to the sun.
 /// The value returned is the mass at which the planet begins to accrete gas as well as dust, and is in units of solar masses.
-fn critical_limit(
+pub fn critical_limit(
     b: &f64,
     orbital_radius: &f64,
     eccentricity: &f64,
@@ -258,7 +258,7 @@ pub fn coalesce_planetismals(primary_star_luminosity: &f64, planets: &mut Vec<Pl
                         } else {
                             *prev_p = capture_moon(&larger, &smaller);
                             prev_p.moons.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
-                            coalesce_planetismals(primary_star_luminosity, prev_p.moons, cloud_eccentricity);
+                            coalesce_planetismals(primary_star_luminosity, &mut prev_p.moons, cloud_eccentricity);
                         }
                     }
                 } else {
@@ -325,7 +325,8 @@ pub fn capture_moon(larger: &Planetismal, smaller: &Planetismal) -> Planetismal 
         m.a = rng.gen_range(0.0, hill_sphere);
 
         if m.a <= roche_limit {
-            println!("Ringgggg!");
+            let ring = Ring::new(roche_limit, m);
+            planet.rings.push(ring);
         }
 
         m.distance_to_primary_star = planet.a;

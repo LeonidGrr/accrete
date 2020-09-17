@@ -7,7 +7,7 @@ mod system;
 mod utils;
 
 use consts::*;
-use planetismal::Planetismal;
+use planetismal::*;
 use rand::prelude::*;
 use serde_json::json;
 use system::PrimaryStar;
@@ -92,7 +92,14 @@ pub fn run(
         .to_string();
         return AccreteOutput::Json(s);
     }
-    println!("{:#?}", planetary_system);
+    println!("{:#?}", planetary_system.planets);
+    for (i, p) in planetary_system.planets.iter().enumerate() {
+        println!("Planet {}", i);
+        println!("mass {}", p.mass);
+        println!("a {}", p.a);
+        println!("Moons: {}", p.moons.len());
+        println!("------------------");
+    }
     AccreteOutput::Struct(planetary_system.planets)
 }
 
