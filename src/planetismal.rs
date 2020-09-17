@@ -232,19 +232,6 @@ pub fn coalesce_planetismals(primary_star_luminosity: &f64, planets: &mut Vec<Pl
                         (dist1, dist2)
                     }
                 };
-
-                // Check for larger/smaller planetismal
-                let (mut larger, mut smaller) = match p.mass >= prev_p.mass {
-                    true => (p.clone(), prev_p.clone()),
-                    false => (prev_p.clone(), p.clone()),
-                };
-                
-                // Recalculate current radius ad density of bodies
-                larger.orbit_zone = orbital_zone(primary_star_luminosity, larger.distance_to_primary_star);
-                larger.radius = kothari_radius(&larger.mass, &larger.gas_giant, &larger.orbit_zone);
-
-                smaller.orbit_zone = orbital_zone(primary_star_luminosity, smaller.distance_to_primary_star);
-                smaller.radius = kothari_radius(&smaller.mass, &smaller.gas_giant, &smaller.orbit_zone);
                 
                 // Check if planetismals whithin effective zone of each other
                 if dist.abs() < dist1.abs() || dist.abs() < dist2.abs() {
@@ -252,11 +239,26 @@ pub fn coalesce_planetismals(primary_star_luminosity: &f64, planets: &mut Vec<Pl
                     if p.is_moon {
                         *prev_p = coalesce_two_planets(&prev_p, &p);
                     } else {
+                        // Check for larger/smaller planetismal
+                        let (mut larger, mut smaller) = match p.mass >= prev_p.mass {
+                            true => (p.clone(), prev_p.clone()),
+                            false => (prev_p.clone(), p.clone()),
+                        };
+                
+                        // Recalculate current radius ad density of bodies
+                        larger.orbit_zone = orbital_zone(primary_star_luminosity, larger.distance_to_primary_star);
+                        larger.radius = kothari_radius(&larger.mass, &larger.gas_giant, &larger.orbit_zone);
+
+                        smaller.orbit_zone = orbital_zone(primary_star_luminosity, smaller.distance_to_primary_star);
+                        smaller.radius = kothari_radius(&smaller.mass, &smaller.gas_giant, &smaller.orbit_zone);
+                        
+                        // Planetismals collide or one capture another
                         if dist.abs() < (larger.radius + smaller.radius) / KM_PER_AU {
                             *prev_p = coalesce_two_planets(&prev_p, &p);
                         } else {
                             *prev_p = capture_moon(&larger, &smaller);
                         }
+                    }
                 } else {
                     next_planets.push(p.clone());
                 }
