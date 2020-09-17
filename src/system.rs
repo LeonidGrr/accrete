@@ -37,8 +37,6 @@ pub struct PrimaryStar {
     pub ecosphere: (f64, f64),
     pub planets: Vec<Planetismal>,
     pub cloud_eccentricity: f64,
-    pub planetismal_inner_bound: f64,
-    pub planetismal_outer_bound: f64,
     pub dust_density_coeff: f64,
     pub planets_limit: Option<usize>,
     pub k: f64,
@@ -56,8 +54,6 @@ impl PrimaryStar {
         b: f64,
     ) -> Self {
         let stellar_luminosity = luminosity(stellar_mass);
-        let planetismal_inner_bound = innermost_planet(stellar_mass);
-        let planetismal_outer_bound = outermost_planet(stellar_mass);
         let main_seq_life = main_sequence_age(stellar_mass, stellar_luminosity);
 
         let stellar_radius_au = stellar_radius_au(stellar_mass);
@@ -81,8 +77,6 @@ impl PrimaryStar {
             dust_density_coeff,
             planets_limit,
             cloud_eccentricity,
-            planetismal_inner_bound,
-            planetismal_outer_bound,
             stellar_surface_temp,
             stellar_radius_au,
             spectral_class,
@@ -102,10 +96,10 @@ impl PrimaryStar {
             dust_density_coeff,
             planets_limit,
             cloud_eccentricity,
-            planetismal_inner_bound,
-            planetismal_outer_bound,
             ..
         } = self;
+        let planetismal_inner_bound = innermost_planet(stellar_mass);
+        let planetismal_outer_bound = outermost_planet(stellar_mass);
         let inner_dust = 0.0;
         let outer_dust = stellar_dust_limit(&stellar_mass);
         let dust_band = DustBand::new(outer_dust, inner_dust, true, true);
