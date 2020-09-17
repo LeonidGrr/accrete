@@ -288,10 +288,10 @@ pub fn capture_moon(larger: &Planetismal, smaller: &Planetismal) -> Planetismal 
         let roche_limit = roche_limit_au(&planet.mass, &m.mass, &m.radius);
         m.a = rng.gen_range(0.0, hill_sphere);
 
-        // if m.a <= roche_limit {
+        if m.a <= roche_limit {
             let ring = Ring::new(roche_limit, m);
             planet.rings.push(ring);
-        // }
+        }
 
         m.distance_to_primary_star = planet.a;
         planet.mass_with_moons += m.mass;
