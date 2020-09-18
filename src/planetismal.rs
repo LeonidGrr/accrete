@@ -232,8 +232,8 @@ impl Planetismal {
                     &k,
                 );
 
-                // let min = 0.0;
-                // let max = 0.01 * p.mass.powf(1.0 / 3.0);
+                let min = 0.0;
+                let max = 0.01 * p.mass.powf(1.0 / 3.0);
                 update_dust_lanes(&mut dust_bands, min, max, &p.mass, &crit_mass);
                 compress_dust_lanes(&mut dust_bands);
 
