@@ -1,20 +1,20 @@
 mod consts;
 mod dust;
 mod enviro;
-mod planetismal;
+mod planetesimal;
 mod ring;
 mod system;
 mod utils;
 
 use consts::*;
-use planetismal::*;
+use planetesimal::*;
 use rand::prelude::*;
 use serde_json::json;
 use system::PrimaryStar;
 
 #[derive(Debug)]
 pub enum AccreteOutput {
-    Struct(Vec<Planetismal>),
+    Struct(Vec<Planetesimal>),
     Json(String),
 }
 
@@ -88,11 +88,12 @@ pub fn run(
         .to_string();
         return AccreteOutput::Json(s);
     }
-    println!("{:#?}", planetary_system.planets);
+    // println!("{:#?}", planetary_system.planets);
     for (i, p) in planetary_system.planets.iter().enumerate() {
         println!("Planet {}", i);
         println!("mass {}", p.mass);
         println!("a {}", p.a);
+        println!("is giant: {}", p.gas_giant);
         println!("Moons: {}", p.moons.len());
         println!("Rings: {}", p.rings.len());
         println!("------------------");

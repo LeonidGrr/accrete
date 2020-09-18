@@ -3,12 +3,11 @@ use crate::consts::*;
 use crate::enviro::*;
 use crate::ring::*;
 use crate::utils::*;
-use crate::dust::*;
 use rand::prelude::*;
 use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
-pub struct Planetismal {
+pub struct Planetesimal {
     // axis, AU
     pub a: f64,
     // eccentricity of the orbit, unitless
@@ -50,13 +49,13 @@ pub struct Planetismal {
     pub hydrosphere: f64,
     pub cloud_cover: f64,
     pub ice_cover: f64,
-    pub moons: Vec<Planetismal>,
+    pub moons: Vec<Planetesimal>,
     pub rings: Vec<Ring>,
     pub is_moon: bool,
     pub is_spherical: bool,
 }
 
-impl Planetismal {
+impl Planetesimal {
     pub fn new(
         planetesimal_inner_bound: &f64,
         planetesimal_outer_bound: &f64,
@@ -67,7 +66,7 @@ impl Planetismal {
         let a = rng.gen_range(planetesimal_inner_bound, planetesimal_outer_bound);
         let e = random_eccentricity(rng.gen_range(0.0, 1.0), cloud_eccentricity);
 
-        Planetismal {
+        Planetesimal {
             a,
             e,
             distance_to_primary_star: a,
@@ -182,84 +181,6 @@ impl Planetismal {
         self.escape_velocity_km_per_sec = self.escape_velocity / CM_PER_KM;
         self.is_tidally_locked = check_tidal_lock(self.day_hours, self.orbital_period_days);
     }
-
-    pub fn distribute_moons(&mut self, stellar_luminosity: &f64, k: &f64, b: &f64, dust_density_coeff: &f64, cloud_eccentricity: &f64) {
-        let Self {
-            mass,
-            moons,
-            // a,
-            // e,
-            ..
-        } = self;
-        let planetismal_inner_bound = 0.001 * mass.powf(1.0/3.0);
-        let planetismal_outer_bound = 4.0 * mass.powf(1.0/3.0);
-
-        // let planetismal_outer_bound = hill_sphere_au(a, e, mass, &PROTOPLANET_MASS); 
-
-        // let inner_dust = 0.001 * mass.powf(1.0/3.0);
-        let inner_dust = 0.0;
-        let outer_dust = 4.0 * mass.powf(1.0/3.0);
-        
-        let dust_band = DustBand::new(outer_dust, inner_dust, true, true);
-        // let dust_band = DustBand::new(planetismal_outer_bound, planetismal_inner_bound, true, true);
-
-        let mut dust_bands = Vec::new();
-        dust_bands.push(dust_band);
-        let mut dust_left = true;
-
-        while dust_left {
-            let mut p = Planetismal::new(
-                &planetismal_inner_bound,
-                &planetismal_outer_bound,
-                &cloud_eccentricity,
-            );
-
-            // let inside_range = 0.0;
-            // let outside_range = 0.01 * p.mass.powf(1.0 / 3.0);
-            let inside_range = inner_effect_limit(&p.a, &p.e, &p.mass, &cloud_eccentricity);
-            let outside_range = outer_effect_limit(&p.a, &p.e, &p.mass, &cloud_eccentricity);
-
-            if dust_availible(
-                &dust_bands,
-                &inside_range,
-                &outside_range,
-            ) {
-                let dust_density = dust_density(&dust_density_coeff, mass, &p.a);
-                let crit_mass = critical_limit(&b, &p.a, &p.e, &stellar_luminosity);
-                accrete_dust(
-                    &mut p,
-                    &mut dust_bands,
-                    &crit_mass,
-                    &dust_density,
-                    &cloud_eccentricity,
-                    &k,
-                );
-
-                let min = inner_effect_limit(&p.a, &p.e, &p.mass, &cloud_eccentricity);
-                let max = outer_effect_limit(&p.a, &p.e, &p.mass, &cloud_eccentricity);
-                update_dust_lanes(&mut dust_bands, min, max, &p.mass, &crit_mass);
-                compress_dust_lanes(&mut dust_bands);
-
-                if p.mass != 0.0 && p.mass != PROTOPLANET_MASS {
-                    if p.mass > crit_mass {
-                        p.gas_giant = true;
-                    }
-                    moons.push(p);
-                    moons.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
-                    coalesce_planetismals(stellar_luminosity, moons, &cloud_eccentricity);
-                } else {
-                    // belt?
-                    // console.debug(sprintf(".. failed due to large neighbor.\n"));
-                }
-            }
-
-            dust_left = dust_availible(
-                &dust_bands,
-                &planetismal_inner_bound,
-                &planetismal_outer_bound,
-            );
-        }
-    }
 }
 
 /// Orbital radius is in AU, eccentricity is unitless, and the stellar luminosity ratio is with respect to the sun.
@@ -275,67 +196,42 @@ pub fn critical_limit(
     b * temp.powf(-0.75)
 }
 
-/// Check planetismal coalescence
-pub fn coalesce_planetismals(primary_star_luminosity: &f64, planets: &mut Vec<Planetismal>, cloud_eccentricity: &f64) {
+/// Check planetesimal coalescence
+pub fn coalesce_planetesimals(primary_star_luminosity: &f64, planets: &mut Vec<Planetesimal>, cloud_eccentricity: &f64) {
     let mut next_planets = Vec::new();
     for (i, p) in planets.iter().enumerate() {
         if i == 0 {
             next_planets.push(p.clone());
         } else {
             if let Some(prev_p) = next_planets.last_mut() {
-                let dist = prev_p.a - p.a;
-                let (dist1, dist2) = match dist > 0.0 {
-                    true => {
-                        let dist1 =
-                            outer_effect_limit(&p.a, &p.e, &p.mass, cloud_eccentricity) - p.a;
-                        let dist2 = prev_p.a
-                            - inner_effect_limit(
-                                &prev_p.a,
-                                &prev_p.e,
-                                &prev_p.mass,
-                                cloud_eccentricity,
-                            );
-                        (dist1, dist2)
-                    }
-                    false => {
-                        let dist1 =
-                            p.a - inner_effect_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
-                        let dist2 = outer_effect_limit(
-                            &prev_p.a,
-                            &prev_p.e,
-                            &prev_p.mass,
-                            cloud_eccentricity,
-                        ) - prev_p.a;
-                        (dist1, dist2)
-                    }
-                };
-                
-                // Check if planetismals whithin effective zone of each other
-                if dist.abs() < dist1.abs() || dist.abs() < dist2.abs() {
+                // Check if planetesimals whithin effective zone of each other
+                if check_planetesimals_intersect(p, prev_p, cloud_eccentricity) {
                     // Moon not likely to capture other moon
                     if p.is_moon {
                         *prev_p = coalesce_two_planets(&prev_p, &p);
                     } else {
-                        // Check for larger/smaller planetismal
+                        // Check for larger/smaller planetesimal
                         let (mut larger, mut smaller) = match p.mass >= prev_p.mass {
                             true => (p.clone(), prev_p.clone()),
                             false => (prev_p.clone(), p.clone()),
                         };
                 
-                        // Recalculate current radius ad density of bodies
+                        // Recalculate current radius of bodies
                         larger.orbit_zone = orbital_zone(primary_star_luminosity, larger.distance_to_primary_star);
                         larger.radius = kothari_radius(&larger.mass, &larger.gas_giant, &larger.orbit_zone);
 
                         smaller.orbit_zone = orbital_zone(primary_star_luminosity, smaller.distance_to_primary_star);
                         smaller.radius = kothari_radius(&smaller.mass, &smaller.gas_giant, &smaller.orbit_zone);
+
+                        let roche_limit = roche_limit_au(&larger.mass, &smaller.mass, &smaller.radius);
                         
-                        // Planetismals collide or one capture another
-                        if dist.abs() < (larger.radius + smaller.radius) / KM_PER_AU {
+                        // Planetesimals collide or one capture another
+                        if (prev_p.a - p.a).abs() <= roche_limit {
                             *prev_p = coalesce_two_planets(&prev_p, &p);
                         } else {
                             *prev_p = capture_moon(&larger, &smaller);
                             prev_p.moons.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
-                            coalesce_planetismals(primary_star_luminosity, &mut prev_p.moons, cloud_eccentricity);
+                            coalesce_planetesimals(primary_star_luminosity, &mut prev_p.moons, cloud_eccentricity);
                             moons_to_rings(prev_p);
                         }
                     }
@@ -348,8 +244,41 @@ pub fn coalesce_planetismals(primary_star_luminosity: &f64, planets: &mut Vec<Pl
     *planets = next_planets;
 }
 
-/// Two planetismals collide and form one planet
-pub fn coalesce_two_planets(a: &Planetismal, b: &Planetismal) -> Planetismal {
+/// Check planetesimal intersection
+fn check_planetesimals_intersect(p: &Planetesimal, prev_p: &Planetesimal, cloud_eccentricity: &f64) -> bool {
+    let dist = prev_p.a - p.a;
+    let (dist1, dist2) = match dist > 0.0 {
+        true => {
+            let dist1 =
+                outer_effect_limit(&p.a, &p.e, &p.mass, cloud_eccentricity) - p.a;
+                
+            let dist2 = prev_p.a
+                - inner_effect_limit(
+                    &prev_p.a,
+                    &prev_p.e,
+                    &prev_p.mass,
+                    cloud_eccentricity,
+                );
+            (dist1, dist2)
+            
+        }
+        false => {
+            let dist1 =
+                p.a - inner_effect_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
+            let dist2 = outer_effect_limit(
+                &prev_p.a,
+                &prev_p.e,
+                &prev_p.mass,
+                cloud_eccentricity,
+            ) - prev_p.a;
+            (dist1, dist2)
+        }
+    };
+    dist.abs() < dist1.abs() || dist.abs() < dist2.abs()
+}
+
+/// Two planetesimals collide and form one planet
+pub fn coalesce_two_planets(a: &Planetesimal, b: &Planetesimal) -> Planetesimal {
     let new_mass = a.mass + b.mass;
     let new_axis = new_mass / (a.mass / a.a + b.mass / b.a);
     let term1 = a.mass * (a.a * (1.0 - a.e.powf(2.0))).sqrt();
@@ -366,12 +295,12 @@ pub fn coalesce_two_planets(a: &Planetismal, b: &Planetismal) -> Planetismal {
 }
 
 /// Larger planetsimal capture smaller as moon
-pub fn capture_moon(larger: &Planetismal, smaller: &Planetismal) -> Planetismal {
+fn capture_moon(larger: &Planetesimal, smaller: &Planetesimal) -> Planetesimal {
     let mut planet = larger.clone();
     let mut moon = smaller.clone();
     moon.is_moon = true;
 
-    // Recalcualte combined mass of planet-moons system and planetary axis
+    // Recalcualte planetary axis
     let new_mass = planet.mass + moon.mass;
     let new_axis = new_mass / (planet.mass / planet.a + moon.mass / moon.a);
     let term1 = planet.mass * (planet.a * (1.0 - planet.e.powf(2.0))).sqrt();
@@ -387,6 +316,7 @@ pub fn capture_moon(larger: &Planetismal, smaller: &Planetismal) -> Planetismal 
     let mut rng = rand::thread_rng();
     planet.moons.append(&mut moon.moons);
     planet.moons.push(moon);
+    let planet_outer_moon = 4.0 * &planet.mass.powf(0.33);
 
     for m in planet.moons.iter_mut() {
         let hill_sphere = hill_sphere_au(
@@ -395,15 +325,14 @@ pub fn capture_moon(larger: &Planetismal, smaller: &Planetismal) -> Planetismal 
             &planet.mass,
             &m.mass,
         );
-        m.a = rng.gen_range(0.0, hill_sphere);
+        m.a = rng.gen_range(0.0, planet_outer_moon);
         m.distance_to_primary_star = planet.a;
     }
 
-    // Check collisions between moons
     planet
 }
 
-pub fn moons_to_rings(planet: &mut Planetismal) {
+fn moons_to_rings(planet: &mut Planetesimal) {
     let mut next_moons = Vec::new();
 
     for m in planet.moons.iter_mut() {
@@ -422,4 +351,3 @@ pub fn moons_to_rings(planet: &mut Planetismal) {
 
     planet.moons = next_moons;
 }
- 

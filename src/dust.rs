@@ -1,5 +1,5 @@
 use crate::consts::*;
-use crate::planetismal::*;
+use crate::planetesimal::*;
 use crate::utils::*;
 
 #[derive(Debug, Copy, Clone)]
@@ -32,22 +32,22 @@ pub fn dust_availible(dust_bands: &Vec<DustBand>, inside_range: &f64, outside_ra
 }
 
 pub fn accrete_dust(
-    planetismal: &mut Planetismal,
+    planetesimal: &mut Planetesimal,
     dust_bands: &mut Vec<DustBand>,
     crit_mass: &f64,
     dust_density: &f64,
     cloud_eccentricity: &f64,
     k: &f64,
 ) {
-    let mut new_mass = planetismal.mass;
+    let mut new_mass = planetesimal.mass;
 
     loop {
-        planetismal.mass = new_mass;
+        planetesimal.mass = new_mass;
         new_mass = 0.0;
 
         for d in dust_bands.iter_mut() {
             new_mass += collect_dust(
-                planetismal,
+                planetesimal,
                 crit_mass,
                 d,
                 cloud_eccentricity,
@@ -56,26 +56,26 @@ pub fn accrete_dust(
             );
         }
 
-        if !(new_mass - planetismal.mass > 0.0001 * planetismal.mass) {
+        if !(new_mass - planetesimal.mass >= 0.0001 * planetesimal.mass) {
             break;
         }
     }
-    planetismal.mass = new_mass;
+    planetesimal.mass = new_mass;
 }
 
 pub fn collect_dust(
-    p: &Planetismal,
+    p: &Planetesimal,
     crit_mass: &f64,
     dust_band: &mut DustBand,
     cloud_eccentricity: &f64,
     dust_density: &f64,
     k: &f64,
 ) -> f64 {
-    let Planetismal { mass, a, e, .. } = p;
+    let Planetesimal { mass, a, e, .. } = p;
     let mut temp = mass / (1.0 + mass);
-    let reduced_mass = temp.powf(0.25);
-    let mut r_inner = inner_effect_limit(a, e, mass, cloud_eccentricity);
-    let r_outer = outer_effect_limit(a, e, mass, cloud_eccentricity);
+    let reduced_mass = temp.powf(1.0 / 4.0);
+    let mut r_inner = inner_effect_limit(a, e, &reduced_mass, cloud_eccentricity);
+    let r_outer = outer_effect_limit(a, e, &reduced_mass, cloud_eccentricity);
 
     if r_inner < 0.0 {
         r_inner = 0.0;
@@ -92,7 +92,6 @@ pub fn collect_dust(
 
     let mass_density = match mass < crit_mass || dust_band.gas_present {
         true => mass_density(k, &temp_density, &crit_mass, &mass),
-        // K * temp_density / (1.0 + (crit_mass / mass).sqrt() * (K - 1.0)),
         false => temp_density,
     };
 
@@ -181,7 +180,7 @@ pub fn compress_dust_lanes(dust_bands: &mut Vec<DustBand>) {
 }
 
 pub fn stellar_dust_limit(stellar_mass_ratio: &f64) -> f64 {
-    200.0 * stellar_mass_ratio.powf(0.33)
+    200.0 * stellar_mass_ratio.powf(1.0 / 3.0)
 }
 
 pub fn mass_density(k: &f64, dust_density: &f64, critical_mass: &f64, mass: &f64) -> f64 {

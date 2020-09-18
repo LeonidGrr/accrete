@@ -1,5 +1,5 @@
 use crate::consts::*;
-use crate::planetismal::Planetismal;
+use crate::planetesimal::Planetesimal;
 use crate::utils::*;
 
 /// This function, given the orbital radius of a planet in AU, returns the orbital 'zone' of the particle.
@@ -102,7 +102,7 @@ pub fn period(separation: &f64, small_mass: &f64, large_mass: &f64) -> f64 {
 /// Fogg's information for this routine came from Dole "Habitable Planets for Man", Blaisdell Publishing Company, NY, 1964. From this, he came up with his eq.12, which is the equation for the base_angular_velocity below.
 /// Going a bit further, he found an equation for the change in angular velocity per time (dw/dt) from P. Goldreich and S. Soter's paper "Q in the Solar System" in Icarus, vol 5, pp.375-389 (1966).
 /// Comparing to the change in angular velocity for the Earth, we can come up with an approximation for our new planet (his eq.13) and take that into account.
-pub fn day_length(planet: &mut Planetismal, stellar_mass: &f64, main_sequence_age: &f64) -> f64 {
+pub fn day_length(planet: &mut Planetesimal, stellar_mass: &f64, main_sequence_age: &f64) -> f64 {
     let planet_mass_in_grams = planet.mass * SOLAR_MASS_IN_GRAMS;
     let equatorial_radius_in_cm = planet.radius * CM_PER_KM;
     let year_in_hours = planet.orbital_period_days;
@@ -407,7 +407,7 @@ pub fn get_earth_mass(mass: f64) -> f64 {
 }
 
 /// The temperature calculated is in degrees Kelvin.
-pub fn iterate_surface_temp(planet: &mut Planetismal, ecosphere_radius: &f64) -> f64 {
+pub fn iterate_surface_temp(planet: &mut Planetesimal, ecosphere_radius: &f64) -> f64 {
     let mut albedo = 0.0;
     let mut water = 0.0;
     let mut clouds = 0.0;

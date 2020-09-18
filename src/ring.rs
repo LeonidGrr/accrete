@@ -1,5 +1,5 @@
 use serde::Serialize;
-use crate::planetismal::Planetismal;
+use crate::planetesimal::Planetesimal;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Ring {
@@ -9,7 +9,7 @@ pub struct Ring {
 }
 
 impl Ring {
-    pub fn new(roche_limit: f64, moon: &Planetismal) -> Self {
+    pub fn new(roche_limit: f64, moon: &Planetesimal) -> Self {
         Ring {
             a: roche_limit,
             mass: moon.mass,

@@ -1,10 +1,10 @@
 use crate::consts::PROTOPLANET_MASS;
 use crate::consts::*;
 use crate::dust::*;
-use crate::planetismal::*;
+use crate::planetesimal::*;
 use crate::utils::*;
 
-/// [Star classifier by Harvard system](https://en.wikipedia.org/wiki/Stellar_classification)
+/// [Star class by Harvard system](https://en.wikipedia.org/wiki/Stellar_classification)
 /// [Additional info](https://www.enchantedlearning.com/subjects/astronomy/stars/startypes.shtml)
 #[derive(Debug, Clone)]
 pub enum SpectralClass {
@@ -33,7 +33,7 @@ pub struct PrimaryStar {
     pub main_seq_life: f64,
     // pub age: f64,
     pub ecosphere: (f64, f64),
-    pub planets: Vec<Planetismal>,
+    pub planets: Vec<Planetesimal>,
     pub cloud_eccentricity: f64,
     pub dust_density_coeff: f64,
     pub planets_limit: Option<usize>,
@@ -53,14 +53,11 @@ impl PrimaryStar {
     ) -> Self {
         let stellar_luminosity = luminosity(stellar_mass);
         let main_seq_life = main_sequence_age(stellar_mass, stellar_luminosity);
-
         let stellar_radius_au = stellar_radius_au(stellar_mass);
         let stellar_surface_temp = stellar_surface_temp(stellar_radius_au, stellar_luminosity);
         let spectral_class = spectral_class(&stellar_surface_temp);
-
         let bv_color_index = bv_color_index(stellar_surface_temp);
         let color = bv_to_rgb(bv_color_index);
-
         let ecosphere = ecosphere(&stellar_luminosity, &spectral_class);
 
         Self {
@@ -96,8 +93,8 @@ impl PrimaryStar {
             cloud_eccentricity,
             ..
         } = self;
-        let planetismal_inner_bound = innermost_planet(stellar_mass);
-        let planetismal_outer_bound = outermost_planet(stellar_mass);
+        let planetesimal_inner_bound = innermost_planet(stellar_mass);
+        let planetesimal_outer_bound = outermost_planet(stellar_mass);
         let inner_dust = 0.0;
         let outer_dust = stellar_dust_limit(&stellar_mass);
         let dust_band = DustBand::new(outer_dust, inner_dust, true, true);
@@ -106,9 +103,9 @@ impl PrimaryStar {
         let mut dust_left = true;
 
         while dust_left {
-            let mut p = Planetismal::new(
-                &planetismal_inner_bound,
-                &planetismal_outer_bound,
+            let mut p = Planetesimal::new(
+                &planetesimal_inner_bound,
+                &planetesimal_outer_bound,
                 &cloud_eccentricity,
             );
 
@@ -140,20 +137,18 @@ impl PrimaryStar {
                     if p.mass > crit_mass {
                         p.gas_giant = true;
                     }
-                    p.distribute_moons(stellar_luminosity, k, b, dust_density_coeff, cloud_eccentricity);
                     planets.push(p);
                     planets.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
-                    coalesce_planetismals(stellar_luminosity, planets, &cloud_eccentricity);
+                    coalesce_planetesimals(stellar_luminosity, planets, &cloud_eccentricity);
                 } else {
                     // belt?
-                    // console.debug(sprintf(".. failed due to large neighbor.\n"));
                 }
             }
 
             let dust_still_left = dust_availible(
                 &dust_bands,
-                &planetismal_inner_bound,
-                &planetismal_outer_bound,
+                &planetesimal_inner_bound,
+                &planetesimal_outer_bound,
             );
 
             dust_left = match planets_limit {
