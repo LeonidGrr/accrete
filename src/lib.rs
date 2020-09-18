@@ -94,6 +94,7 @@ pub fn run(
         println!("mass {}", p.mass);
         println!("a {}", p.a);
         println!("Moons: {}", p.moons.len());
+        println!("Rings: {}", p.rings.len());
         println!("------------------");
     }
     AccreteOutput::Struct(planetary_system.planets)
