@@ -140,7 +140,7 @@ impl PrimaryStar {
                     if p.mass > crit_mass {
                         p.gas_giant = true;
                     }
-
+                    p.distribute_moons(stellar_luminosity, k, b, dust_density_coeff, cloud_eccentricity);
                     planets.push(p);
                     planets.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
                     coalesce_planetismals(stellar_luminosity, planets, &cloud_eccentricity);
