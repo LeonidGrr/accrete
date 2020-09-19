@@ -30,6 +30,8 @@ pub fn dust_availible(dust_bands: &Vec<DustBand>, inside_range: &f64, outside_ra
     })
 }
 
+/// "The center of mass is occupied by a star with a mass of one unit (one solar mass). All particles in the cloud are moving on elliptical orbits, with the center of mass at one focus. The density of dust (p1) within the cloud depends on a function of the form p1 = A exp (-arl/n). The overall density of gas and dust (p2) within the cloud equals Kpl, where r is distance from the center of mass (in astronomical units, a.u.) and A. a. n. and K (the vas/dust ratio) are constants."
+/// "There is a spherically symmetrical cloud of dust and gas with a constant ratio of gas to dust, the density decreasing with distance from the center."
 pub fn accrete_dust(
     mass: &mut f64,
     new_dust: &mut f64,

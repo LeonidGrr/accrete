@@ -453,3 +453,7 @@ pub fn iterate_surface_temp(planet: &mut Planetesimal, ecosphere_radius: &f64) -
 pub fn check_tidal_lock(day_length: f64, orbital_period: f64) -> bool {
     day_length == orbital_period * day_length
 }
+
+// Habitable moons:
+// Based on tidal heating models, scientists have defined zones in satellite systems similarly to those of planetary systems. One such zone is the circumplanetary habitable zone (or "habitable edge"). According to this theory, moons closer to their planet than the habitable edge cannot support liquid water at their surface. When effects of eclipses as well as constraints from a satellite's orbital stability are included into this concept, one finds that — depending on a moon's orbital eccentricity — there is a minimum mass of roughly 0.2 solar masses for stars to host habitable moons within the stellar HZ.[48]
+// The magnetic environment of exomoons, which is critically triggered by the intrinsic magnetic field of the host planet, has been identified as another effect on exomoon habitability.[49] Most notably, it was found that moons at distances between about 5 and 20 planetary radii from a giant planet can be habitable from an illumination and tidal heating point of view, but still the planetary magnetosphere would critically influence their habitability.

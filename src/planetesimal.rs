@@ -320,10 +320,9 @@ fn capture_moon(larger: &Planetesimal, smaller: &Planetesimal) -> Planetesimal {
 
 fn moons_to_rings(planet: &mut Planetesimal) {
     let mut next_moons = Vec::new();
-
     for m in planet.moons.iter_mut() {
         let roche_limit = roche_limit_au(&planet.mass, &m.mass, &m.radius);
-        if m.a <= roche_limit {
+        if m.a <= roche_limit * 2.0 {
             let ring = Ring::new(roche_limit, m);
             planet.rings.push(ring);
         } else {

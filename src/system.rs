@@ -13,7 +13,6 @@ pub struct PrimaryStar {
     pub bv_color_index: f64,
     pub color: String,
     pub main_seq_life: f64,
-    // pub age: f64,
     pub ecosphere: (f64, f64),
     pub planets: Vec<Planetesimal>,
     pub cloud_eccentricity: f64,
@@ -46,7 +45,6 @@ impl PrimaryStar {
             stellar_mass,
             stellar_luminosity,
             main_seq_life,
-            // age,
             ecosphere,
             planets: Vec::new(),
             k,
@@ -77,7 +75,6 @@ impl PrimaryStar {
         } = self;
         let planetesimal_inner_bound = innermost_planet(stellar_mass);
         let planetesimal_outer_bound = outermost_planet(stellar_mass);
-
         let inner_dust = 0.0;
         let outer_dust = stellar_dust_limit(&stellar_mass);
         let dust_band = DustBand::new(outer_dust, inner_dust, true, true);
@@ -94,13 +91,12 @@ impl PrimaryStar {
 
             let inside_range = inner_effect_limit(&p.a, &p.e, &p.mass, &cloud_eccentricity);
             let outside_range = outer_effect_limit(&p.a, &p.e, &p.mass, &cloud_eccentricity);
+            let dust_density = dust_density(&dust_density_coeff, &stellar_mass, &p.a);
+            let crit_mass = critical_limit(&b, &p.a, &p.e, &stellar_luminosity);
+            let mut gas_mass = 0.0;
+            let mut dust_mass = 0.0;
 
             if dust_availible(&dust_bands, &inside_range, &outside_range) {
-                let dust_density = dust_density(&dust_density_coeff, &stellar_mass, &p.a);
-                let crit_mass = critical_limit(&b, &p.a, &p.e, &stellar_luminosity);
-
-                let mut gas_mass = 0.0;
-                let mut dust_mass = 0.0;
                 accrete_dust(
                     &mut p.mass,
                     &mut dust_mass,
@@ -120,18 +116,14 @@ impl PrimaryStar {
                 update_dust_lanes(&mut dust_bands, min, max, &p.mass, &crit_mass);
                 compress_dust_lanes(&mut dust_bands);
 
-                if p.mass > PROTOPLANET_MASS {
-                    if p.mass > crit_mass {
-                        p.gas_giant = true;
-                    }
-                    planets.push(p);
-                    planets.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
-                    coalesce_planetesimals(stellar_luminosity, planets, &cloud_eccentricity);
-                } else {
-                    println!("Belt??");
+                if p.mass > crit_mass {
+                    p.gas_giant = true;
                 }
+                planets.push(p);
+                planets.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
+                coalesce_planetesimals(stellar_luminosity, planets, &cloud_eccentricity);
             }
-
+            
             let dust_still_left = dust_availible(
                 &dust_bands,
                 &planetesimal_inner_bound,
@@ -161,15 +153,14 @@ impl PrimaryStar {
                 main_seq_life,
                 ecosphere,
             );
-
-            // for moon in planet.moons.iter_mut() {
-            //     moon.derive_planetary_environment(
-            //         stellar_luminosity,
-            //         stellar_mass,
-            //         main_seq_life,
-            //         ecosphere,
-            //     );
-            // }
+            for moon in planet.moons.iter_mut() {
+                moon.derive_planetary_environment(
+                    stellar_luminosity,
+                    &planet.mass,
+                    main_seq_life,
+                    ecosphere,
+                );
+            }
         }
     }
 }

@@ -7,14 +7,13 @@ mod system;
 mod utils;
 
 use consts::*;
-use planetesimal::*;
 use rand::prelude::*;
 use serde_json::json;
 use system::PrimaryStar;
 
 #[derive(Debug)]
 pub enum AccreteOutput {
-    Struct(Vec<Planetesimal>),
+    Struct(PrimaryStar),
     Json(String),
 }
 
@@ -50,6 +49,8 @@ pub enum AccreteOutput {
 /// **to_json** - Output as JSON string.
 /// *Default: false*
 ///
+/// From original Dole paper:
+/// "Certain parameters must be specified to obtain quantitative results: the density distribution within the cloud; the ratio of gas to dust; a definition of critical mass, or the planetary mass above which a planet can begin to accumulate gas in addition to dust; and the orbital eccentricity of particles within the cloud. Also, a few rules for the coalescence and growth of planets must be established. When these parameters and rules have been set forth in a suitable manner, planetary systems very much like the solar system can be created. Multiple-star systems can be created by changing a single parameter, the density level within the cloud."
 pub fn run(
     planets_limit: Option<usize>,
     stellar_mass: Option<f64>,
@@ -90,21 +91,20 @@ pub fn run(
     }
     println!("{:#?}", planetary_system.planets);
     // for (i, p) in planetary_system.planets.iter().enumerate() {
-        // println!("Planet {}", i);
-        // println!("mass EM {}", p.mass * EARTH_MASSES_PER_SOLAR_MASS);
-        // println!("a {}", p.a);
-        // println!("is giant: {}", p.gas_giant);
-        // println!("Moons: {}", p.moons.len());
-        // println!("Rings: {}", p.rings.len());
-        // println!("------------------");
+    //     println!("Planet {}", i);
+    //     println!("mass EM {}", p.mass * EARTH_MASSES_PER_SOLAR_MASS);
+    //     println!("a {}", p.a);
+    //     println!("is giant: {}", p.gas_giant);
+    //     println!("Moons: {}", p.moons.len());
+    //     println!("Rings: {}", p.rings.len());
+    //     println!("------------------");
     // }
-    AccreteOutput::Struct(planetary_system.planets)
+    AccreteOutput::Struct(planetary_system)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn run_with_default_config() {
         run(None, None, None, None, None, None, false);
@@ -157,17 +157,7 @@ mod tests {
 
     #[test]
     fn planets_limit() {
-        run(Some(2), None, None, None, None, None, false);
-    }
-
-    #[test]
-    fn low_density_dust() {
-        run(None, None, Some(0.00125), None, None, None, false);
-    }
-
-    #[test]
-    fn high_density_dust() {
-        run(None, None, Some(0.05), None, None, None, false);
+        run(Some(15), None, None, None, None, None, false);
     }
 
     #[test]
@@ -179,4 +169,17 @@ mod tests {
     fn small_star() {
         run(None, Some(0.3), None, None, None, None, false);
     }
+
+    // "Even small increases in A result in large increases in the total mass of the systems produced; increasing A also decreases the average number of planets per system. As may be seen in Figure 17, for A = 0.003 and 0.006 the planetary system has become a binary star sys-tem, the body near 9 a.u. having grown large enough to be considered a red dwarf star. Observationally, the two stars of smallest mass now known are members of a binary system designated L726-8; each star has a mass estimated at about 0.04Ms (about 40 times the mass of Jupiter) or 13,000M e. The lower theoretical limit to the mass of a star is believed to be near 0.02Ms. It will be noticed that the binary star systems still contain numerous planetary bodies. As A is increased still more the systems become multiple-star systems and the number of planetary companions diminishes. Actually, the results at the higher values of A should be considered only suggestive of the general trend, since the total mass of the "planetary" bodies is now becoming fairly high with respect to that of the central body, so that the original simplifying assumptions, which were adequate when the total planetary mass was well below 0.01Ms, no longer apply so satisfactorily. The gravitational attractions of the several large masses for each other can no longer be considered to have negligible effects on the secular stability of the systems. This is pushing the ACRETE program somewhat beyond its original intent (to create planetary systems similar to the solar system). However, it would be readily possible to modify the program slightly to provide more rigorously for cases in which some of the planetary bodies grow to stellar mass. In any event, the general trend is clear. Simply increasing the value assigned to one parameter makes it possible to generate widely spaced binary and multiple-star systems."
+
+    #[test]
+    fn high_density_dust() {
+        run(None, None, Some(0.05), None, None, None, false);
+    }
+
+    #[test]
+    fn low_density_dust() {
+        run(None, None, Some(0.00125), None, None, None, false);
+    }
+
 }

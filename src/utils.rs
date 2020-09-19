@@ -6,12 +6,13 @@ pub fn about(value: f64, variation: f64) -> f64 {
     rng.gen_range(value - variation, value + variation)
 }
 
-pub fn innermost_planet(stellar_mass_ratio: &f64) -> f64 {
-    0.3 * stellar_mass_ratio.powf(0.33)
-}
-
+/// "...the semimajor axes of planetary nuclei can never be greater than 50 distance units, which effectively sets an outer boundary to the problem. An inner boundary was also established, arbitrarily at 0.3 distance unit. (More than 92 percent of the total cloud mass lies between these bounds.)"
 pub fn outermost_planet(stellar_mass_ratio: &f64) -> f64 {
     50.0 * stellar_mass_ratio.powf(0.33)
+}
+
+pub fn innermost_planet(stellar_mass_ratio: &f64) -> f64 {
+    0.3 * stellar_mass_ratio.powf(0.33)
 }
 
 pub fn inner_effect_limit(a: &f64, e: &f64, mass: &f64, cloud_eccentricity: &f64) -> f64 {
@@ -36,10 +37,13 @@ pub fn random_eccentricity(random: f64, cloud_eccentricity: &f64) -> f64 {
     1.0 - random.powf(*cloud_eccentricity)
 }
 
+
+/// Roche limit for planet / moon system in AU. Moon radius passes in AU, masses in solar mass.
 pub fn roche_limit_au(planet_mass: &f64, moon_mass: &f64, moon_radius: &f64) -> f64 {
     moon_radius / KM_PER_AU * (2.0 * (planet_mass / moon_mass)).powf(1.0 / 3.0)
 }
 
+/// Hill sphere radius for planet / moon system in AU.
 pub fn hill_sphere_au(
     planet_axis: &f64,
     planet_eccn: &f64,
@@ -264,5 +268,14 @@ mod tests {
     fn check_sun_color() {
         let color_sun = bv_to_rgb(0.6);
         assert_eq!("#fff3ea", color_sun);
+    }
+
+    #[test]
+    fn check_earth_moon_roche_limit() {
+        let earth_mass = 2.988000001494E-6;
+        let moon_mass = earth_mass * 0.012;
+        let moon_radius =  1737.5;
+        let earth_moon_roche_limit = roche_limit_au(&earth_mass, &moon_mass, &moon_radius) * KM_PER_AU;
+        assert!(earth_moon_roche_limit > 9400.0 && earth_moon_roche_limit < 9600.0);
     }
 }
