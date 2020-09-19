@@ -40,7 +40,12 @@ pub fn roche_limit_au(planet_mass: &f64, moon_mass: &f64, moon_radius: &f64) -> 
     moon_radius / KM_PER_AU * (2.0 * (planet_mass / moon_mass)).powf(1.0 / 3.0)
 }
 
-pub fn hill_sphere_au(planet_axis: &f64, planet_eccn: &f64, planet_mass: &f64, moon_mass: &f64) -> f64 {
+pub fn hill_sphere_au(
+    planet_axis: &f64,
+    planet_eccn: &f64,
+    planet_mass: &f64,
+    moon_mass: &f64,
+) -> f64 {
     planet_axis * (1.0 - planet_eccn) * (moon_mass / (3.0 * planet_mass)).powf(1.0 / 3.0)
 }
 
@@ -194,7 +199,7 @@ pub fn spectral_class(stellar_surface_temp: &f64) -> SpectralClass {
         t if t >= 1300.0 && t < 2400.0 => SpectralClass::L,
         t if t >= 550.0 && t < 1300.0 => SpectralClass::T,
         t if t >= 273.15 && t < 550.0 => SpectralClass::Y,
-        _ => SpectralClass:: ROGUE,
+        _ => SpectralClass::ROGUE,
     }
 }
 

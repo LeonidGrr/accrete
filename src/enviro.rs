@@ -451,7 +451,7 @@ pub fn iterate_surface_temp(planet: &mut Planetesimal, ecosphere_radius: &f64) -
 }
 
 pub fn check_tidal_lock(day_length: f64, orbital_period: f64) -> bool {
-    day_length == orbital_period * 24.0
+    day_length == orbital_period * day_length
 }
 
 pub fn get_smallest_molecular_weight(m: f64) -> String {

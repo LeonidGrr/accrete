@@ -1,5 +1,5 @@
-use serde::Serialize;
 use crate::planetesimal::Planetesimal;
+use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Ring {

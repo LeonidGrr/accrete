@@ -77,7 +77,7 @@ impl PrimaryStar {
         } = self;
         let planetesimal_inner_bound = innermost_planet(stellar_mass);
         let planetesimal_outer_bound = outermost_planet(stellar_mass);
-        
+
         let inner_dust = 0.0;
         let outer_dust = stellar_dust_limit(&stellar_mass);
         let dust_band = DustBand::new(outer_dust, inner_dust, true, true);
@@ -95,21 +95,28 @@ impl PrimaryStar {
             let inside_range = inner_effect_limit(&p.a, &p.e, &p.mass, &cloud_eccentricity);
             let outside_range = outer_effect_limit(&p.a, &p.e, &p.mass, &cloud_eccentricity);
 
-            if dust_availible(
-                &dust_bands,
-                &inside_range,
-                &outside_range,
-            ) {
+            if dust_availible(&dust_bands, &inside_range, &outside_range) {
                 let dust_density = dust_density(&dust_density_coeff, &stellar_mass, &p.a);
-
                 let crit_mass = critical_limit(&b, &p.a, &p.e, &stellar_luminosity);
 
-                accrete_dust(&mut p.mass, &mut p.dust_mass, &mut p.gas_mass, &mut p.a, &mut p.e, &crit_mass, &mut dust_bands, &cloud_eccentricity, &dust_density, k);
-
-                p.dust_mass += PROTOPLANET_MASS;
+                let mut gas_mass = 0.0;
+                let mut dust_mass = 0.0;
+                accrete_dust(
+                    &mut p.mass,
+                    &mut dust_mass,
+                    &mut gas_mass,
+                    &mut p.a,
+                    &mut p.e,
+                    &crit_mass,
+                    &mut dust_bands,
+                    &cloud_eccentricity,
+                    &dust_density,
+                    k,
+                );
 
                 let min = inner_effect_limit(&p.a, &p.e, &p.mass, &cloud_eccentricity);
                 let max = outer_effect_limit(&p.a, &p.e, &p.mass, &cloud_eccentricity);
+
                 update_dust_lanes(&mut dust_bands, min, max, &p.mass, &crit_mass);
                 compress_dust_lanes(&mut dust_bands);
 
