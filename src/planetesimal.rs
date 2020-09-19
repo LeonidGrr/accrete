@@ -38,7 +38,6 @@ pub struct Planetesimal {
     pub day_hours: f64,
     pub length_of_year: f64,
     pub molecule_weight: f64,
-    pub smallest_molecular_weight: String,
     pub volatile_gas_inventory: f64,
     pub greenhouse_effect: bool,
     pub albedo: f64,
@@ -52,7 +51,6 @@ pub struct Planetesimal {
     pub moons: Vec<Planetesimal>,
     pub rings: Vec<Ring>,
     pub is_moon: bool,
-    pub is_spherical: bool,
 }
 
 impl Planetesimal {
@@ -97,12 +95,10 @@ impl Planetesimal {
             ice_cover: 0.0,
             moons: Vec::new(),
             rings: Vec::new(),
-            smallest_molecular_weight: String::new(),
             length_of_year: 0.0,
             escape_velocity_km_per_sec: 0.0,
             is_tidally_locked: false,
             is_moon: false,
-            is_spherical: false,
         }
     }
 
@@ -174,7 +170,6 @@ impl Planetesimal {
 
         self.earth_masses = get_earth_mass(self.mass);
         self.earth_radii = self.radius / EARTH_RADIUS_IN_KM;
-        self.smallest_molecular_weight = get_smallest_molecular_weight(self.molecule_weight);
         self.length_of_year = self.orbital_period_days / 365.25;
         self.escape_velocity_km_per_sec = self.escape_velocity / CM_PER_KM;
         self.is_tidally_locked = check_tidal_lock(self.day_hours, self.orbital_period_days);
