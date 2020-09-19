@@ -12,6 +12,8 @@ pub struct Planetesimal {
     pub a: f64,
     // eccentricity of the orbit, unitless
     pub e: f64,
+    pub gas_mass: f64,
+    pub dust_mass: f64,
     pub distance_to_primary_star: f64,
     pub mass: f64,
     pub earth_masses: f64,
@@ -69,6 +71,8 @@ impl Planetesimal {
         Planetesimal {
             a,
             e,
+            gas_mass: 0.0,
+            dust_mass: 0.0,
             distance_to_primary_star: a,
             mass: PROTOPLANET_MASS,
             earth_masses: 0.0,
@@ -183,19 +187,6 @@ impl Planetesimal {
     }
 }
 
-/// Orbital radius is in AU, eccentricity is unitless, and the stellar luminosity ratio is with respect to the sun.
-/// The value returned is the mass at which the planet begins to accrete gas as well as dust, and is in units of solar masses.
-pub fn critical_limit(
-    b: &f64,
-    orbital_radius: &f64,
-    eccentricity: &f64,
-    stellar_luminosity_ratio: &f64,
-) -> f64 {
-    let perihelion_dist = orbital_radius - orbital_radius * eccentricity;
-    let temp = perihelion_dist * stellar_luminosity_ratio.sqrt();
-    b * temp.powf(-0.75)
-}
-
 /// Check planetesimal coalescence
 pub fn coalesce_planetesimals(primary_star_luminosity: &f64, planets: &mut Vec<Planetesimal>, cloud_eccentricity: &f64) {
     let mut next_planets = Vec::new();
@@ -204,8 +195,8 @@ pub fn coalesce_planetesimals(primary_star_luminosity: &f64, planets: &mut Vec<P
             next_planets.push(p.clone());
         } else {
             if let Some(prev_p) = next_planets.last_mut() {
-                // Check if planetesimals whithin effective zone of each other
-                if check_planetesimals_intersect(p, prev_p, cloud_eccentricity) {
+                // Check if planetesimals have an over-lapping orbits
+                if check_planetesimals_intersect(p, prev_p, cloud_eccentricity) {            
                     // Moon not likely to capture other moon
                     if p.is_moon {
                         *prev_p = coalesce_two_planets(&prev_p, &p);
@@ -319,7 +310,7 @@ fn capture_moon(larger: &Planetesimal, smaller: &Planetesimal) -> Planetesimal {
     let planet_outer_moon = 4.0 * &planet.mass.powf(0.33);
 
     for m in planet.moons.iter_mut() {
-        let hill_sphere = hill_sphere_au(
+        let _hill_sphere = hill_sphere_au(
             &planet.a,
             &planet.e,
             &planet.mass,

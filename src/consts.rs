@@ -1,5 +1,22 @@
 #![allow(dead_code)]
 
+/// [Star class by Harvard system](https://en.wikipedia.org/wiki/Stellar_classification)
+/// [Additional info](https://www.enchantedlearning.com/subjects/astronomy/stars/startypes.shtml)
+#[derive(Debug, Clone)]
+pub enum SpectralClass {
+    ROGUE,
+    Y,
+    T,
+    L,
+    M,
+    K,
+    G,
+    F,
+    A,
+    B,
+    O,
+}
+
 pub const PI: f64 = std::f64::consts::PI;
 
 /// Used to calculate the eccentricity of planetary nuclei
@@ -7,7 +24,7 @@ pub const PI: f64 = std::f64::consts::PI;
 pub const ECCENTRICITY_COEFF: f64 = 0.077;
 
 /// Units of solar masses
-pub const PROTOPLANET_MASS: f64 = 1.0E-15;
+pub const PROTOPLANET_MASS: f64 = 1.0E-25;
 
 /// Units of grams
 pub const SOLAR_MASS_IN_GRAMS: f64 = 1.989E33;

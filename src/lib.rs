@@ -91,7 +91,7 @@ pub fn run(
     // println!("{:#?}", planetary_system.planets);
     for (i, p) in planetary_system.planets.iter().enumerate() {
         println!("Planet {}", i);
-        println!("mass {}", p.mass);
+        println!("mass EM {}", p.mass * EARTH_MASSES_PER_SOLAR_MASS);
         println!("a {}", p.a);
         println!("is giant: {}", p.gas_giant);
         println!("Moons: {}", p.moons.len());
