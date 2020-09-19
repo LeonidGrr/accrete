@@ -1,5 +1,5 @@
 use crate::consts::*;
-use crate::planetesimal::Planetesimal;
+use crate::structs::planetesimal::*;
 use crate::utils::*;
 
 /// This function, given the orbital radius of a planet in AU, returns the orbital 'zone' of the particle.

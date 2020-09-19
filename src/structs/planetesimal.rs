@@ -1,11 +1,11 @@
-use crate::consts::PROTOPLANET_MASS;
 use crate::consts::*;
 use crate::enviro::*;
-use crate::ring::*;
+use crate::structs::Ring;
 use crate::utils::*;
 use rand::prelude::*;
 use serde::Serialize;
 
+// http://orbitsimulator.com/formulas/
 #[derive(Debug, Clone, Serialize)]
 pub struct Planetesimal {
     // axis, AU
@@ -51,6 +51,7 @@ pub struct Planetesimal {
     pub moons: Vec<Planetesimal>,
     pub rings: Vec<Ring>,
     pub is_moon: bool,
+    pub hill_sphere: f64,
 }
 
 impl Planetesimal {
@@ -99,6 +100,7 @@ impl Planetesimal {
             escape_velocity_km_per_sec: 0.0,
             is_tidally_locked: false,
             is_moon: false,
+            hill_sphere: 0.0,
         }
     }
 
@@ -168,6 +170,7 @@ impl Planetesimal {
             }
         }
 
+        self.hill_sphere = hill_sphere_au(&self.a, &self.e, &self.mass, stellar_mass);
         self.earth_masses = get_earth_mass(self.mass);
         self.earth_radii = self.radius / EARTH_RADIUS_IN_KM;
         self.length_of_year = self.orbital_period_days / 365.25;
@@ -178,157 +181,4 @@ impl Planetesimal {
             moon.derive_planetary_environment(stellar_luminosity, &self.mass, main_seq_life, ecosphere);
         }
     }
-}
-
-/// Check planetesimal coalescence
-pub fn coalesce_planetesimals(
-    primary_star_luminosity: &f64,
-    planets: &mut Vec<Planetesimal>,
-    cloud_eccentricity: &f64,
-) {
-    let mut next_planets = Vec::new();
-    for (i, p) in planets.iter().enumerate() {
-        if i == 0 {
-            next_planets.push(p.clone());
-        } else {
-            if let Some(prev_p) = next_planets.last_mut() {
-                // Check if planetesimals have an over-lapping orbits
-                if check_planetesimals_intersect(p, prev_p, cloud_eccentricity) {
-                    // Moon not likely to capture other moon
-                    if p.is_moon {
-                        *prev_p = coalesce_two_planets(&prev_p, &p);
-                    } else {
-                        // Check for larger/smaller planetesimal
-                        let (mut larger, mut smaller) = match p.mass >= prev_p.mass {
-                            true => (p.clone(), prev_p.clone()),
-                            false => (prev_p.clone(), p.clone()),
-                        };
-
-                        // Recalculate current radius of bodies
-                        larger.orbit_zone =
-                            orbital_zone(primary_star_luminosity, larger.distance_to_primary_star);
-                        larger.radius =
-                            kothari_radius(&larger.mass, &larger.gas_giant, &larger.orbit_zone);
-
-                        smaller.orbit_zone =
-                            orbital_zone(primary_star_luminosity, smaller.distance_to_primary_star);
-                        smaller.radius =
-                            kothari_radius(&smaller.mass, &smaller.gas_giant, &smaller.orbit_zone);
-
-                        let roche_limit =
-                            roche_limit_au(&larger.mass, &smaller.mass, &smaller.radius);
-
-                        // Planetesimals collide or one capture another
-                        if (prev_p.a - p.a).abs() <= roche_limit {
-                            *prev_p = coalesce_two_planets(&prev_p, &p);
-                        } else {
-                            *prev_p = capture_moon(&larger, &smaller);
-                            prev_p
-                                .moons
-                                .sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
-                            coalesce_planetesimals(
-                                primary_star_luminosity,
-                                &mut prev_p.moons,
-                                cloud_eccentricity,
-                            );
-                            moons_to_rings(prev_p);
-                        }
-                    }
-                } else {
-                    next_planets.push(p.clone());
-                }
-            }
-        }
-    }
-    *planets = next_planets;
-}
-
-/// Check planetesimal intersection
-fn check_planetesimals_intersect(
-    p: &Planetesimal,
-    prev_p: &Planetesimal,
-    cloud_eccentricity: &f64,
-) -> bool {
-    let dist = prev_p.a - p.a;
-    let (dist1, dist2) = match dist > 0.0 {
-        true => {
-            let dist1 = outer_effect_limit(&p.a, &p.e, &p.mass, cloud_eccentricity) - p.a;
-
-            let dist2 = prev_p.a
-                - inner_effect_limit(&prev_p.a, &prev_p.e, &prev_p.mass, cloud_eccentricity);
-            (dist1, dist2)
-        }
-        false => {
-            let dist1 = p.a - inner_effect_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
-            let dist2 = outer_effect_limit(&prev_p.a, &prev_p.e, &prev_p.mass, cloud_eccentricity)
-                - prev_p.a;
-            (dist1, dist2)
-        }
-    };
-    dist.abs() < dist1.abs() || dist.abs() < dist2.abs()
-}
-
-/// Two planetesimals collide and form one planet
-pub fn coalesce_two_planets(a: &Planetesimal, b: &Planetesimal) -> Planetesimal {
-    let new_mass = a.mass + b.mass;
-    let new_axis = new_mass / (a.mass / a.a + b.mass / b.a);
-    let term1 = a.mass * (a.a * (1.0 - a.e.powf(2.0))).sqrt();
-    let term2 = b.mass * (b.a * (1.0 - b.e.powf(2.0))).sqrt();
-    let term3 = (term1 + term2) / (new_mass * new_axis.sqrt());
-    let term4 = 1.0 - term3.powf(2.0);
-    let new_eccn = term4.abs().sqrt();
-    let mut coalesced = a.clone();
-    coalesced.mass = new_mass;
-    coalesced.a = new_axis;
-    coalesced.e = new_eccn;
-    coalesced.gas_giant = a.gas_giant || b.gas_giant;
-    coalesced
-}
-
-/// Larger planetsimal capture smaller as moon
-fn capture_moon(larger: &Planetesimal, smaller: &Planetesimal) -> Planetesimal {
-    let mut planet = larger.clone();
-    let mut moon = smaller.clone();
-    moon.is_moon = true;
-
-    // Recalcualte planetary axis
-    let new_mass = planet.mass + moon.mass;
-    let new_axis = new_mass / (planet.mass / planet.a + moon.mass / moon.a);
-    let term1 = planet.mass * (planet.a * (1.0 - planet.e.powf(2.0))).sqrt();
-    let term2 = moon.mass * (moon.a * (1.0 - moon.e.powf(2.0))).sqrt();
-    let term3 = (term1 + term2) / (new_mass * new_axis.sqrt());
-    let term4 = 1.0 - term3.powf(2.0);
-    let new_eccn = term4.abs().sqrt();
-    planet.a = new_axis;
-    planet.e = new_eccn;
-    planet.distance_to_primary_star = new_axis;
-
-    // Add moon to planetary moons, recalculate disturbed orbits of moons
-    let mut rng = rand::thread_rng();
-    planet.moons.append(&mut moon.moons);
-    planet.moons.push(moon);
-    let planet_outer_moon = 4.0 * &planet.mass.powf(0.33);
-
-    for m in planet.moons.iter_mut() {
-        let _hill_sphere = hill_sphere_au(&planet.a, &planet.e, &planet.mass, &m.mass);
-        m.a = rng.gen_range(0.0, planet_outer_moon);
-        m.distance_to_primary_star = planet.a;
-    }
-
-    planet
-}
-
-fn moons_to_rings(planet: &mut Planetesimal) {
-    let mut next_moons = Vec::new();
-    for m in planet.moons.iter_mut() {
-        let roche_limit = roche_limit_au(&planet.mass, &m.mass, &m.radius);
-        if m.a <= roche_limit * 2.0 {
-            let ring = Ring::new(roche_limit, m);
-            planet.rings.push(ring);
-        } else {
-            next_moons.push(m.clone());
-        }
-    }
-
-    planet.moons = next_moons;
 }

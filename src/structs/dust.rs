@@ -238,10 +238,6 @@ pub fn compress_dust_lanes(dust_bands: &mut Vec<DustBand>) {
         });
 }
 
-pub fn stellar_dust_limit(stellar_mass_ratio: &f64) -> f64 {
-    200.0 * stellar_mass_ratio.powf(1.0 / 3.0)
-}
-
 pub fn get_mass_density(k: &f64, dust_density: &f64, critical_mass: &f64, mass: &f64) -> f64 {
     k * dust_density / (1.0 + (critical_mass / mass).sqrt() * (k - 1.0))
 }

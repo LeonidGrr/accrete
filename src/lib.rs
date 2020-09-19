@@ -1,19 +1,16 @@
 mod consts;
-mod dust;
+mod structs;
 mod enviro;
-mod planetesimal;
-mod ring;
-mod system;
 mod utils;
 
 use consts::*;
 use rand::prelude::*;
 use serde_json::json;
-use system::PrimaryStar;
+use structs::system::System;
 
 #[derive(Debug)]
 pub enum AccreteOutput {
-    Struct(PrimaryStar),
+    Struct(System),
     Json(String),
 }
 
@@ -69,7 +66,7 @@ pub fn run(
     let cloud_eccentricity = cloud_eccentricity.unwrap_or(0.2);
     let b = b.unwrap_or(B);
 
-    let mut planetary_system = PrimaryStar::set_initial_conditions(
+    let mut planetary_system = System::set_initial_conditions(
         planets_limit,
         stellar_mass,
         dust_density_coeff,
@@ -179,7 +176,6 @@ mod tests {
 
     #[test]
     fn low_density_dust() {
-        run(None, None, Some(0.00125), None, None, None, false);
+        run(None, None, Some(0.00125), Some(25.0), None, None, false);
     }
-
 }
