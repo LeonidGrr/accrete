@@ -86,16 +86,16 @@ pub fn run(
         .to_string();
         return AccreteOutput::Json(s);
     }
-    println!("{:#?}", planetary_system.planets);
-    // for (i, p) in planetary_system.planets.iter().enumerate() {
-    //     println!("Planet {}", i);
-    //     println!("mass EM {}", p.mass * EARTH_MASSES_PER_SOLAR_MASS);
-    //     println!("a {}", p.a);
-    //     println!("is giant: {}", p.gas_giant);
-    //     println!("Moons: {}", p.moons.len());
-    //     println!("Rings: {}", p.rings.len());
-    //     println!("------------------");
-    // }
+    // println!("{:#?}", planetary_system.planets);
+    for (i, p) in planetary_system.planets.iter().enumerate() {
+        println!("Planet {}", i);
+        println!("mass EM {}", p.mass * EARTH_MASSES_PER_SOLAR_MASS);
+        println!("a {}", p.a);
+        println!("is giant: {}", p.gas_giant);
+        println!("Moons: {}", p.moons.len());
+        println!("Rings: {}", p.rings.len());
+        println!("------------------");
+    }
     AccreteOutput::Struct(planetary_system)
 }
 
