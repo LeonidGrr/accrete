@@ -55,15 +55,11 @@ pub struct Planetesimal {
 }
 
 impl Planetesimal {
-    pub fn new(
-        planetesimal_inner_bound: &f64,
-        planetesimal_outer_bound: &f64,
-        cloud_eccentricity: &f64,
-    ) -> Self {
+    pub fn new(planetesimal_inner_bound: &f64, planetesimal_outer_bound: &f64) -> Self {
         let mut rng = rand::thread_rng();
         let gas_giant = false;
         let a = rng.gen_range(planetesimal_inner_bound, planetesimal_outer_bound);
-        let e = random_eccentricity(rng.gen_range(0.0, 1.0), cloud_eccentricity);
+        let e = random_eccentricity();
 
         Planetesimal {
             a,
@@ -176,9 +172,14 @@ impl Planetesimal {
         self.length_of_year = self.orbital_period_days / 365.25;
         self.escape_velocity_km_per_sec = self.escape_velocity / CM_PER_KM;
         self.is_tidally_locked = check_tidal_lock(self.day_hours, self.orbital_period_days);
-        
+
         for moon in self.moons.iter_mut() {
-            moon.derive_planetary_environment(stellar_luminosity, &self.mass, main_seq_age, ecosphere);
+            moon.derive_planetary_environment(
+                stellar_luminosity,
+                &self.mass,
+                main_seq_age,
+                ecosphere,
+            );
         }
     }
 }

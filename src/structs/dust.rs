@@ -20,7 +20,7 @@ impl DustBand {
     }
 }
 
-pub fn dust_availible(dust_bands: &Vec<DustBand>, inside_range: &f64, outside_range: &f64) -> bool {
+pub fn dust_availible(dust_bands: &[DustBand], inside_range: &f64, outside_range: &f64) -> bool {
     dust_bands.iter().rev().fold(false, |mut acc, band| {
         if band.dust_present && &band.outer_edge > inside_range && &band.inner_edge < outside_range
         {
@@ -34,8 +34,6 @@ pub fn dust_availible(dust_bands: &Vec<DustBand>, inside_range: &f64, outside_ra
 /// "There is a spherically symmetrical cloud of dust and gas with a constant ratio of gas to dust, the density decreasing with distance from the center."
 pub fn accrete_dust(
     mass: &mut f64,
-    new_dust: &mut f64,
-    new_gas: &mut f64,
     a: &f64,
     e: &f64,
     crit_mass: &f64,
@@ -45,133 +43,71 @@ pub fn accrete_dust(
     k: &f64,
 ) {
     let mut new_mass = *mass;
-    let mut temp_mass;
-
     loop {
-        temp_mass = new_mass;
-        new_mass = collect_dust(
-            &mut new_mass,
-            new_dust,
-            new_gas,
-            a,
-            e,
-            crit_mass,
-            dust_bands,
-            0,
-            cloud_eccentricity,
-            dust_density,
-            k,
-        );
+        *mass = new_mass;
+        new_mass = 0.0;
 
-        if !(new_mass - temp_mass >= 0.0001 * temp_mass) {
+        for d in dust_bands.iter_mut() {
+            new_mass += collect_dust(
+                mass,
+                a,
+                e,
+                crit_mass,
+                cloud_eccentricity,
+                dust_density,
+                k,
+                d,
+            );
+        }
+
+        if !((new_mass - *mass) >= (0.0001 * *mass)) {
             break;
         }
     }
-    *mass += new_mass;
+
+    *mass = new_mass;
 }
 
 pub fn collect_dust(
-    last_mass: &mut f64,
-    new_dust: &mut f64,
-    new_gas: &mut f64,
+    mass: &f64,
     a: &f64,
     e: &f64,
     crit_mass: &f64,
-    dust_bands: &mut Vec<DustBand>,
-    i: usize,
     cloud_eccentricity: &f64,
     dust_density: &f64,
     k: &f64,
+    band: &mut DustBand,
 ) -> f64 {
-    // for d in dust_bands.iter() {
-    match dust_bands.get(i) {
-        None => 0.0,
-        Some(d) => {
-            let mut temp = *last_mass / (1.0 + *last_mass);
-            let reduced_mass = temp.powf(1.0 / 4.0);
-            let mut r_inner = inner_effect_limit(a, e, &reduced_mass, cloud_eccentricity);
-            let r_outer = outer_effect_limit(a, e, &reduced_mass, cloud_eccentricity);
+    let mut r_inner = inner_swept_limit(a, e, mass, cloud_eccentricity);
+    let r_outer = outer_swept_limit(a, e, mass, cloud_eccentricity);
 
-            if r_inner < 0.0 {
-                r_inner = 0.0;
-            }
-
-            let temp_density = match d.dust_present == true {
-                true => *dust_density,
-                false => 0.0,
-            };
-
-            let mass_density;
-            let mut gas_density = 0.0;
-            if *last_mass < *crit_mass || !d.gas_present {
-                mass_density = temp_density
-            } else {
-                mass_density = get_mass_density(k, &temp_density, &crit_mass, &last_mass);
-                gas_density = mass_density - temp_density;
-            }
-
-            if d.outer_edge <= r_inner || d.inner_edge >= r_outer {
-                return collect_dust(
-                    last_mass,
-                    new_dust,
-                    new_gas,
-                    a,
-                    e,
-                    crit_mass,
-                    dust_bands,
-                    i + 1,
-                    cloud_eccentricity,
-                    dust_density,
-                    k,
-                );
-            } else {
-                let bandwidth = r_outer - r_inner;
-
-                let mut temp1 = r_outer - d.outer_edge;
-                if temp1 < 0.0 {
-                    temp1 = 0.0;
-                }
-                let mut width = bandwidth - temp1;
-
-                let mut temp2 = d.inner_edge - r_inner;
-                if temp2 < 0.0 {
-                    temp2 = 0.0;
-                }
-                width = width - temp2;
-
-                temp =
-                    4.0 * PI * a.powf(2.0) * reduced_mass * (1.0 - e * (temp1 - temp2) / bandwidth);
-                let volume = temp * width;
-
-                let new_mass = volume * mass_density;
-                *new_gas = volume * gas_density;
-                *new_dust = new_mass - *new_gas;
-                let mut next_dust = 0.0;
-                let mut next_gas = 0.0;
-
-                let next_mass = collect_dust(
-                    last_mass,
-                    &mut next_dust,
-                    &mut next_gas,
-                    a,
-                    e,
-                    crit_mass,
-                    dust_bands,
-                    i + 1,
-                    cloud_eccentricity,
-                    dust_density,
-                    k,
-                );
-
-                *new_gas = *new_gas + next_gas;
-                *new_dust = *new_dust + next_dust;
-
-                new_mass + next_mass
-            }
-        } // }
-
-          // volume * mass_density
+    if r_inner < 0.0 {
+        r_inner = 0.0;
     }
+
+    if band.outer_edge <= r_inner || band.inner_edge >= r_outer || !band.dust_present {
+        return 0.0;
+    };
+
+    let density = match !band.gas_present || mass < crit_mass {
+        true => *dust_density,
+        false => get_mass_density(k, dust_density, &crit_mass, &mass),
+    };
+    let bandwidth = r_outer - r_inner;
+    let temp1 = match r_outer - band.outer_edge > 0.0 {
+        true => r_outer - band.outer_edge,
+        false => 0.0,
+    };
+    let temp2 = match band.inner_edge - r_inner > 0.0 {
+        true => band.inner_edge - r_inner,
+        false => 0.0,
+    };
+    let width = bandwidth - temp1 - temp2;
+    let term1 = 4.0 * PI * a.powf(2.0);
+    let term2 = 1.0 - e * (temp1 - temp2) / bandwidth;
+    let volume = term1 * reduced_mass(mass) * width * term2;
+
+    volume * density
 }
 
 pub fn update_dust_lanes(
@@ -188,7 +124,7 @@ pub fn update_dust_lanes(
     *dust_bands = dust_bands.iter_mut().fold(Vec::new(), |mut acc, band| {
         let new_gas = band.gas_present && gas;
         if band.inner_edge < min && band.outer_edge > max {
-            let mut inner = band.clone();
+            let mut inner = *band;
             inner.outer_edge = min;
             let middle = DustBand::new(max, min, false, new_gas);
             let outer = DustBand::new(band.outer_edge, max, band.dust_present, band.gas_present);
@@ -209,7 +145,7 @@ pub fn update_dust_lanes(
             let dust_band = DustBand::new(band.outer_edge, band.inner_edge, false, new_gas);
             acc.push(dust_band)
         } else if band.outer_edge < min || band.inner_edge > max {
-            acc.push(band.clone());
+            acc.push(*band);
         }
         acc
     });
@@ -225,14 +161,14 @@ pub fn compress_dust_lanes(dust_bands: &mut Vec<DustBand>) {
                     if band.dust_present == next_band.dust_present
                         && band.gas_present == next_band.gas_present
                     {
-                        let mut band = band.clone();
+                        let mut band = *band;
                         band.outer_edge = next_band.outer_edge;
                         acc.push(band);
                     } else {
-                        acc.push(band.clone());
+                        acc.push(*band);
                     }
                 }
-                None => acc.push(band.clone()),
+                None => acc.push(*band),
             }
             acc
         });

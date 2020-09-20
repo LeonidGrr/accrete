@@ -1,6 +1,6 @@
 mod consts;
-mod structs;
 mod enviro;
+mod structs;
 mod utils;
 
 use consts::*;
@@ -37,7 +37,7 @@ pub enum AccreteOutput {
 /// **k** - The dust-to-gas ratio 50-100 (dust/gas = K), gas = hydrogen and helium, dust = other. Recommended range: 50.0-100.0
 /// *Default: 50.0*
 ///
-/// **cloud_eccentricity** - Initial dust cloud cloud_eccentricity. Recommended range: 0.15-0.25.
+/// **cloud_eccentricity** - Initial dust cloud cloud_eccentricity. High eccentricity reduce number of planets. Recommended range: 0.15-0.25.
 /// *Default: 0.20*
 ///
 /// **b** - Crit_mass coeff is used as threshold for planet to become gas giant. Recommended range: 1.0e-5 - 1.2e-5
@@ -158,7 +158,7 @@ mod tests {
 
     #[test]
     fn planets_limit() {
-        run(Some(15), None, None, None, None, None, false);
+        run(Some(5), None, None, None, None, None, false);
     }
 
     #[test]
@@ -181,5 +181,20 @@ mod tests {
     #[test]
     fn low_density_dust() {
         run(None, None, Some(0.00125), Some(25.0), None, None, false);
+    }
+
+    #[test]
+    fn high_cloud_ecentricity() {
+        run(None, None, None, None, Some(0.5), None, false);
+    }
+
+    #[test]
+    fn low_cloud_ecentricity() {
+        run(None, None, None, None, Some(0.1), None, false);
+    }
+
+    #[test]
+    fn low_cloud_ecentricity_and_dust_density() {
+        run(None, None, Some(0.035), None, Some(0.05), None, false);
     }
 }

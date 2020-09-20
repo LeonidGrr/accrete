@@ -58,11 +58,11 @@ pub fn kothari_radius(mass: &f64, giant: &bool, zone: &i32) -> f64 {
         / (A1_20 * (temp as f64).powf(1.0 / 3.0));
 
     let mut temp2 = A2_20 * atomic_weight.powf(4.0 / 3.0) * SOLAR_MASS_IN_GRAMS.powf(2.0 / 3.0);
-    temp2 = temp2 * mass.powf(2.0 / 3.0);
-    temp2 = temp2 / (A1_20 * atomic_num.powf(2.0));
+    temp2 *= mass.powf(2.0 / 3.0);
+    temp2 /= A1_20 * atomic_num.powf(2.0);
     temp2 += 1.0;
 
-    temp = temp / temp2;
+    temp /= temp2;
     temp = (temp * mass.powf(1.0 / 3.0)) / CM_PER_KM;
     temp /= JIMS_FUDGE;
 
@@ -77,7 +77,7 @@ pub fn empirical_density(
     gas_giant: &bool,
 ) -> f64 {
     let mut density = (mass * EARTH_MASSES_PER_SOLAR_MASS).powf(1.0 / 8.0);
-    density = density * (ecosphere_radius / distance_to_primary_star).powf(0.25);
+    density *= (ecosphere_radius / distance_to_primary_star).powf(0.25);
 
     match gas_giant {
         true => density * 1.2,
@@ -323,19 +323,19 @@ pub fn planet_albedo(
     let mut components = 0.0;
 
     if *water_fraction > 0.0 {
-        components = components + 1.0;
+        components += 1.0;
     }
     if *ice_fraction > 0.0 {
-        components = components + 1.0;
+        components += 1.0;
     }
     if rock_fraction > 0.0 {
-        components = components + 1.0;
+        components += 1.0;
     }
 
     let cloud_adjustment = *cloud_fraction / components as f64;
 
     if rock_fraction >= cloud_adjustment {
-        rock_fraction = rock_fraction - cloud_adjustment;
+        rock_fraction -= cloud_adjustment;
     } else {
         rock_fraction = 0.0;
     }
@@ -387,15 +387,15 @@ pub fn opacity(molecular_weight: f64, surface_pressure_bar: f64) -> f64 {
     }
 
     if surface_pressure_bar >= 0.07 {
-        optical_depth = optical_depth * 8.333;
+        optical_depth *= 8.333;
     } else if surface_pressure_bar >= 0.05 {
-        optical_depth = optical_depth * 6.666;
+        optical_depth *= 6.666;
     } else if surface_pressure_bar >= 0.03 {
-        optical_depth = optical_depth * 3.333;
+        optical_depth *= 3.333;
     } else if surface_pressure_bar >= 0.01 {
-        optical_depth = optical_depth * 2.0;
-    } else if surface_pressure_bar >= 0.05 {
-        optical_depth = optical_depth * 1.5;
+        optical_depth *= 2.0;
+    } else if surface_pressure_bar >= 0.005 {
+        optical_depth *= 1.5;
     }
 
     optical_depth
@@ -451,7 +451,8 @@ pub fn iterate_surface_temp(planet: &mut Planetesimal, ecosphere_radius: &f64) -
 }
 
 pub fn check_tidal_lock(day_length: f64, orbital_period: f64) -> bool {
-    day_length == orbital_period * day_length
+    let error_margin = f64::EPSILON;
+    (day_length - orbital_period * day_length).abs() < error_margin
 }
 
 // Habitable moons:
