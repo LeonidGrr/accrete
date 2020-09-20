@@ -46,8 +46,6 @@ pub enum AccreteOutput {
 /// **to_json** - Output as JSON string.
 /// *Default: false*
 ///
-/// From original Dole paper:
-/// "Certain parameters must be specified to obtain quantitative results: the density distribution within the cloud; the ratio of gas to dust; a definition of critical mass, or the planetary mass above which a planet can begin to accumulate gas in addition to dust; and the orbital eccentricity of particles within the cloud. Also, a few rules for the coalescence and growth of planets must be established. When these parameters and rules have been set forth in a suitable manner, planetary systems very much like the solar system can be created. Multiple-star systems can be created by changing a single parameter, the density level within the cloud."
 pub fn run(
     planets_limit: Option<usize>,
     stellar_mass: Option<f64>,
@@ -74,19 +72,20 @@ pub fn run(
         cloud_eccentricity,
         b,
     );
+
     planetary_system.distribute_planetary_masses();
     planetary_system.process_planets();
 
     if to_json {
         let s = json!({
-            // "stellar_mass": stellar_mass,
-            // "stellar_luminosity": stellar_luminosity,
-            // "planets": planetary_system.planets,
+            "primary_star": planetary_system.primary_star,
+            "planets": planetary_system.planets,
         })
         .to_string();
+        println!("{}", s);
         return AccreteOutput::Json(s);
     }
-    // println!("{:#?}", planetary_system.planets);
+
     for (i, p) in planetary_system.planets.iter().enumerate() {
         println!("Planet {}", i);
         println!("mass EM {}", p.mass * EARTH_MASSES_PER_SOLAR_MASS);
@@ -105,6 +104,11 @@ mod tests {
     #[test]
     fn run_with_default_config() {
         run(None, None, None, None, None, None, false);
+    }
+
+    #[test]
+    fn run_to_json() {
+        run(None, None, None, None, None, None, true);
     }
 
     #[test]

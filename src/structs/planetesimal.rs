@@ -1,6 +1,6 @@
 use crate::consts::*;
 use crate::enviro::*;
-use crate::structs::Ring;
+use crate::structs::*;
 use crate::utils::*;
 use rand::prelude::*;
 use serde::Serialize;
@@ -108,7 +108,7 @@ impl Planetesimal {
         &mut self,
         stellar_luminosity: &f64,
         stellar_mass: &f64,
-        main_seq_life: &f64,
+        main_seq_age: &f64,
         ecosphere: &mut (f64, f64),
     ) {
         self.orbit_zone = orbital_zone(stellar_luminosity, self.a);
@@ -125,7 +125,7 @@ impl Planetesimal {
             self.density = volume_density(&self.mass, &self.radius);
         }
         self.orbital_period_days = period(&self.a, &self.mass, &stellar_mass);
-        self.day_hours = day_length(self, &stellar_mass, main_seq_life);
+        self.day_hours = day_length(self, &stellar_mass, main_seq_age);
         self.axial_tilt = inclination(&self.a);
         self.escape_velocity = escape_vel(&self.mass, &self.radius);
         self.surface_accel = acceleration(&self.mass, &self.radius);
@@ -178,7 +178,7 @@ impl Planetesimal {
         self.is_tidally_locked = check_tidal_lock(self.day_hours, self.orbital_period_days);
         
         for moon in self.moons.iter_mut() {
-            moon.derive_planetary_environment(stellar_luminosity, &self.mass, main_seq_life, ecosphere);
+            moon.derive_planetary_environment(stellar_luminosity, &self.mass, main_seq_age, ecosphere);
         }
     }
 }

@@ -1,6 +1,7 @@
 use crate::consts::*;
+use serde::Serialize;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct PrimaryStar {
     pub stellar_mass: f64,
     pub stellar_luminosity: f64,
@@ -9,14 +10,14 @@ pub struct PrimaryStar {
     pub spectral_class: SpectralClass,
     pub bv_color_index: f64,
     pub color: String,
-    pub main_seq_life: f64,
+    pub main_seq_age: f64,
     pub ecosphere: (f64, f64),
 }
 
 impl PrimaryStar {
     pub fn new(stellar_mass: f64) -> Self {
         let stellar_luminosity = luminosity(stellar_mass);
-        let main_seq_life = main_sequence_age(stellar_mass, stellar_luminosity);
+        let main_seq_age = main_sequence_age(stellar_mass, stellar_luminosity);
         let stellar_radius_au = stellar_radius_au(stellar_mass);
         let stellar_surface_temp = stellar_surface_temp(stellar_radius_au, stellar_luminosity);
         let spectral_class = spectral_class(&stellar_surface_temp);
@@ -27,7 +28,7 @@ impl PrimaryStar {
         Self {
             stellar_mass,
             stellar_luminosity,
-            main_seq_life,
+            main_seq_age,
             ecosphere,
             stellar_surface_temp,
             stellar_radius_au,

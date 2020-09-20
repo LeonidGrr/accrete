@@ -1,8 +1,9 @@
 #![allow(dead_code)]
+use serde::Serialize;
 
 /// [Star class by Harvard system](https://en.wikipedia.org/wiki/Stellar_classification)
 /// [Additional info](https://www.enchantedlearning.com/subjects/astronomy/stars/startypes.shtml)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub enum SpectralClass {
     ROGUE,
     Y,
@@ -24,7 +25,7 @@ pub const PI: f64 = std::f64::consts::PI;
 pub const ECCENTRICITY_COEFF: f64 = 0.077;
 
 /// Units of solar masses
-pub const PROTOPLANET_MASS: f64 = 1.0E-25;
+pub const PROTOPLANET_MASS: f64 = 1.0E-15;
 
 /// Units of grams
 pub const SOLAR_MASS_IN_GRAMS: f64 = 1.989E33;

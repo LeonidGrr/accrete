@@ -12,7 +12,12 @@ pub struct System {
     pub planets_limit: Option<usize>,
     pub k: f64,
     pub b: f64,
-    pub has_nebulae: bool,
+    pub planetesimal_inner_bound: f64,
+    pub planetesimal_outer_bound: f64,
+    pub inner_dust: f64,
+    pub outer_dust: f64,
+    pub dust_bands: Vec<DustBand>,
+    pub dust_left: bool,
 }
 
 impl System {
@@ -25,6 +30,14 @@ impl System {
         b: f64,
     ) -> Self {
         let primary_star = PrimaryStar::new(stellar_mass);
+        let planetesimal_inner_bound = innermost_planet(&stellar_mass);
+        let planetesimal_outer_bound = outermost_planet(&stellar_mass);
+        let inner_dust = 0.0;
+        let outer_dust = stellar_dust_limit(&stellar_mass);
+        let dust_band = DustBand::new(outer_dust, inner_dust, true, true);
+        let mut dust_bands = Vec::new();
+        dust_bands.push(dust_band);
+
         Self {
             primary_star,
             planets: Vec::new(),
@@ -33,7 +46,12 @@ impl System {
             dust_density_coeff,
             planets_limit,
             cloud_eccentricity,
-            has_nebulae: false,
+            planetesimal_inner_bound,
+            planetesimal_outer_bound,
+            inner_dust,
+            outer_dust,
+            dust_bands,
+            dust_left: true,
         }
     }
 
@@ -46,19 +64,15 @@ impl System {
             dust_density_coeff,
             planets_limit,
             cloud_eccentricity,
+            planetesimal_inner_bound,
+            planetesimal_outer_bound,
+            dust_bands,
+            dust_left,
             ..
         } = self;
         let PrimaryStar { stellar_mass, stellar_luminosity, .. } = primary_star;
-        let planetesimal_inner_bound = innermost_planet(stellar_mass);
-        let planetesimal_outer_bound = outermost_planet(stellar_mass);
-        let inner_dust = 0.0;
-        let outer_dust = stellar_dust_limit(&stellar_mass);
-        let dust_band = DustBand::new(outer_dust, inner_dust, true, true);
-        let mut dust_bands = Vec::new();
-        dust_bands.push(dust_band);
-        let mut dust_left = true;
 
-        while dust_left {
+        while *dust_left {
             let mut p = Planetesimal::new(
                 &planetesimal_inner_bound,
                 &planetesimal_outer_bound,
@@ -80,7 +94,7 @@ impl System {
                     &mut p.a,
                     &mut p.e,
                     &crit_mass,
-                    &mut dust_bands,
+                    dust_bands,
                     &cloud_eccentricity,
                     &dust_density,
                     k,
@@ -89,12 +103,15 @@ impl System {
                 let min = inner_effect_limit(&p.a, &p.e, &p.mass, &cloud_eccentricity);
                 let max = outer_effect_limit(&p.a, &p.e, &p.mass, &cloud_eccentricity);
 
-                update_dust_lanes(&mut dust_bands, min, max, &p.mass, &crit_mass);
-                compress_dust_lanes(&mut dust_bands);
+                update_dust_lanes(dust_bands, min, max, &p.mass, &crit_mass);
+                compress_dust_lanes(dust_bands);
 
                 if p.mass > crit_mass {
                     p.gas_giant = true;
                 }
+                p.orbit_zone = orbital_zone(stellar_luminosity, p.distance_to_primary_star);
+                p.radius = kothari_radius(&p.mass, &p.gas_giant, &p.orbit_zone);
+                
                 planets.push(p);
                 planets.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
                 coalesce_planetesimals(stellar_luminosity, stellar_mass, planets, &cloud_eccentricity);
@@ -106,7 +123,7 @@ impl System {
                 &planetesimal_outer_bound,
             );
 
-            dust_left = match planets_limit {
+            *dust_left = match planets_limit {
                 Some(limit) => planets.len() < *limit && dust_still_left,
                 None => dust_still_left,
             };
@@ -122,7 +139,7 @@ impl System {
         let PrimaryStar {
             stellar_luminosity,
             stellar_mass,
-            main_seq_life,
+            main_seq_age,
             ecosphere,
             ..
         } = primary_star;
@@ -130,14 +147,14 @@ impl System {
             planet.derive_planetary_environment(
                 stellar_luminosity,
                 stellar_mass,
-                main_seq_life,
+                main_seq_age,
                 ecosphere,
             );
             for moon in planet.moons.iter_mut() {
                 moon.derive_planetary_environment(
                     stellar_luminosity,
                     &planet.mass,
-                    main_seq_life,
+                    main_seq_age,
                     ecosphere,
                 );
             }
@@ -158,34 +175,21 @@ pub fn coalesce_planetesimals(
             next_planets.push(p.clone());
         } else {
             if let Some(prev_p) = next_planets.last_mut() {
-                // Check if planetesimals have an over-lapping orbits
                 if check_planetesimals_intersect(p, prev_p, cloud_eccentricity) {
                     // Moon not likely to capture other moon
                     if p.is_moon {
                         *prev_p = coalesce_two_planets(&prev_p, &p);
                     } else {
                         // Check for larger/smaller planetesimal
-                        let (mut larger, mut smaller) = match p.mass >= prev_p.mass {
+                        let (larger, smaller) = match p.mass >= prev_p.mass {
                             true => (p.clone(), prev_p.clone()),
                             false => (prev_p.clone(), p.clone()),
                         };
-
-                        // Recalculate current radius of bodies
-                        larger.orbit_zone =
-                            orbital_zone(primary_star_luminosity, larger.distance_to_primary_star);
-                        larger.radius =
-                            kothari_radius(&larger.mass, &larger.gas_giant, &larger.orbit_zone);
-
-                        smaller.orbit_zone =
-                            orbital_zone(primary_star_luminosity, smaller.distance_to_primary_star);
-                        smaller.radius =
-                            kothari_radius(&smaller.mass, &smaller.gas_giant, &smaller.orbit_zone);
-
                         let roche_limit =
                             roche_limit_au(&larger.mass, &smaller.mass, &smaller.radius);
 
                         // Planetesimals collide or one capture another
-                        if (prev_p.a - p.a).abs() <= roche_limit {
+                        if (prev_p.a - p.a).abs() <= roche_limit * 2.0 {
                             *prev_p = coalesce_two_planets(&prev_p, &p);
                         } else {
                             *prev_p = capture_moon(&larger, &smaller, primary_star_mass);
@@ -210,7 +214,7 @@ pub fn coalesce_planetesimals(
     *planets = next_planets;
 }
 
-/// Check planetesimal intersection
+/// Check if planetesimals have an over-lapping orbits
 pub fn check_planetesimals_intersect(
     p: &Planetesimal,
     prev_p: &Planetesimal,
@@ -220,7 +224,6 @@ pub fn check_planetesimals_intersect(
     let (dist1, dist2) = match dist > 0.0 {
         true => {
             let dist1 = outer_effect_limit(&p.a, &p.e, &p.mass, cloud_eccentricity) - p.a;
-
             let dist2 = prev_p.a
                 - inner_effect_limit(&prev_p.a, &prev_p.e, &prev_p.mass, cloud_eccentricity);
             (dist1, dist2)
@@ -249,6 +252,7 @@ pub fn coalesce_two_planets(a: &Planetesimal, b: &Planetesimal) -> Planetesimal 
     coalesced.a = new_axis;
     coalesced.e = new_eccn;
     coalesced.gas_giant = a.gas_giant || b.gas_giant;
+    coalesced.radius = kothari_radius(&coalesced.mass, &coalesced.gas_giant, &coalesced.orbit_zone);
     coalesced
 }
 
