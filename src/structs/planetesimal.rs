@@ -8,6 +8,7 @@ use serde::Serialize;
 // http://orbitsimulator.com/formulas/
 #[derive(Debug, Clone, Serialize)]
 pub struct Planetesimal {
+    // "In an anonymous footnote to his 1766 translation of Charles Bonnet's Contemplation de la Nature, the astronomer Johann Daniel Titius of Wittenberg noted an apparent pattern in the layout of the planets, now known as the Titius-Bode Law. If one began a numerical sequence at 0, then included 3, 6, 12, 24, 48, etc., doubling each time, and added four to each number and divided by 10, this produced a remarkably close approximation to the radii of the orbits of the known planets as measured in astronomic units."
     // axis, AU
     pub a: f64,
     // eccentricity of the orbit, unitless
@@ -65,7 +66,7 @@ impl Planetesimal {
             a,
             e,
             distance_to_primary_star: a,
-            mass: PROTOPLANET_MASS,
+            mass: PLANETESIMAL_MASS,
             earth_masses: 0.0,
             gas_giant,
             orbit_zone: 0,

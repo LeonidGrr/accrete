@@ -25,7 +25,9 @@ pub const PI: f64 = std::f64::consts::PI;
 pub const ECCENTRICITY_COEFF: f64 = 0.077;
 
 /// Units of solar masses
+pub const PLANETESIMAL_MASS: f64 = 1.0E-25;
 pub const PROTOPLANET_MASS: f64 = 1.0E-15;
+pub const ASTEROID_MASS_LIMIT: f64 = 2.988000001494E-9;
 
 /// Units of grams
 pub const SOLAR_MASS_IN_GRAMS: f64 = 1.989E33;
@@ -231,9 +233,6 @@ pub const MAX_CH4_IPP: f64 = 50000.0 * PPM_PRSSURE;
 
 /// Units of g/cc
 pub const EARTH_DENSITY: f64 = 5.52;
-
-/// Units of Earth Masses
-pub const ASTEROID_MASS_LIMIT: f64 = 0.001;
 
 /// Maximum angular inclination of dust cloud (Dole specifies as ~90 degrees)
 pub const OMEGA: f64 = PI / 2.01;

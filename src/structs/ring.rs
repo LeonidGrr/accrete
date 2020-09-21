@@ -9,7 +9,7 @@ pub struct Ring {
 }
 
 impl Ring {
-    pub fn new(roche_limit: f64, moon: &Planetesimal) -> Self {
+    pub fn from_planet(roche_limit: f64, moon: &Planetesimal) -> Self {
         Ring {
             a: roche_limit,
             mass: moon.mass,

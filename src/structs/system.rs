@@ -1,12 +1,14 @@
 use crate::enviro::*;
 use crate::structs::*;
 use crate::utils::*;
+use crate::consts::*;
 use rand::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct System {
     pub primary_star: PrimaryStar,
     pub planets: Vec<Planetesimal>,
+    pub asteroids: Vec<Asteroids>,
     pub cloud_eccentricity: f64,
     pub dust_density_coeff: f64,
     pub planets_limit: Option<usize>,
@@ -41,6 +43,7 @@ impl System {
         Self {
             primary_star,
             planets: Vec::new(),
+            asteroids: Vec::new(),
             k,
             b,
             dust_density_coeff,
@@ -59,6 +62,7 @@ impl System {
         let Self {
             primary_star,
             planets,
+            asteroids,
             k,
             b,
             dust_density_coeff,
@@ -78,7 +82,6 @@ impl System {
 
         while *dust_left {
             let mut p = Planetesimal::new(&planetesimal_inner_bound, &planetesimal_outer_bound);
-
             let inside_range = inner_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
             let outside_range = outer_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
             let dust_density = dust_density(&dust_density_coeff, &stellar_mass, &p.a);
@@ -105,12 +108,18 @@ impl System {
                 if p.mass > crit_mass {
                     p.gas_giant = true;
                 }
+
                 p.orbit_zone = orbital_zone(stellar_luminosity, p.distance_to_primary_star);
                 p.radius = kothari_radius(&p.mass, &p.gas_giant, &p.orbit_zone);
 
-                planets.push(p);
-                planets.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
-                coalesce_planetesimals(stellar_luminosity, stellar_mass, planets);
+                if p.mass < ASTEROID_MASS_LIMIT {
+                    let asteroid_field = Asteroids::new(p);
+                    asteroids.push(asteroid_field);
+                } else {
+                    planets.push(p);
+                    planets.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
+                    coalesce_planetesimals(stellar_luminosity, stellar_mass, planets);
+                }
             }
 
             let dust_still_left = dust_availible(
@@ -126,6 +135,18 @@ impl System {
         }
     }
 
+    pub fn post_accretion(&mut self) {
+        for a in self.asteroids.iter() {
+            for p in self.planets.iter_mut() {
+                if check_orbits_intersect(p.a, p.e, p.mass, a.a, a.e, a.mass) {
+                    println!("Asteroids intesect planet!");
+                    println!("{:#?}", p);
+                }
+            }
+        }
+
+    }
+
     pub fn process_planets(&mut self) {
         let System {
             primary_star,
@@ -139,6 +160,7 @@ impl System {
             ecosphere,
             ..
         } = primary_star;
+
         for planet in planets.iter_mut() {
             planet.derive_planetary_environment(
                 stellar_luminosity,
@@ -169,8 +191,8 @@ pub fn coalesce_planetesimals(
         if i == 0 {
             next_planets.push(p.clone());
         } else if let Some(prev_p) = next_planets.last_mut() {
-            if check_planetesimals_intersect(p, prev_p) {
-                // Moon not likely to capture other moon
+            if check_orbits_intersect(p.a, p.e, p.mass, prev_p.a, prev_p.e, prev_p.mass) {
+                // Moon is not likely to capture other moon in a presence of planet
                 if p.is_moon {
                     *prev_p = coalesce_two_planets(&prev_p, &p);
                 } else {
@@ -181,7 +203,7 @@ pub fn coalesce_planetesimals(
                     };
                     let roche_limit = roche_limit_au(&larger.mass, &smaller.mass, &smaller.radius);
 
-                    // Planetesimals collide or one capture another
+                    // Planetesimals collide or one capture another as moon
                     if (prev_p.a - p.a).abs() <= roche_limit * 2.0 {
                         *prev_p = coalesce_two_planets(&prev_p, &p);
                     } else {
@@ -202,22 +224,22 @@ pub fn coalesce_planetesimals(
             }
         }
     }
+
     *planets = next_planets;
 }
 
-/// Check if planetesimals have an over-lapping orbits
-pub fn check_planetesimals_intersect(p: &Planetesimal, prev_p: &Planetesimal) -> bool {
-    let diff = prev_p.a - p.a;
-
+/// Check if planetesimals have an overlapping orbits
+pub fn check_orbits_intersect(p1_a: f64, p1_e: f64, p1_mass: f64, p2_a: f64, p2_e: f64, p2_mass: f64) -> bool {
+    let diff = p2_a - p1_a;
     let (dist1, dist2) = match diff > 0.0 {
         true => {
-            let dist1 = outer_effect_limit(&p.a, &p.e, &p.mass) - p.a;
-            let dist2 = prev_p.a - inner_effect_limit(&prev_p.a, &prev_p.e, &prev_p.mass);
+            let dist1 = outer_effect_limit(&p1_a, &p1_e, &p1_mass) - p1_a;
+            let dist2 = p2_a - inner_effect_limit(&p2_a, &p2_e, &p2_mass);
             (dist1, dist2)
         }
         false => {
-            let dist1 = p.a - inner_effect_limit(&p.a, &p.e, &p.mass);
-            let dist2 = outer_effect_limit(&prev_p.a, &prev_p.e, &prev_p.mass) - prev_p.a;
+            let dist1 = p1_a - inner_effect_limit(&p1_a, &p1_e, &p1_mass);
+            let dist2 = outer_effect_limit(&p2_a, &p2_e, &p2_mass) - p2_a;
             (dist1, dist2)
         }
     };
@@ -283,7 +305,7 @@ pub fn moons_to_rings(planet: &mut Planetesimal) {
     for m in planet.moons.iter_mut() {
         let roche_limit = roche_limit_au(&planet.mass, &m.mass, &m.radius);
         if m.a <= roche_limit * 2.0 {
-            let ring = Ring::new(roche_limit, m);
+            let ring = Ring::from_planet(roche_limit, m);
             planet.rings.push(ring);
         } else {
             next_moons.push(m.clone());

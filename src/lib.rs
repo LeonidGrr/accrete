@@ -74,6 +74,7 @@ pub fn run(
     );
 
     planetary_system.distribute_planetary_masses();
+    planetary_system.post_accretion();
     planetary_system.process_planets();
 
     if to_json {
@@ -95,6 +96,7 @@ pub fn run(
         println!("Rings: {}", p.rings.len());
         println!("------------------");
     }
+    println!("Asteroids: {:#?}", planetary_system.asteroids.len());
     AccreteOutput::Struct(planetary_system)
 }
 

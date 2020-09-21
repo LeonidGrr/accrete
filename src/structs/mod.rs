@@ -8,5 +8,6 @@ pub mod system;
 // use asteroid::*;
 use dust::{DustBand, *};
 use planetesimal::Planetesimal;
+use asteroid::Asteroids;
 use primary_star::PrimaryStar;
 use ring::Ring;
