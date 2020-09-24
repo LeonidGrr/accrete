@@ -16,7 +16,7 @@ pub struct Planetesimal {
     pub distance_to_primary_star: f64,
     pub mass: f64,
     pub earth_masses: f64,
-    pub gas_giant: bool,
+    pub is_gas_giant: bool,
     pub orbit_zone: i32,
     // equatorial radius, km
     pub radius: f64,
@@ -52,13 +52,14 @@ pub struct Planetesimal {
     pub moons: Vec<Planetesimal>,
     pub rings: Vec<Ring>,
     pub is_moon: bool,
+    pub is_asteroid_field: bool,
     pub hill_sphere: f64,
 }
 
 impl Planetesimal {
     pub fn new(planetesimal_inner_bound: &f64, planetesimal_outer_bound: &f64) -> Self {
         let mut rng = rand::thread_rng();
-        let gas_giant = false;
+        let is_gas_giant = false;
         let a = rng.gen_range(planetesimal_inner_bound, planetesimal_outer_bound);
         let e = random_eccentricity();
 
@@ -68,7 +69,7 @@ impl Planetesimal {
             distance_to_primary_star: a,
             mass: PLANETESIMAL_MASS,
             earth_masses: 0.0,
-            gas_giant,
+            is_gas_giant,
             orbit_zone: 0,
             radius: 0.0,
             earth_radii: 0.0,
@@ -97,6 +98,7 @@ impl Planetesimal {
             escape_velocity_km_per_sec: 0.0,
             is_tidally_locked: false,
             is_moon: false,
+            is_asteroid_field: false,
             hill_sphere: 0.0,
         }
     }
@@ -109,16 +111,16 @@ impl Planetesimal {
         ecosphere: &mut (f64, f64),
     ) {
         self.orbit_zone = orbital_zone(stellar_luminosity, self.a);
-        if self.gas_giant {
+        if self.is_gas_giant {
             self.density = empirical_density(
                 &self.mass,
                 &self.distance_to_primary_star,
                 &ecosphere.1,
-                &self.gas_giant,
+                &self.is_gas_giant,
             );
             self.radius = volume_radius(&self.mass, &self.density);
         } else {
-            self.radius = kothari_radius(&self.mass, &self.gas_giant, &self.orbit_zone);
+            self.radius = kothari_radius(&self.mass, &self.is_gas_giant, &self.orbit_zone);
             self.density = volume_density(&self.mass, &self.radius);
         }
         self.orbital_period_days = period(&self.a, &self.mass, &stellar_mass);
@@ -129,7 +131,7 @@ impl Planetesimal {
         self.rms_velocity = rms_vel(&MOLECULAR_NITROGEN, &self.a);
         self.molecule_weight = molecule_limit(&self.mass, &self.radius);
 
-        if self.gas_giant {
+        if self.is_gas_giant {
             self.surface_grav = INCREDIBLY_LARGE_NUMBER;
             self.greenhouse_effect = false;
             self.volatile_gas_inventory = INCREDIBLY_LARGE_NUMBER;

@@ -74,7 +74,6 @@ pub fn run(
     );
 
     planetary_system.distribute_planetary_masses();
-    planetary_system.post_accretion();
     planetary_system.process_planets();
 
     if to_json {
@@ -91,12 +90,12 @@ pub fn run(
         println!("Planet {}", i);
         println!("mass EM {}", p.mass * EARTH_MASSES_PER_SOLAR_MASS);
         println!("a {}", p.a);
-        println!("is giant: {}", p.gas_giant);
+        println!("is giant: {}", p.is_gas_giant);
+        println!("is asteroids: {}", p.is_asteroid_field);
         println!("Moons: {}", p.moons.len());
         println!("Rings: {}", p.rings.len());
         println!("------------------");
     }
-    println!("Asteroids: {:#?}", planetary_system.asteroids.len());
     AccreteOutput::Struct(planetary_system)
 }
 

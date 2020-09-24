@@ -16,4 +16,8 @@ impl Ring {
             width: moon.radius * 2.0,
         }
     }
+
+    pub fn new(a: f64, mass: f64, width: f64) -> Self {
+        Ring { a, mass, width }
+    }
 }

@@ -74,12 +74,12 @@ pub fn empirical_density(
     mass: &f64,
     distance_to_primary_star: &f64,
     ecosphere_radius: &f64,
-    gas_giant: &bool,
+    is_gas_giant: &bool,
 ) -> f64 {
     let mut density = (mass * EARTH_MASSES_PER_SOLAR_MASS).powf(1.0 / 8.0);
     density *= (ecosphere_radius / distance_to_primary_star).powf(0.25);
 
-    match gas_giant {
+    match is_gas_giant {
         true => density * 1.2,
         false => density * 5.5,
     }
@@ -107,7 +107,7 @@ pub fn day_length(planet: &mut Planetesimal, stellar_mass: &f64, main_sequence_a
     let equatorial_radius_in_cm = planet.radius * CM_PER_KM;
     let year_in_hours = planet.orbital_period_days;
 
-    let k2 = match planet.gas_giant {
+    let k2 = match planet.is_gas_giant {
         true => 0.24,
         false => 0.33,
     };

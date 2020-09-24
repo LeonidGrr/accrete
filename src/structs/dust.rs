@@ -64,7 +64,6 @@ pub fn accrete_dust(
             break;
         }
     }
-
     *mass = new_mass;
 }
 

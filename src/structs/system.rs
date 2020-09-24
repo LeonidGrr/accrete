@@ -1,14 +1,13 @@
+use crate::consts::*;
 use crate::enviro::*;
 use crate::structs::*;
 use crate::utils::*;
-use crate::consts::*;
 use rand::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct System {
     pub primary_star: PrimaryStar,
     pub planets: Vec<Planetesimal>,
-    pub asteroids: Vec<Asteroids>,
     pub cloud_eccentricity: f64,
     pub dust_density_coeff: f64,
     pub planets_limit: Option<usize>,
@@ -43,7 +42,6 @@ impl System {
         Self {
             primary_star,
             planets: Vec::new(),
-            asteroids: Vec::new(),
             k,
             b,
             dust_density_coeff,
@@ -62,7 +60,6 @@ impl System {
         let Self {
             primary_star,
             planets,
-            asteroids,
             k,
             b,
             dust_density_coeff,
@@ -106,20 +103,19 @@ impl System {
                 compress_dust_lanes(dust_bands);
 
                 if p.mass > crit_mass {
-                    p.gas_giant = true;
+                    p.is_gas_giant = true;
+                }
+
+                if p.mass < ASTEROID_MASS_LIMIT {
+                    p.is_asteroid_field = true;
                 }
 
                 p.orbit_zone = orbital_zone(stellar_luminosity, p.distance_to_primary_star);
-                p.radius = kothari_radius(&p.mass, &p.gas_giant, &p.orbit_zone);
+                p.radius = kothari_radius(&p.mass, &p.is_gas_giant, &p.orbit_zone);
 
-                if p.mass < ASTEROID_MASS_LIMIT {
-                    let asteroid_field = Asteroids::new(p);
-                    asteroids.push(asteroid_field);
-                } else {
-                    planets.push(p);
-                    planets.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
-                    coalesce_planetesimals(stellar_luminosity, stellar_mass, planets);
-                }
+                planets.push(p);
+                planets.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
+                coalesce_planetesimals(stellar_luminosity, stellar_mass, planets);
             }
 
             let dust_still_left = dust_availible(
@@ -133,18 +129,6 @@ impl System {
                 None => dust_still_left,
             };
         }
-    }
-
-    pub fn post_accretion(&mut self) {
-        for a in self.asteroids.iter() {
-            for p in self.planets.iter_mut() {
-                if check_orbits_intersect(p.a, p.e, p.mass, a.a, a.e, a.mass) {
-                    println!("Asteroids intesect planet!");
-                    println!("{:#?}", p);
-                }
-            }
-        }
-
     }
 
     pub fn process_planets(&mut self) {
@@ -191,7 +175,8 @@ pub fn coalesce_planetesimals(
         if i == 0 {
             next_planets.push(p.clone());
         } else if let Some(prev_p) = next_planets.last_mut() {
-            if check_orbits_intersect(p.a, p.e, p.mass, prev_p.a, prev_p.e, prev_p.mass) {
+            if check_orbits_intersect(p.a, p.e, p.mass, prev_p.a, prev_p.e, prev_p.mass) && (!p.is_asteroid_field || !prev_p.is_asteroid_field)
+            {
                 // Moon is not likely to capture other moon in a presence of planet
                 if p.is_moon {
                     *prev_p = coalesce_two_planets(&prev_p, &p);
@@ -217,6 +202,7 @@ pub fn coalesce_planetesimals(
                             &mut prev_p.moons,
                         );
                         moons_to_rings(prev_p);
+
                     }
                 }
             } else {
@@ -229,7 +215,14 @@ pub fn coalesce_planetesimals(
 }
 
 /// Check if planetesimals have an overlapping orbits
-pub fn check_orbits_intersect(p1_a: f64, p1_e: f64, p1_mass: f64, p2_a: f64, p2_e: f64, p2_mass: f64) -> bool {
+fn check_orbits_intersect(
+    p1_a: f64,
+    p1_e: f64,
+    p1_mass: f64,
+    p2_a: f64,
+    p2_e: f64,
+    p2_mass: f64,
+) -> bool {
     let diff = p2_a - p1_a;
     let (dist1, dist2) = match diff > 0.0 {
         true => {
@@ -247,7 +240,7 @@ pub fn check_orbits_intersect(p1_a: f64, p1_e: f64, p1_mass: f64, p2_a: f64, p2_
 }
 
 /// Two planetesimals collide and form one planet
-pub fn coalesce_two_planets(a: &Planetesimal, b: &Planetesimal) -> Planetesimal {
+fn coalesce_two_planets(a: &Planetesimal, b: &Planetesimal) -> Planetesimal {
     let new_mass = a.mass + b.mass;
     let new_axis = new_mass / (a.mass / a.a + b.mass / b.a);
     let term1 = a.mass * (a.a * (1.0 - a.e.powf(2.0))).sqrt();
@@ -259,17 +252,17 @@ pub fn coalesce_two_planets(a: &Planetesimal, b: &Planetesimal) -> Planetesimal 
     coalesced.mass = new_mass;
     coalesced.a = new_axis;
     coalesced.e = new_eccn;
-    coalesced.gas_giant = a.gas_giant || b.gas_giant;
-    coalesced.radius = kothari_radius(&coalesced.mass, &coalesced.gas_giant, &coalesced.orbit_zone);
+    coalesced.is_gas_giant = a.is_gas_giant || b.is_gas_giant;
+    coalesced.radius = kothari_radius(
+        &coalesced.mass,
+        &coalesced.is_gas_giant,
+        &coalesced.orbit_zone,
+    );
     coalesced
 }
 
 /// Larger planetsimal capture smaller as moon
-pub fn capture_moon(
-    larger: &Planetesimal,
-    smaller: &Planetesimal,
-    stellar_mass: &f64,
-) -> Planetesimal {
+fn capture_moon(larger: &Planetesimal, smaller: &Planetesimal, stellar_mass: &f64) -> Planetesimal {
     let mut planet = larger.clone();
     let mut moon = smaller.clone();
     moon.is_moon = true;
@@ -300,7 +293,7 @@ pub fn capture_moon(
     planet
 }
 
-pub fn moons_to_rings(planet: &mut Planetesimal) {
+fn moons_to_rings(planet: &mut Planetesimal) {
     let mut next_moons = Vec::new();
     for m in planet.moons.iter_mut() {
         let roche_limit = roche_limit_au(&planet.mass, &m.mass, &m.radius);
@@ -315,13 +308,13 @@ pub fn moons_to_rings(planet: &mut Planetesimal) {
     planet.moons = next_moons;
 }
 
-pub fn stellar_dust_limit(stellar_mass_ratio: &f64) -> f64 {
+fn stellar_dust_limit(stellar_mass_ratio: &f64) -> f64 {
     200.0 * stellar_mass_ratio.powf(1.0 / 3.0)
 }
 
 /// Orbital radius is in AU, eccentricity is unitless, and the stellar luminosity ratio is with respect to the sun.
 /// The value returned is the mass at which the planet begins to accrete gas as well as dust, and is in units of solar masses.
-pub fn critical_limit(
+fn critical_limit(
     b: &f64,
     orbital_radius: &f64,
     eccentricity: &f64,
@@ -333,10 +326,10 @@ pub fn critical_limit(
 }
 
 /// "...the semimajor axes of planetary nuclei can never be greater than 50 distance units, which effectively sets an outer boundary to the problem. An inner boundary was also established, arbitrarily at 0.3 distance unit. (More than 92 percent of the total cloud mass lies between these bounds.)"
-pub fn outermost_planet(stellar_mass_ratio: &f64) -> f64 {
+fn outermost_planet(stellar_mass_ratio: &f64) -> f64 {
     50.0 * stellar_mass_ratio.powf(0.33)
 }
 
-pub fn innermost_planet(stellar_mass_ratio: &f64) -> f64 {
+fn innermost_planet(stellar_mass_ratio: &f64) -> f64 {
     0.3 * stellar_mass_ratio.powf(0.33)
 }
