@@ -1,6 +1,6 @@
 Accrete.rs
 ========================
-Accrete is planetary system generation program by simulation of protoplanetary disk accretion.
+Accrete is planetary system generation program using simulation of protoplanetary disk accretion.
 While this particular version is not an accurate modelling tool, it can be used for procedural generation of plausible planetary system for game development or education.
 During last 50 years this code was reimplemented many times with many improvements ([good overview here](https://github.com/zakski/accrete-starform-stargen), also brief history below).
 
