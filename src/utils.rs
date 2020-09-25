@@ -59,6 +59,14 @@ pub fn hill_sphere_au(
     planet_axis * (1.0 - planet_eccn) * (planet_mass / (3.0 * stellar_mass)).powf(1.0 / 3.0)
 }
 
+/// Clearing neightbourhood around planets orbit Margot's П discriminant (masses in solar mass, axis untiless)
+pub fn clearing_neightbourhood(planet_mass: &f64, planet_axis: &f64, stellar_mass: &f64) -> f64 {
+    let planet_mass_earth_mass = planet_mass * EARTH_MASSES_PER_SOLAR_MASS;
+    // Coeff depends on extent of clearing required and parents star lifetime (~10 billion years for main-seq)
+    let k = 807.0;
+    (planet_mass_earth_mass / (stellar_mass.powf(5.0 / 2.0) * planet_axis.powf(9.0 / 8.0))) * k
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

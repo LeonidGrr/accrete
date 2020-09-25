@@ -27,7 +27,6 @@ pub const ECCENTRICITY_COEFF: f64 = 0.077;
 /// Units of solar masses
 pub const PLANETESIMAL_MASS: f64 = 1.0E-25;
 pub const PROTOPLANET_MASS: f64 = 1.0E-15;
-pub const ASTEROID_MASS_LIMIT: f64 = 2.988000001494E-9;
 
 /// Units of grams
 pub const SOLAR_MASS_IN_GRAMS: f64 = 1.989E33;

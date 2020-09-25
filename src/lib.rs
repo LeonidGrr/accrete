@@ -91,7 +91,7 @@ pub fn run(
         println!("mass EM {}", p.mass * EARTH_MASSES_PER_SOLAR_MASS);
         println!("a {}", p.a);
         println!("is giant: {}", p.is_gas_giant);
-        println!("is asteroids: {}", p.is_asteroid_field);
+        println!("is dwarf: {}", p.is_dwarf_planet);
         println!("Moons: {}", p.moons.len());
         println!("Rings: {}", p.rings.len());
         println!("------------------");

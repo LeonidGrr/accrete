@@ -52,14 +52,14 @@ pub struct Planetesimal {
     pub moons: Vec<Planetesimal>,
     pub rings: Vec<Ring>,
     pub is_moon: bool,
-    pub is_asteroid_field: bool,
+    pub orbit_clearing: f64,
+    pub is_dwarf_planet: bool,
     pub hill_sphere: f64,
 }
 
 impl Planetesimal {
     pub fn new(planetesimal_inner_bound: &f64, planetesimal_outer_bound: &f64) -> Self {
         let mut rng = rand::thread_rng();
-        let is_gas_giant = false;
         let a = rng.gen_range(planetesimal_inner_bound, planetesimal_outer_bound);
         let e = random_eccentricity();
 
@@ -67,9 +67,8 @@ impl Planetesimal {
             a,
             e,
             distance_to_primary_star: a,
-            mass: PLANETESIMAL_MASS,
+            mass: PROTOPLANET_MASS,
             earth_masses: 0.0,
-            is_gas_giant,
             orbit_zone: 0,
             radius: 0.0,
             earth_radii: 0.0,
@@ -98,7 +97,9 @@ impl Planetesimal {
             escape_velocity_km_per_sec: 0.0,
             is_tidally_locked: false,
             is_moon: false,
-            is_asteroid_field: false,
+            is_gas_giant: false,
+            is_dwarf_planet: false,
+            orbit_clearing: 0.0,
             hill_sphere: 0.0,
         }
     }

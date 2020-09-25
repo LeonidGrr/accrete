@@ -1,4 +1,3 @@
-use crate::consts::*;
 use crate::enviro::*;
 use crate::structs::*;
 use crate::utils::*;
@@ -105,11 +104,10 @@ impl System {
                 if p.mass > crit_mass {
                     p.is_gas_giant = true;
                 }
-
-                if p.mass < ASTEROID_MASS_LIMIT {
-                    p.is_asteroid_field = true;
+                p.orbit_clearing = clearing_neightbourhood(&p.mass, &p.a, stellar_mass);
+                if p.orbit_clearing < 1.0 {
+                    p.is_dwarf_planet = true;
                 }
-
                 p.orbit_zone = orbital_zone(stellar_luminosity, p.distance_to_primary_star);
                 p.radius = kothari_radius(&p.mass, &p.is_gas_giant, &p.orbit_zone);
 
@@ -175,7 +173,7 @@ pub fn coalesce_planetesimals(
         if i == 0 {
             next_planets.push(p.clone());
         } else if let Some(prev_p) = next_planets.last_mut() {
-            if check_orbits_intersect(p.a, p.e, p.mass, prev_p.a, prev_p.e, prev_p.mass) && (!p.is_asteroid_field || !prev_p.is_asteroid_field)
+            if check_orbits_intersect(p.a, p.e, p.mass, prev_p.a, prev_p.e, prev_p.mass)
             {
                 // Moon is not likely to capture other moon in a presence of planet
                 if p.is_moon {
@@ -202,7 +200,6 @@ pub fn coalesce_planetesimals(
                             &mut prev_p.moons,
                         );
                         moons_to_rings(prev_p);
-
                     }
                 }
             } else {
@@ -287,6 +284,7 @@ fn capture_moon(larger: &Planetesimal, smaller: &Planetesimal, stellar_mass: &f6
 
     for m in planet.moons.iter_mut() {
         m.a = rng.gen_range(0.0, planet.hill_sphere);
+        m.e = random_eccentricity();
         m.distance_to_primary_star = planet.a;
     }
 
@@ -297,7 +295,9 @@ fn moons_to_rings(planet: &mut Planetesimal) {
     let mut next_moons = Vec::new();
     for m in planet.moons.iter_mut() {
         let roche_limit = roche_limit_au(&planet.mass, &m.mass, &m.radius);
-        if m.a <= roche_limit * 2.0 {
+        let moon_perhelion = perihelion_distance(&m.a, &m.e);
+        // if moon_perhelion <= roche_limit.powf(0.5) {
+        if moon_perhelion <= roche_limit * 2.0 {
             let ring = Ring::from_planet(roche_limit, m);
             planet.rings.push(ring);
         } else {
