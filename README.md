@@ -50,8 +50,10 @@ Simple way to variate output is to change stellar mass. This accrete implementat
 
 ## Papers
 - [Dole, Stephen H., Formation of Planetary Systems by Aggregation: A Computer Simulation.. Santa Monica, CA: RAND Corporation, 1969.](https://www.rand.org/pubs/papers/P4226.html)
+- [Dole, Stephen H., Habitable Planets for Man.](https://www.rand.org/content/dam/rand/pubs/commercial_books/2007/RAND_CB179-1.pdf)
 - [Isaacman, R., Sagan, C. Cornell University, Ithaca, N.Y., Computer Simulations of Planetary Accretion Dynamics Sensitivity to Initial Condition.](https://ui.adsabs.harvard.edu/abs/1977Icar...31..510I/abstract)
 - [Martyn J. Fogg, Extra Solar Planetary Systems A Microcomputer simulation.](https://www.academia.edu/4173808/Extra_Solar_Planetary_Systems_A_Microcomputer_Simulation)
+
 
 ## Acknowledgements
 - Stephen H. Dole

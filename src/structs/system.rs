@@ -255,6 +255,7 @@ fn coalesce_two_planets(a: &Planetesimal, b: &Planetesimal) -> Planetesimal {
         &coalesced.is_gas_giant,
         &coalesced.orbit_zone,
     );
+    coalesced.has_collision = true;
     coalesced
 }
 

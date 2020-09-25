@@ -76,16 +76,6 @@ pub fn run(
     planetary_system.distribute_planetary_masses();
     planetary_system.process_planets();
 
-    if to_json {
-        let s = json!({
-            "primary_star": planetary_system.primary_star,
-            "planets": planetary_system.planets,
-        })
-        .to_string();
-        println!("{}", s);
-        return AccreteOutput::Json(s);
-    }
-
     for (i, p) in planetary_system.planets.iter().enumerate() {
         println!("Planet {}", i);
         println!("mass EM {}", p.mass * EARTH_MASSES_PER_SOLAR_MASS);
@@ -96,6 +86,16 @@ pub fn run(
         println!("Rings: {}", p.rings.len());
         println!("------------------");
     }
+
+    if to_json {
+        let s = json!({
+            "primary_star": planetary_system.primary_star,
+            "planets": planetary_system.planets,
+        })
+        .to_string();
+        return AccreteOutput::Json(s);
+    }
+
     AccreteOutput::Struct(planetary_system)
 }
 

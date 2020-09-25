@@ -55,6 +55,9 @@ pub struct Planetesimal {
     pub orbit_clearing: f64,
     pub is_dwarf_planet: bool,
     pub hill_sphere: f64,
+    pub tectonic_activity: bool,
+    pub magnetosphere: bool,
+    pub has_collision: bool,
 }
 
 impl Planetesimal {
@@ -101,6 +104,9 @@ impl Planetesimal {
             is_dwarf_planet: false,
             orbit_clearing: 0.0,
             hill_sphere: 0.0,
+            tectonic_activity: false,
+            magnetosphere: false,
+            has_collision: false,
         }
     }
 
@@ -176,6 +182,27 @@ impl Planetesimal {
         self.length_of_year = self.orbital_period_days / 365.25;
         self.escape_velocity_km_per_sec = self.escape_velocity / CM_PER_KM;
         self.is_tidally_locked = check_tidal_lock(self.day_hours, self.orbital_period_days);
+
+        // Probability of planet have a tectonic activity:
+        // 1) planet locked close to the star due to one side of planet being hotter than other
+        // 2) planet mass is within 0.5-1.5 of Earth mass
+        // 3) planet had collision
+        if (!self.is_moon && !self.is_gas_giant)
+        && (self.is_tidally_locked
+        || self.earth_masses > 0.5 && self.earth_masses < 1.5
+        || self.has_collision) {
+            self.tectonic_activity = true;
+        }
+
+        // Probability of planet have a tectonic activity:
+        // 1) planet is gas giant
+        // 2) planet have tectonic activity
+        // 3) planet have atmosphere
+        if self.is_gas_giant
+        || self.tectonic_activity
+        || self.surface_pressure_bar > 0.0 {
+            self.magnetosphere = true;
+        }
 
         for moon in self.moons.iter_mut() {
             moon.derive_planetary_environment(

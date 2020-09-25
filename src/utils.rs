@@ -60,6 +60,7 @@ pub fn hill_sphere_au(
 }
 
 /// Clearing neightbourhood around planets orbit Margot's П discriminant (masses in solar mass, axis untiless)
+/// https://en.wikipedia.org/wiki/Clearing_the_neighbourhood
 pub fn clearing_neightbourhood(planet_mass: &f64, planet_axis: &f64, stellar_mass: &f64) -> f64 {
     let planet_mass_earth_mass = planet_mass * EARTH_MASSES_PER_SOLAR_MASS;
     // Coeff depends on extent of clearing required and parents star lifetime (~10 billion years for main-seq)
