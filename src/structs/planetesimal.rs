@@ -191,9 +191,10 @@ impl Planetesimal {
         // 2) planet mass is within 0.5-1.5 of Earth mass
         // 3) planet had collision
         if (!self.is_moon && !self.is_gas_giant)
-        && (self.is_tidally_locked
-        || self.earth_masses > 0.5 && self.earth_masses < 1.5
-        || self.has_collision) {
+            && (self.is_tidally_locked
+                || self.earth_masses > 0.5 && self.earth_masses < 1.5
+                || self.has_collision)
+        {
             self.tectonic_activity = true;
         }
 
@@ -201,9 +202,7 @@ impl Planetesimal {
         // 1) planet is gas giant
         // 2) planet have tectonic activity
         // 3) planet have atmosphere
-        if self.is_gas_giant
-        || self.tectonic_activity
-        || self.surface_pressure_bar > 0.0 {
+        if self.is_gas_giant || self.tectonic_activity || self.surface_pressure_bar > 0.0 {
             self.magnetosphere = true;
         }
 
@@ -217,14 +216,22 @@ impl Planetesimal {
         }
     }
 
-    pub fn random_outer_body(planetesimal_inner_bound: &f64, planetesimal_outer_bound: &f64,
-    stellar_luminosity: &f64) -> Self {
+    pub fn random_outer_body(
+        planetesimal_inner_bound: &f64,
+        planetesimal_outer_bound: &f64,
+        stellar_luminosity: &f64,
+    ) -> Self {
         let mut rng = rand::thread_rng();
-        
+
         let mut random_body = Planetesimal::new(planetesimal_inner_bound, planetesimal_outer_bound);
         random_body.mass = rng.gen_range(PLANETESIMAL_MASS, PROTOPLANET_MASS);
-        random_body.orbit_zone = orbital_zone(&stellar_luminosity, random_body.distance_to_primary_star);
-        random_body.radius = kothari_radius(&random_body.mass, &random_body.is_gas_giant, &random_body.orbit_zone);
+        random_body.orbit_zone =
+            orbital_zone(&stellar_luminosity, random_body.distance_to_primary_star);
+        random_body.radius = kothari_radius(
+            &random_body.mass,
+            &random_body.is_gas_giant,
+            &random_body.orbit_zone,
+        );
 
         random_body
     }

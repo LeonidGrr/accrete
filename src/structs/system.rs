@@ -138,11 +138,15 @@ impl System {
             ..
         } = self;
         let intensity = (primary_star.main_seq_age / 1.0e6) as i32;
-        
+
         for p in planets.iter_mut() {
             if p.is_gas_giant {
                 for _i in 0..intensity {
-                    let mut outer_body = Planetesimal::random_outer_body(planetesimal_inner_bound, planetesimal_outer_bound, &primary_star.stellar_luminosity);
+                    let mut outer_body = Planetesimal::random_outer_body(
+                        planetesimal_inner_bound,
+                        planetesimal_outer_bound,
+                        &primary_star.stellar_luminosity,
+                    );
 
                     if check_orbits_intersect(
                         outer_body.a,
@@ -152,12 +156,17 @@ impl System {
                         p.e,
                         p.mass,
                     ) {
-                        planetesimals_intersect(&mut outer_body, p, &primary_star.stellar_luminosity, &primary_star.stellar_mass);
+                        planetesimals_intersect(
+                            &mut outer_body,
+                            p,
+                            &primary_star.stellar_luminosity,
+                            &primary_star.stellar_mass,
+                        );
                     }
                 }
             }
         }
-    }            
+    }
 
     pub fn process_planets(&mut self) {
         let System {
@@ -203,8 +212,7 @@ pub fn coalesce_planetesimals(
         if i == 0 {
             next_planets.push(p.clone());
         } else if let Some(prev_p) = next_planets.last_mut() {
-            if check_orbits_intersect(p.a, p.e, p.mass, prev_p.a, prev_p.e, prev_p.mass)
-            {
+            if check_orbits_intersect(p.a, p.e, p.mass, prev_p.a, prev_p.e, prev_p.mass) {
                 planetesimals_intersect(p, prev_p, primary_star_luminosity, primary_star_mass);
             } else {
                 next_planets.push(p.clone());
@@ -215,7 +223,12 @@ pub fn coalesce_planetesimals(
 }
 
 /// Two planetesimals intersect
-fn planetesimals_intersect(p: &mut Planetesimal, prev_p: &mut Planetesimal, primary_star_luminosity: &f64, primary_star_mass: &f64) {
+fn planetesimals_intersect(
+    p: &mut Planetesimal,
+    prev_p: &mut Planetesimal,
+    primary_star_luminosity: &f64,
+    primary_star_mass: &f64,
+) {
     // Moon is not likely to capture other moon in a presence of planet
     if p.is_moon {
         *prev_p = coalesce_two_planets(&prev_p, &p);
