@@ -129,6 +129,36 @@ impl System {
         }
     }
 
+    pub fn post_accretion(&mut self) {
+        let Self {
+            planetesimal_inner_bound,
+            planetesimal_outer_bound,
+            primary_star,
+            planets,
+            ..
+        } = self;
+        let intensity = (primary_star.main_seq_age / 1.0e6) as i32;
+        
+        for p in planets.iter_mut() {
+            if p.is_gas_giant {
+                for _i in 0..intensity {
+                    let mut outer_body = Planetesimal::random_outer_body(planetesimal_inner_bound, planetesimal_outer_bound, &primary_star.stellar_luminosity);
+
+                    if check_orbits_intersect(
+                        outer_body.a,
+                        outer_body.e,
+                        outer_body.mass,
+                        p.a,
+                        p.e,
+                        p.mass,
+                    ) {
+                        planetesimals_intersect(&mut outer_body, p, &primary_star.stellar_luminosity, &primary_star.stellar_mass);
+                    }
+                }
+            }
+        }
+    }            
+
     pub fn process_planets(&mut self) {
         let System {
             primary_star,
@@ -169,46 +199,50 @@ pub fn coalesce_planetesimals(
     planets: &mut Vec<Planetesimal>,
 ) {
     let mut next_planets = Vec::new();
-    for (i, p) in planets.iter().enumerate() {
+    for (i, p) in planets.iter_mut().enumerate() {
         if i == 0 {
             next_planets.push(p.clone());
         } else if let Some(prev_p) = next_planets.last_mut() {
             if check_orbits_intersect(p.a, p.e, p.mass, prev_p.a, prev_p.e, prev_p.mass)
             {
-                // Moon is not likely to capture other moon in a presence of planet
-                if p.is_moon {
-                    *prev_p = coalesce_two_planets(&prev_p, &p);
-                } else {
-                    // Check for larger/smaller planetesimal
-                    let (larger, smaller) = match p.mass >= prev_p.mass {
-                        true => (p.clone(), prev_p.clone()),
-                        false => (prev_p.clone(), p.clone()),
-                    };
-                    let roche_limit = roche_limit_au(&larger.mass, &smaller.mass, &smaller.radius);
-
-                    // Planetesimals collide or one capture another as moon
-                    if (prev_p.a - p.a).abs() <= roche_limit * 2.0 {
-                        *prev_p = coalesce_two_planets(&prev_p, &p);
-                    } else {
-                        *prev_p = capture_moon(&larger, &smaller, primary_star_mass);
-                        prev_p
-                            .moons
-                            .sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
-                        coalesce_planetesimals(
-                            primary_star_luminosity,
-                            primary_star_mass,
-                            &mut prev_p.moons,
-                        );
-                        moons_to_rings(prev_p);
-                    }
-                }
+                planetesimals_intersect(p, prev_p, primary_star_luminosity, primary_star_mass);
             } else {
                 next_planets.push(p.clone());
             }
         }
     }
-
     *planets = next_planets;
+}
+
+/// Two planetesimals intersect
+fn planetesimals_intersect(p: &mut Planetesimal, prev_p: &mut Planetesimal, primary_star_luminosity: &f64, primary_star_mass: &f64) {
+    // Moon is not likely to capture other moon in a presence of planet
+    if p.is_moon {
+        *prev_p = coalesce_two_planets(&prev_p, &p);
+    } else {
+        // Check for larger/smaller planetesimal
+        let (larger, smaller) = match p.mass >= prev_p.mass {
+            true => (p.clone(), prev_p.clone()),
+            false => (prev_p.clone(), p.clone()),
+        };
+        let roche_limit = roche_limit_au(&larger.mass, &smaller.mass, &smaller.radius);
+
+        // Planetesimals collide or one capture another as moon
+        if (prev_p.a - p.a).abs() <= roche_limit * 2.0 {
+            *prev_p = coalesce_two_planets(&prev_p, &p);
+        } else {
+            *prev_p = capture_moon(&larger, &smaller, primary_star_mass);
+            prev_p
+                .moons
+                .sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
+            coalesce_planetesimals(
+                primary_star_luminosity,
+                primary_star_mass,
+                &mut prev_p.moons,
+            );
+            moons_to_rings(prev_p);
+        }
+    }
 }
 
 /// Check if planetesimals have an overlapping orbits
@@ -297,7 +331,6 @@ fn moons_to_rings(planet: &mut Planetesimal) {
     for m in planet.moons.iter_mut() {
         let roche_limit = roche_limit_au(&planet.mass, &m.mass, &m.radius);
         let moon_perhelion = perihelion_distance(&m.a, &m.e);
-        // if moon_perhelion <= roche_limit.powf(0.5) {
         if moon_perhelion <= roche_limit * 2.0 {
             let ring = Ring::from_planet(roche_limit, m);
             planet.rings.push(ring);

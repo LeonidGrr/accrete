@@ -74,6 +74,7 @@ pub fn run(
     );
 
     planetary_system.distribute_planetary_masses();
+    planetary_system.post_accretion();
     planetary_system.process_planets();
 
     for (i, p) in planetary_system.planets.iter().enumerate() {
