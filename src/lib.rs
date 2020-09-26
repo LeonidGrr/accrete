@@ -103,6 +103,7 @@ pub fn run(
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn run_with_default_config() {
         run(None, None, None, None, None, None, false);
