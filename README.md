@@ -16,7 +16,7 @@ During last 50 years this code was reimplemented many times with many improvemen
 use accrete;
 
 fn main() {
-    let planets = accrete::run(None, None, None, None, None, None, false);
+    let planets = accrete::run(None, None, None, None, None, None, None, false);
 }
 ```
 Simple way to variate output is to change stellar mass. This accrete implementation is capable of generating planetary system for any stellar mass, but better (most realistic) results achieved for main sequence star class with primary star mass of 0.6 - 1.3 solar masses.
@@ -39,6 +39,9 @@ Simple way to variate output is to change stellar mass. This accrete implementat
 
 **b** - Crit_mass coeff is used as threshold for planet to become gas giant. Recommended range: 1.0e-5 - 1.2e-5
 *Default: 1.2e-5*
+
+**post_accretion_intensity** - Amount of random planetesimals that will bomb planets of created system after accretion.
+*Default: 1000*
 
 **to_json** - Output as JSON string. 
 *Default: false*

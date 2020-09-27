@@ -1,7 +1,9 @@
 use crate::enviro::*;
 use crate::structs::*;
 use crate::utils::*;
+
 use rand::prelude::*;
+use rand::distributions::WeightedIndex;
 
 #[derive(Debug, Clone)]
 pub struct System {
@@ -129,42 +131,37 @@ impl System {
         }
     }
 
-    pub fn post_accretion(&mut self) {
+    pub fn post_accretion(&mut self, intensity: i32) {
         let Self {
-            planetesimal_inner_bound,
-            planetesimal_outer_bound,
             primary_star,
             planets,
             ..
         } = self;
-        let intensity = (primary_star.main_seq_age / 1.0e6) as i32;
 
+        let mut weights = Vec::new();
         for p in planets.iter_mut() {
-            if p.is_gas_giant {
-                for _i in 0..intensity {
-                    let mut outer_body = Planetesimal::random_outer_body(
-                        planetesimal_inner_bound,
-                        planetesimal_outer_bound,
-                        &primary_star.stellar_luminosity,
-                    );
+            weights.push(p.mass);
+        }
 
-                    if check_orbits_intersect(
-                        outer_body.a,
-                        outer_body.e,
-                        outer_body.mass,
-                        p.a,
-                        p.e,
-                        p.mass,
-                    ) {
-                        planetesimals_intersect(
-                            &mut outer_body,
-                            p,
-                            &primary_star.stellar_luminosity,
-                            &primary_star.stellar_mass,
-                        );
-                    }
-                }
-            }
+        let dist = WeightedIndex::new(&weights).unwrap();
+        let mut rng = thread_rng();
+        for _i in 0..intensity {
+            let p =  &mut planets[dist.sample(&mut rng)];
+            let Planetesimal { a, e, mass, .. } = p;
+            let r_inner = inner_effect_limit(a, e, mass);
+            let r_outer = outer_effect_limit(a, e, mass);
+            let mut outer_body = Planetesimal::random_outer_body(
+                &r_inner,
+                &r_outer,
+                &primary_star.stellar_luminosity,
+            );
+
+            planetesimals_intersect(
+                &mut outer_body,
+                p,
+                &primary_star.stellar_luminosity,
+                &primary_star.stellar_mass,
+            );
         }
     }
 
@@ -239,7 +236,6 @@ fn planetesimals_intersect(
             false => (prev_p.clone(), p.clone()),
         };
         let roche_limit = roche_limit_au(&larger.mass, &smaller.mass, &smaller.radius);
-
         // Planetesimals collide or one capture another as moon
         if (prev_p.a - p.a).abs() <= roche_limit * 2.0 {
             *prev_p = coalesce_two_planets(&prev_p, &p);
