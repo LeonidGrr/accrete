@@ -118,7 +118,7 @@ impl Planetesimal {
         stellar_luminosity: &f64,
         stellar_mass: &f64,
         main_seq_age: &f64,
-        ecosphere: &mut (f64, f64),
+        ecosphere: &(f64, f64),
     ) {
         self.orbit_zone = orbital_zone(stellar_luminosity, self.a);
         if self.is_gas_giant {
@@ -190,7 +190,7 @@ impl Planetesimal {
         // 1) planet locked close to the star due to one side of planet being hotter than other
         // 2) planet mass is within 0.5-1.5 of Earth mass
         // 3) planet had collision
-        if (!self.is_moon && !self.is_gas_giant)
+        if (!self.is_gas_giant)
             && (self.is_tidally_locked
                 || self.earth_masses > 0.5 && self.earth_masses < 1.5
                 || self.has_collision)
@@ -222,7 +222,6 @@ impl Planetesimal {
         stellar_luminosity: &f64,
     ) -> Self {
         let mut rng = rand::thread_rng();
-
         let mut random_body = Planetesimal::new(planetesimal_inner_bound, planetesimal_outer_bound);
         random_body.mass = rng.gen_range(PLANETESIMAL_MASS, PROTOPLANET_MASS);
         random_body.orbit_zone =
@@ -234,5 +233,106 @@ impl Planetesimal {
         );
 
         random_body
+    }
+
+    pub fn random_planet(
+        stellar_luminosity: Option<f64>,
+        stellar_mass: Option<f64>,
+        a: Option<f64>,
+        e: Option<f64>,
+        mass: Option<f64>,
+        post_accretion_intensity: Option<i32>,
+    ) -> Planetesimal {
+        let mut rng = rand::thread_rng();
+        let stellar_luminosity = stellar_luminosity.unwrap_or(1.0);
+        let stellar_mass = stellar_mass.unwrap_or(1.0);
+        let main_seq_age = main_sequence_age(stellar_mass, stellar_luminosity);
+        let stellar_radius_au = stellar_radius_au(stellar_mass);
+        let stellar_surface_temp = stellar_surface_temp(stellar_radius_au, stellar_luminosity);
+        let spectral_class = spectral_class(&stellar_surface_temp);
+        let ecosphere = ecosphere(&stellar_luminosity, &spectral_class);
+        let intensity = post_accretion_intensity.unwrap_or(100);
+        let a = a.unwrap_or(rng.gen_range(0.0, 50.0));
+        let e = e.unwrap_or(random_eccentricity());
+        let mass =
+            mass.unwrap_or(rng.gen_range(PROTOPLANET_MASS, 500.0 / EARTH_MASSES_PER_SOLAR_MASS));
+
+        let mut is_gas_giant = false;
+        let crit_mass = critical_limit(&B, &a, &e, &stellar_luminosity);
+        if mass > crit_mass {
+            is_gas_giant = true;
+        }
+
+        let mut is_dwarf_planet = false;
+        let orbit_clearing = clearing_neightbourhood(&mass, &a, &stellar_mass);
+        if orbit_clearing < 1.0 {
+            is_dwarf_planet = true;
+        }
+
+        let mut random_planet = Planetesimal {
+            a,
+            e,
+            distance_to_primary_star: a,
+            mass,
+            earth_masses: 0.0,
+            orbit_zone: 0,
+            radius: 0.0,
+            earth_radii: 0.0,
+            density: 0.0,
+            orbital_period_days: 0.0,
+            day_hours: 0.0,
+            resonant_period: false,
+            axial_tilt: 0.0,
+            escape_velocity: 0.0,
+            surface_accel: 0.0,
+            surface_grav: 0.0,
+            rms_velocity: 0.0,
+            molecule_weight: 0.0,
+            volatile_gas_inventory: 0.0,
+            greenhouse_effect: false,
+            albedo: 0.0,
+            surface_temp_kelvin: 0.0,
+            surface_pressure_bar: 0.0,
+            boiling_point_kelvin: 0.0,
+            hydrosphere: 0.0,
+            cloud_cover: 0.0,
+            ice_cover: 0.0,
+            moons: Vec::new(),
+            rings: Vec::new(),
+            length_of_year: 0.0,
+            escape_velocity_km_per_sec: 0.0,
+            is_tidally_locked: false,
+            is_moon: false,
+            is_gas_giant,
+            is_dwarf_planet,
+            orbit_clearing,
+            hill_sphere: 0.0,
+            tectonic_activity: false,
+            magnetosphere: false,
+            has_collision: false,
+        };
+
+        for _i in 0..intensity {
+            let Planetesimal { a, e, mass, .. } = random_planet;
+            let r_inner = inner_effect_limit(&a, &e, &mass);
+            let r_outer = outer_effect_limit(&a, &e, &mass);
+            let mut outer_body =
+                Planetesimal::random_outer_body(&r_inner, &r_outer, &stellar_luminosity);
+            planetesimals_intersect(
+                &mut outer_body,
+                &mut random_planet,
+                &stellar_luminosity,
+                &stellar_mass,
+            );
+        }
+
+        random_planet.derive_planetary_environment(
+            &stellar_luminosity,
+            &stellar_mass,
+            &main_seq_age,
+            &ecosphere,
+        );
+
+        random_planet
     }
 }

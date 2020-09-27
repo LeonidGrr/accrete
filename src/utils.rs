@@ -68,6 +68,19 @@ pub fn clearing_neightbourhood(planet_mass: &f64, planet_axis: &f64, stellar_mas
     (planet_mass_earth_mass / (stellar_mass.powf(5.0 / 2.0) * planet_axis.powf(9.0 / 8.0))) * k
 }
 
+/// Orbital radius is in AU, eccentricity is unitless, and the stellar luminosity ratio is with respect to the sun.
+/// The value returned is the mass at which the planet begins to accrete gas as well as dust, and is in units of solar masses.
+pub fn critical_limit(
+    b: &f64,
+    orbital_radius: &f64,
+    eccentricity: &f64,
+    stellar_luminosity_ratio: &f64,
+) -> f64 {
+    let perihelion_dist = orbital_radius - orbital_radius * eccentricity;
+    let temp = perihelion_dist * stellar_luminosity_ratio.sqrt();
+    b * temp.powf(-0.75)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

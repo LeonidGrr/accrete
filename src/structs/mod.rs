@@ -4,7 +4,8 @@ pub mod primary_star;
 pub mod ring;
 pub mod system;
 
-use dust::{DustBand, *};
+use dust::*;
 use planetesimal::Planetesimal;
-use primary_star::PrimaryStar;
+use primary_star::*;
 use ring::Ring;
+use system::*;

@@ -2,8 +2,8 @@ use crate::enviro::*;
 use crate::structs::*;
 use crate::utils::*;
 
-use rand::prelude::*;
 use rand::distributions::WeightedIndex;
+use rand::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct System {
@@ -146,7 +146,7 @@ impl System {
         let dist = WeightedIndex::new(&weights).unwrap();
         let mut rng = thread_rng();
         for _i in 0..intensity {
-            let p =  &mut planets[dist.sample(&mut rng)];
+            let p = &mut planets[dist.sample(&mut rng)];
             let Planetesimal { a, e, mass, .. } = p;
             let r_inner = inner_effect_limit(a, e, mass);
             let r_outer = outer_effect_limit(a, e, mass);
@@ -220,7 +220,7 @@ pub fn coalesce_planetesimals(
 }
 
 /// Two planetesimals intersect
-fn planetesimals_intersect(
+pub fn planetesimals_intersect(
     p: &mut Planetesimal,
     prev_p: &mut Planetesimal,
     primary_star_luminosity: &f64,
@@ -353,19 +353,6 @@ fn moons_to_rings(planet: &mut Planetesimal) {
 
 fn stellar_dust_limit(stellar_mass_ratio: &f64) -> f64 {
     200.0 * stellar_mass_ratio.powf(1.0 / 3.0)
-}
-
-/// Orbital radius is in AU, eccentricity is unitless, and the stellar luminosity ratio is with respect to the sun.
-/// The value returned is the mass at which the planet begins to accrete gas as well as dust, and is in units of solar masses.
-fn critical_limit(
-    b: &f64,
-    orbital_radius: &f64,
-    eccentricity: &f64,
-    stellar_luminosity_ratio: &f64,
-) -> f64 {
-    let perihelion_dist = orbital_radius - orbital_radius * eccentricity;
-    let temp = perihelion_dist * stellar_luminosity_ratio.sqrt();
-    b * temp.powf(-0.75)
 }
 
 /// "...the semimajor axes of planetary nuclei can never be greater than 50 distance units, which effectively sets an outer boundary to the problem. An inner boundary was also established, arbitrarily at 0.3 distance unit. (More than 92 percent of the total cloud mass lies between these bounds.)"
