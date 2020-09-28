@@ -1,13 +1,13 @@
 Accrete.rs
 ========================
-Accrete is planetary system generation program using simulation of protoplanetary disk accretion.
-While this particular version is not an accurate modelling tool, it can be used for procedural generation of plausible planetary system for game development or education.
-During last 50 years this code was reimplemented many times with many improvements ([good overview here](https://github.com/zakski/accrete-starform-stargen), also brief history below).
+Rust port of Accrete, planetary system generation program. Based on 'Formation of Planetary Systems by Aggregation: A Computer Simulation' by Stephen H. Dole. Improved and extended by many talented people during past ~50 years ([good overview here](https://github.com/zakski/accrete-starform-stargen), also brief history below).
+This version of Accrete can be used for procedural generation of plausible planetary system for game development or education purposes.
 
 ## Features
 - Planetary system generation from original Accrete.
-- Moons and planetary rings generation.
-- Extended stellar and planetary data.
+- Planet environment generation from Starform / Stargen.
+- Moons and rings generation.
+- Extended stellar and planetary data (tectonic activity, magnetosphere).
 - Stand-alone planet generation.
 - JSON output.
 
