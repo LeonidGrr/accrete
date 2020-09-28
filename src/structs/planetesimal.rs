@@ -254,7 +254,9 @@ impl Planetesimal {
         let intensity = post_accretion_intensity.unwrap_or(100);
         let a = a.unwrap_or(rng.gen_range(0.3, 50.0));
         let e = e.unwrap_or(random_eccentricity());
-        let mass = mass.unwrap_or(rng.gen_range(PROTOPLANET_MASS * EARTH_MASSES_PER_SOLAR_MASS, 500.0)) / EARTH_MASSES_PER_SOLAR_MASS;
+        let mass = mass
+            .unwrap_or(rng.gen_range(PROTOPLANET_MASS * EARTH_MASSES_PER_SOLAR_MASS, 500.0))
+            / EARTH_MASSES_PER_SOLAR_MASS;
 
         let mut is_gas_giant = false;
         let crit_mass = critical_limit(&B, &a, &e, &stellar_luminosity);
@@ -315,8 +317,7 @@ impl Planetesimal {
             let Planetesimal { a, e, mass, .. } = random_planet;
             let r_inner = inner_effect_limit(&a, &e, &mass);
             let r_outer = outer_effect_limit(&a, &e, &mass);
-            let mut outer_body =
-                Planetesimal::random_outer_body(&r_inner, &r_outer);
+            let mut outer_body = Planetesimal::random_outer_body(&r_inner, &r_outer);
             planetesimals_intersect(
                 &mut outer_body,
                 &mut random_planet,

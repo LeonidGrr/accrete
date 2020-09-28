@@ -278,7 +278,12 @@ mod tests {
     }
 
     #[test]
-    fn random_planet_deafult() {
+    fn random_planet_default() {
         planet(None, None, None, None, None, None, false);
+    }
+
+    #[test]
+    fn random_planet_to_json() {
+        planet(None, None, None, None, None, None, true);
     }
 }

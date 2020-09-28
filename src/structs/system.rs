@@ -150,10 +150,7 @@ impl System {
             let Planetesimal { a, e, mass, .. } = p;
             let r_inner = inner_effect_limit(a, e, mass);
             let r_outer = outer_effect_limit(a, e, mass);
-            let mut outer_body = Planetesimal::random_outer_body(
-                &r_inner,
-                &r_outer,
-            );
+            let mut outer_body = Planetesimal::random_outer_body(&r_inner, &r_outer);
 
             planetesimals_intersect(
                 &mut outer_body,
