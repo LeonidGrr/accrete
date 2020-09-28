@@ -120,7 +120,9 @@ impl Planetesimal {
         main_seq_age: &f64,
         ecosphere: &(f64, f64),
     ) {
-        self.orbit_zone = orbital_zone(stellar_luminosity, self.a);
+        if !self.is_moon {
+            self.orbit_zone = orbital_zone(stellar_luminosity, self.a);
+        }
         if self.is_gas_giant {
             self.density = empirical_density(
                 &self.mass,
@@ -219,13 +221,11 @@ impl Planetesimal {
     pub fn random_outer_body(
         planetesimal_inner_bound: &f64,
         planetesimal_outer_bound: &f64,
-        stellar_luminosity: &f64,
     ) -> Self {
         let mut rng = rand::thread_rng();
         let mut random_body = Planetesimal::new(planetesimal_inner_bound, planetesimal_outer_bound);
-        random_body.mass = rng.gen_range(PLANETESIMAL_MASS, PROTOPLANET_MASS);
-        random_body.orbit_zone =
-            orbital_zone(&stellar_luminosity, random_body.distance_to_primary_star);
+        random_body.mass = rng.gen_range(PLANETESIMAL_MASS, PROTOPLANET_MASS * 1.0e5);
+        random_body.orbit_zone = 3;
         random_body.radius = kothari_radius(
             &random_body.mass,
             &random_body.is_gas_giant,
@@ -252,10 +252,9 @@ impl Planetesimal {
         let spectral_class = spectral_class(&stellar_surface_temp);
         let ecosphere = ecosphere(&stellar_luminosity, &spectral_class);
         let intensity = post_accretion_intensity.unwrap_or(100);
-        let a = a.unwrap_or(rng.gen_range(0.0, 50.0));
+        let a = a.unwrap_or(rng.gen_range(0.3, 50.0));
         let e = e.unwrap_or(random_eccentricity());
-        let mass =
-            mass.unwrap_or(rng.gen_range(PROTOPLANET_MASS, 500.0 / EARTH_MASSES_PER_SOLAR_MASS));
+        let mass = mass.unwrap_or(rng.gen_range(PROTOPLANET_MASS * EARTH_MASSES_PER_SOLAR_MASS, 500.0)) / EARTH_MASSES_PER_SOLAR_MASS;
 
         let mut is_gas_giant = false;
         let crit_mass = critical_limit(&B, &a, &e, &stellar_luminosity);
@@ -317,7 +316,7 @@ impl Planetesimal {
             let r_inner = inner_effect_limit(&a, &e, &mass);
             let r_outer = outer_effect_limit(&a, &e, &mass);
             let mut outer_body =
-                Planetesimal::random_outer_body(&r_inner, &r_outer, &stellar_luminosity);
+                Planetesimal::random_outer_body(&r_inner, &r_outer);
             planetesimals_intersect(
                 &mut outer_body,
                 &mut random_planet,

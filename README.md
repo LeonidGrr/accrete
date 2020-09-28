@@ -11,6 +11,7 @@ During last 50 years this code was reimplemented many times with many improvemen
 - JSON output.
 
 ## Generate planetary system
+
 ### Default:
 ```rust
 use accrete;
@@ -44,6 +45,29 @@ Simple way to variate output is to change stellar mass. This accrete implementat
 *Default: 1000*
 
 **to_json** - Output as JSON string. 
+*Default: false*
+
+## Generate planet.
+
+### Default:
+```rust
+let system = accrete::planet(None, None, None, None, None, None, false);
+```
+
+### Configuration:
+**stellar_luminosity** - Primary star luminosity.
+*Default: 1.0*
+**stellar_mass** - Primary star mass in solar masses.
+*Default: 1.0*
+**a** - Planet orbital radius in AU.
+*Default: random f64 in a range of 0.3-50.0*
+**e** - Planet eccentricity
+*Default: f64 from random_eccentricity function*
+**mass** - Planet mass in Earth masses.
+*Default: Random f64 in a range 3.3467202125167E-10 - 500.0*
+**post_accretion_intensity** - Amount of random planetesimals that will bomb planet after accretion.
+*Default: 100*
+**to_json** - Output as JSON string.
 *Default: false*
 
 ## Brief history

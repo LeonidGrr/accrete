@@ -153,7 +153,6 @@ impl System {
             let mut outer_body = Planetesimal::random_outer_body(
                 &r_inner,
                 &r_outer,
-                &primary_star.stellar_luminosity,
             );
 
             planetesimals_intersect(
@@ -331,7 +330,6 @@ fn capture_moon(larger: &Planetesimal, smaller: &Planetesimal, stellar_mass: &f6
         m.e = random_eccentricity();
         m.distance_to_primary_star = planet.a;
     }
-
     planet
 }
 
@@ -347,7 +345,6 @@ fn moons_to_rings(planet: &mut Planetesimal) {
             next_moons.push(m.clone());
         }
     }
-
     planet.moons = next_moons;
 }
 

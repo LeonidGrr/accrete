@@ -11,7 +11,8 @@ use structs::system::System;
 
 #[derive(Debug)]
 pub enum AccreteOutput {
-    Struct(System),
+    Planet(Planetesimal),
+    System(System),
     Json(String),
 }
 
@@ -102,9 +103,39 @@ pub fn planetary_system(
         return AccreteOutput::Json(s);
     }
 
-    AccreteOutput::Struct(planetary_system)
+    AccreteOutput::System(planetary_system)
 }
 
+/// ## Generate planet.
+///
+/// ### Default:
+/// ```rust
+/// let system = accrete::planet(None, None, None, None, None, None, false);
+/// ```
+///
+/// ### Configuration:
+///
+/// **stellar_luminosity** - Primary star luminosity.
+/// *Default: 1.0*
+///
+/// **stellar_mass** - Primary star mass in solar masses.
+/// *Default: 1.0*
+///
+/// **a** - Planet orbital radius in AU.
+/// *Default: random f64 in a range of 0.3-50.0*
+///
+/// **e** - Planet eccentricity
+/// *Default: f64 from random_eccentricity function*
+///
+/// **mass** - Planet mass in Earth masses.
+/// *Default: Random f64 in a range 3.3467202125167E-10 - 500.0*
+///
+/// **post_accretion_intensity** - Amount of random planetesimals that will bomb planet after accretion.
+/// *Default: 100*
+///
+/// **to_json** - Output as JSON string.
+/// *Default: false*
+///
 pub fn planet(
     stellar_luminosity: Option<f64>,
     stellar_mass: Option<f64>,
@@ -112,7 +143,8 @@ pub fn planet(
     e: Option<f64>,
     mass: Option<f64>,
     post_accretion_intensity: Option<i32>,
-) {
+    to_json: bool,
+) -> AccreteOutput {
     let planet = Planetesimal::random_planet(
         stellar_luminosity,
         stellar_mass,
@@ -121,7 +153,18 @@ pub fn planet(
         mass,
         post_accretion_intensity,
     );
+
     println!("{:#?}", planet);
+
+    if to_json {
+        let s = json!({
+            "planet": planet,
+        })
+        .to_string();
+        return AccreteOutput::Json(s);
+    }
+
+    AccreteOutput::Planet(planet)
 }
 
 #[cfg(test)]
@@ -236,6 +279,6 @@ mod tests {
 
     #[test]
     fn random_planet_deafult() {
-        planet(None, None, None, None, None, None);
+        planet(None, None, None, None, None, None, false);
     }
 }
