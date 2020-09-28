@@ -241,7 +241,7 @@ impl Planetesimal {
         a: Option<f64>,
         e: Option<f64>,
         mass: Option<f64>,
-        post_accretion_intensity: Option<i32>,
+        post_accretion_intensity: Option<u32>,
     ) -> Planetesimal {
         let mut rng = rand::thread_rng();
         let stellar_luminosity = stellar_luminosity.unwrap_or(1.0);

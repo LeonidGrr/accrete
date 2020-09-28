@@ -58,7 +58,7 @@ pub fn planetary_system(
     k: Option<f64>,
     cloud_eccentricity: Option<f64>,
     b: Option<f64>,
-    post_accretion_intensity: Option<i32>,
+    post_accretion_intensity: Option<u32>,
     to_json: bool,
 ) -> AccreteOutput {
     let mut rng = rand::thread_rng();
@@ -142,7 +142,7 @@ pub fn planet(
     a: Option<f64>,
     e: Option<f64>,
     mass: Option<f64>,
-    post_accretion_intensity: Option<i32>,
+    post_accretion_intensity: Option<u32>,
     to_json: bool,
 ) -> AccreteOutput {
     let planet = Planetesimal::random_planet(
@@ -153,7 +153,6 @@ pub fn planet(
         mass,
         post_accretion_intensity,
     );
-
     println!("{:#?}", planet);
 
     if to_json {
@@ -170,7 +169,6 @@ pub fn planet(
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn run_with_default_config() {
         planetary_system(None, None, None, None, None, None, None, false);

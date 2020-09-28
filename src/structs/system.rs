@@ -131,7 +131,7 @@ impl System {
         }
     }
 
-    pub fn post_accretion(&mut self, intensity: i32) {
+    pub fn post_accretion(&mut self, intensity: u32) {
         let Self {
             primary_star,
             planets,
@@ -140,7 +140,7 @@ impl System {
 
         let mut weights = Vec::new();
         for p in planets.iter_mut() {
-            weights.push(p.mass);
+            weights.push(p.mass * p.a);
         }
 
         let dist = WeightedIndex::new(&weights).unwrap();
