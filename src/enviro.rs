@@ -465,7 +465,7 @@ fn soft(v: &f64, max: &f64, min: &f64) -> f64 {
     (lim(2.0 * dv / dm - 1.0) + 1.0) / 2.0 * dm + min
 }
 
-pub fn set_temp_range(planet: &mut Planetesimal) {
+pub fn get_day_night_temp_kelvin(planet: &mut Planetesimal) {
     let Planetesimal {
         surface_pressure_bar,
         surface_temp_kelvin,
@@ -495,36 +495,39 @@ pub fn set_temp_range(planet: &mut Planetesimal) {
         wl = 0.0;
     }
 
-    planet.high_temp = soft(&hi, &max, &min);
-    planet.low_temp = soft(&lo, &max, &min);
-    planet.max_temp = soft(&sh, &max, &min);
-    planet.min_temp = soft(&wl, &max, &min);
+    let high_temp = soft(&hi, &max, &min);
+    let low_temp = soft(&lo, &max, &min);
+    let max_temp = soft(&sh, &max, &min);
+    let min_temp = soft(&wl, &max, &min);
+    
+    if (high_temp - max_temp).abs() > 10.0 || (low_temp - min_temp).abs() > 10.0 {
+        planet.day_temp_kelvin = high_temp;
+        planet.night_temp_kelvin = low_temp;
+    }
+
+    planet.day_temp_kelvin = max_temp;
+    planet.night_temp_kelvin = min_temp;
+
 }
 
 // The magnetic environment of exomoons, which is critically triggered by the intrinsic magnetic field of the host planet, has been identified as another effect on exomoon habitability.[49] Most notably, it was found that moons at distances between about 5 and 20 planetary radii from a giant planet can be habitable from an illumination and tidal heating point of view, but still the planetary magnetosphere would critically influence their habitability.
 
 
-// {
-//     fprintf (file, 
-//         "<tr><th>Normal temperature range</th>"
-//         "<td><center><table>\n");
 
-//     if (fabs(planet->high_temp - planet->max_temp) > 10 
-//      || fabs(planet->low_temp - planet->min_temp) > 10)
-//     {
+
 //         fprintf (file, "\t<tr><th>Night</th><th></th><th>Day</th></tr>\n");
         
 //         fprintf (file, 
 //             "\t<tr><td>%5.1Lf&deg; C<br>%5.1Lf&deg; F</td>"
 //             "<td> - </td>",
 //                 planet->low_temp - FREEZING_POINT_OF_WATER,
-//                 32.0 + (1.8 * (planet->low_temp - FREEZING_POINT_OF_WATER)));
+//            
 
 //         fprintf (file, 
 //             "<td>%5.1Lf&deg; C<br>%5.1Lf&deg; F</td>"
 //             "</tr>\n",
 //                 planet->high_temp - FREEZING_POINT_OF_WATER,
-//                 32.0 + (1.8 * (planet->high_temp - FREEZING_POINT_OF_WATER)));
+//          
 //     }
     
 //     fprintf (file, "\t<tr><th>Min</th><th></th><th>Max</th></tr>\n");
