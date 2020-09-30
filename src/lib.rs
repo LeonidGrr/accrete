@@ -83,16 +83,16 @@ pub fn planetary_system(
     planetary_system.post_accretion(intensity);
     planetary_system.process_planets();
 
-    for (i, p) in planetary_system.planets.iter().enumerate() {
-        println!("Planet {}", i);
-        println!("mass EM {}", p.mass * EARTH_MASSES_PER_SOLAR_MASS);
-        println!("a {}", p.a);
-        println!("is giant: {}", p.is_gas_giant);
-        println!("is dwarf: {}", p.is_dwarf_planet);
-        println!("Moons: {}", p.moons.len());
-        println!("Rings: {}", p.rings.len());
-        println!("------------------");
-    }
+    // for (i, p) in planetary_system.planets.iter().enumerate() {
+    //     println!("Planet {}", i);
+    //     println!("mass EM {}", p.mass * EARTH_MASSES_PER_SOLAR_MASS);
+    //     println!("a {}", p.a);
+    //     println!("is giant: {}", p.is_gas_giant);
+    //     println!("is dwarf: {}", p.is_dwarf_planet);
+    //     println!("Moons: {}", p.moons.len());
+    //     println!("Rings: {}", p.rings.len());
+    //     println!("------------------");
+    // }
 
     if to_json {
         let s = json!({
@@ -100,6 +100,7 @@ pub fn planetary_system(
             "planets": planetary_system.planets,
         })
         .to_string();
+        println!("{}", s);
         return AccreteOutput::Json(s);
     }
 
@@ -153,7 +154,6 @@ pub fn planet(
         mass,
         post_accretion_intensity,
     );
-    println!("{:#?}", planet);
 
     if to_json {
         let s = json!({

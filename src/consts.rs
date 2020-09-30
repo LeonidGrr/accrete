@@ -123,7 +123,7 @@ pub const N: f64 = 3.0;
 /// Used in day_hours-length calcs (cm2/sec2 g)
 pub const J: f64 = 1.46E-19;
 
-pub const INCREDIBLY_LARGE_NUMBER: f64 = 9.9999E37;
+pub const INCREDIBLY_LARGE_NUMBER: f64 = 1.0E38;
 
 /// Molecular weights (used for RMS velocity calcs) ("Habitable Planets for Man" by Stephen H. Dole, p. 38)
 pub const ATOMIC_HYDROGEN: f64 = 1.0; /* H */

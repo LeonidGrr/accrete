@@ -45,6 +45,10 @@ pub struct Planetesimal {
     pub is_tidally_locked: bool,
     pub surface_pressure_bar: f64,
     pub surface_temp_kelvin: f64,
+    pub high_temp: f64,
+    pub low_temp: f64,
+    pub max_temp: f64,
+    pub min_temp: f64,
     pub boiling_point_kelvin: f64,
     pub hydrosphere: f64,
     pub cloud_cover: f64,
@@ -92,6 +96,10 @@ impl Planetesimal {
             greenhouse_effect: false,
             albedo: 0.0,
             surface_temp_kelvin: 0.0,
+            high_temp: 0.0,
+            low_temp: 0.0,
+            max_temp: 0.0,
+            min_temp: 0.0,
             surface_pressure_bar: 0.0,
             boiling_point_kelvin: 0.0,
             hydrosphere: 0.0,
@@ -180,6 +188,8 @@ impl Planetesimal {
                 iterate_surface_temp(self, &ecosphere.1);
             }
         }
+
+        set_temp_range(self);
 
         self.hill_sphere = hill_sphere_au(&self.a, &self.e, &self.mass, stellar_mass);
         self.earth_masses = get_earth_mass(self.mass);
@@ -293,6 +303,10 @@ impl Planetesimal {
             greenhouse_effect: false,
             albedo: 0.0,
             surface_temp_kelvin: 0.0,
+            high_temp: 0.0,
+            low_temp: 0.0,
+            max_temp: 0.0,
+            min_temp: 0.0,
             surface_pressure_bar: 0.0,
             boiling_point_kelvin: 0.0,
             hydrosphere: 0.0,

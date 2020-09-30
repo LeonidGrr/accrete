@@ -88,7 +88,6 @@ let system = accrete::planet(None, None, None, None, None, None, false);
 - [Isaacman, R., Sagan, C. Cornell University, Ithaca, N.Y., Computer Simulations of Planetary Accretion Dynamics Sensitivity to Initial Condition.](https://ui.adsabs.harvard.edu/abs/1977Icar...31..510I/abstract)
 - [Martyn J. Fogg, Extra Solar Planetary Systems A Microcomputer simulation.](https://www.academia.edu/4173808/Extra_Solar_Planetary_Systems_A_Microcomputer_Simulation)
 
-
 ## Acknowledgements
 - Stephen H. Dole
 - Carl Sagan

@@ -455,6 +455,92 @@ pub fn check_tidal_lock(day_length: f64, orbital_period: f64) -> bool {
     (day_length - orbital_period * day_length).abs() < error_margin
 }
 
-// Habitable moons:
-// Based on tidal heating models, scientists have defined zones in satellite systems similarly to those of planetary systems. One such zone is the circumplanetary habitable zone (or "habitable edge"). According to this theory, moons closer to their planet than the habitable edge cannot support liquid water at their surface. When effects of eclipses as well as constraints from a satellite's orbital stability are included into this concept, one finds that — depending on a moon's orbital eccentricity — there is a minimum mass of roughly 0.2 solar masses for stars to host habitable moons within the stellar HZ.[48]
+fn lim(x: f64) -> f64 {
+    x / (1.0 + x.powf(4.0)).sqrt().sqrt()
+}
+
+fn soft(v: &f64, max: &f64, min: &f64) -> f64 {
+    let dv = v - min;
+    let dm = max - min;
+    (lim(2.0 * dv / dm - 1.0) + 1.0) / 2.0 * dm + min
+}
+
+pub fn set_temp_range(planet: &mut Planetesimal) {
+    let Planetesimal {
+        surface_pressure_bar,
+        surface_temp_kelvin,
+        axial_tilt,
+        e,
+        day_hours,
+        ..
+    } = planet;
+    let pressmod = 1.0 / (1.0 + 20.0 * *surface_pressure_bar).sqrt();
+    let ppmod= 1.0 / (10.0 + 5.0 * *surface_pressure_bar).sqrt();
+    let tiltmod  = ((*axial_tilt * PI / 180.0).cos() * (1.0 + *e).powf(2.0)).abs();
+    let daymod = 1.0 / (200.0 / *day_hours + 1.0);
+    let mh = (1.0 + daymod).powf(pressmod as f64);
+    let ml = (1.0 - daymod).powf(pressmod as f64);
+    let hi = mh * *surface_temp_kelvin;
+    let mut lo = ml * *surface_temp_kelvin;
+    let sh = hi + ((100.0 + hi) * tiltmod).powf((ppmod).sqrt());
+    let mut wl = lo - ((150.0 + lo) * tiltmod).powf((ppmod).sqrt());
+    let max = *surface_temp_kelvin + surface_temp_kelvin.sqrt() * 10.0;
+    let min = *surface_temp_kelvin / (*day_hours + 24.0).sqrt();
+
+    if lo < min {
+        lo = min;
+    }
+
+    if wl < 0.0 {
+        wl = 0.0;
+    }
+
+    planet.high_temp = soft(&hi, &max, &min);
+    planet.low_temp = soft(&lo, &max, &min);
+    planet.max_temp = soft(&sh, &max, &min);
+    planet.min_temp = soft(&wl, &max, &min);
+}
+
 // The magnetic environment of exomoons, which is critically triggered by the intrinsic magnetic field of the host planet, has been identified as another effect on exomoon habitability.[49] Most notably, it was found that moons at distances between about 5 and 20 planetary radii from a giant planet can be habitable from an illumination and tidal heating point of view, but still the planetary magnetosphere would critically influence their habitability.
+
+
+// {
+//     fprintf (file, 
+//         "<tr><th>Normal temperature range</th>"
+//         "<td><center><table>\n");
+
+//     if (fabs(planet->high_temp - planet->max_temp) > 10 
+//      || fabs(planet->low_temp - planet->min_temp) > 10)
+//     {
+//         fprintf (file, "\t<tr><th>Night</th><th></th><th>Day</th></tr>\n");
+        
+//         fprintf (file, 
+//             "\t<tr><td>%5.1Lf&deg; C<br>%5.1Lf&deg; F</td>"
+//             "<td> - </td>",
+//                 planet->low_temp - FREEZING_POINT_OF_WATER,
+//                 32.0 + (1.8 * (planet->low_temp - FREEZING_POINT_OF_WATER)));
+
+//         fprintf (file, 
+//             "<td>%5.1Lf&deg; C<br>%5.1Lf&deg; F</td>"
+//             "</tr>\n",
+//                 planet->high_temp - FREEZING_POINT_OF_WATER,
+//                 32.0 + (1.8 * (planet->high_temp - FREEZING_POINT_OF_WATER)));
+//     }
+    
+//     fprintf (file, "\t<tr><th>Min</th><th></th><th>Max</th></tr>\n");
+        
+//     fprintf (file, 
+//         "\t<tr><td>%5.1Lf&deg; C<br>%5.1Lf&deg; F</td>"
+//         "<td> - </td>",
+//         planet->min_temp - FREEZING_POINT_OF_WATER,
+//         32.0 + (1.8 * (planet->min_temp - FREEZING_POINT_OF_WATER)));
+
+//     fprintf (file, 
+//         "<td>%5.1Lf&deg; C<br>%5.1Lf&deg; F</td>"
+//         "</tr>\n",
+//             planet->max_temp - FREEZING_POINT_OF_WATER,
+//             32.0 + (1.8 * (planet->max_temp - FREEZING_POINT_OF_WATER)));
+
+// fprintf (file, 
+//     "</table></center></td></tr>\n");
+// }
