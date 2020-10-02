@@ -19,6 +19,8 @@ use accrete;
 
 fn main() {
     let mut accrete = Accrete::new();
+    // To modify accrete configuration just change public field:
+    // accrete.json = true
     accrete.planetary_system();
 }
 ```
@@ -58,6 +60,8 @@ use accrete;
 
 fn main() {
     let mut accrete = Accrete::new();
+    // To modify accrete configuration just change public field:
+    // accrete.json = true
     accrete.planet();
 }
 ```

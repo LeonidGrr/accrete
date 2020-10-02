@@ -131,7 +131,6 @@ impl Accrete {
             println!("{}", s);
             return AccreteOutput::Json(s);
         }
-
         AccreteOutput::System(planetary_system)
     }
 
