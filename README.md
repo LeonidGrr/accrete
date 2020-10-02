@@ -18,9 +18,11 @@ This version of Accrete can be used for procedural generation of plausible plane
 use accrete;
 
 fn main() {
-    let system = accrete::planetary_system(None, None, None, None, None, None, None, false);
+    let mut accrete = Accrete::new();
+    accrete.planetary_system();
 }
 ```
+
 Simple way to variate output is to change stellar mass. This accrete implementation is capable of generating planetary system for any stellar mass, but better (most realistic) results achieved for main sequence star class with primary star mass of 0.6 - 1.3 solar masses.
 
 ### Configuration:
@@ -52,7 +54,12 @@ Simple way to variate output is to change stellar mass. This accrete implementat
 
 ### Default:
 ```rust
-let system = accrete::planet(None, None, None, None, None, None, false);
+use accrete;
+
+fn main() {
+    let mut accrete = Accrete::new();
+    accrete.planet();
+}
 ```
 
 ### Configuration:

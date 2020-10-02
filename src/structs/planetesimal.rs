@@ -242,27 +242,19 @@ impl Planetesimal {
     }
 
     pub fn random_planet(
-        stellar_luminosity: Option<f64>,
-        stellar_mass: Option<f64>,
-        a: Option<f64>,
-        e: Option<f64>,
-        mass: Option<f64>,
-        post_accretion_intensity: Option<u32>,
+        stellar_luminosity: f64,
+        stellar_mass: f64,
+        a: f64,
+        e: f64,
+        mass: f64,
+        post_accretion_intensity: u32,
     ) -> Planetesimal {
-        let mut rng = rand::thread_rng();
-        let stellar_luminosity = stellar_luminosity.unwrap_or(1.0);
-        let stellar_mass = stellar_mass.unwrap_or(1.0);
         let main_seq_age = main_sequence_age(stellar_mass, stellar_luminosity);
         let stellar_radius_au = stellar_radius_au(stellar_mass);
         let stellar_surface_temp = stellar_surface_temp(stellar_radius_au, stellar_luminosity);
         let spectral_class = spectral_class(&stellar_surface_temp);
         let ecosphere = ecosphere(&stellar_luminosity, &spectral_class);
-        let intensity = post_accretion_intensity.unwrap_or(100);
-        let a = a.unwrap_or(rng.gen_range(0.3, 50.0));
-        let e = e.unwrap_or(random_eccentricity());
-        let mass = mass
-            .unwrap_or(rng.gen_range(PROTOPLANET_MASS * EARTH_MASSES_PER_SOLAR_MASS, 500.0))
-            / EARTH_MASSES_PER_SOLAR_MASS;
+
 
         let mut is_gas_giant = false;
         let crit_mass = critical_limit(&B, &a, &e, &stellar_luminosity);
@@ -321,7 +313,7 @@ impl Planetesimal {
             has_collision: false,
         };
 
-        for _i in 0..intensity {
+        for _i in 0..post_accretion_intensity {
             let Planetesimal { a, e, mass, .. } = random_planet;
             let r_inner = inner_effect_limit(&a, &e, &mass);
             let r_outer = outer_effect_limit(&a, &e, &mass);

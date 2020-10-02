@@ -11,7 +11,6 @@ pub struct System {
     pub planets: Vec<Planetesimal>,
     pub cloud_eccentricity: f64,
     pub dust_density_coeff: f64,
-    pub planets_limit: Option<usize>,
     pub k: f64,
     pub b: f64,
     pub planetesimal_inner_bound: f64,
@@ -24,7 +23,6 @@ pub struct System {
 
 impl System {
     pub fn set_initial_conditions(
-        planets_limit: Option<usize>,
         stellar_mass: f64,
         dust_density_coeff: f64,
         k: f64,
@@ -46,7 +44,6 @@ impl System {
             k,
             b,
             dust_density_coeff,
-            planets_limit,
             cloud_eccentricity,
             planetesimal_inner_bound,
             planetesimal_outer_bound,
@@ -64,7 +61,6 @@ impl System {
             k,
             b,
             dust_density_coeff,
-            planets_limit,
             cloud_eccentricity,
             planetesimal_inner_bound,
             planetesimal_outer_bound,
@@ -118,16 +114,11 @@ impl System {
                 coalesce_planetesimals(stellar_luminosity, stellar_mass, planets);
             }
 
-            let dust_still_left = dust_availible(
+            *dust_left = dust_availible(
                 &dust_bands,
                 &planetesimal_inner_bound,
                 &planetesimal_outer_bound,
             );
-
-            *dust_left = match planets_limit {
-                Some(limit) => planets.len() < *limit && dust_still_left,
-                None => dust_still_left,
-            };
         }
     }
 
