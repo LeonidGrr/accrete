@@ -128,7 +128,6 @@ impl Accrete {
                 "planets": planetary_system.planets,
             })
             .to_string();
-            println!("{}", s);
             return AccreteOutput::Json(s);
         }
         AccreteOutput::System(planetary_system)
