@@ -170,7 +170,6 @@ impl Accrete {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn run_with_default_config() {
         let accrete = Accrete::new();
