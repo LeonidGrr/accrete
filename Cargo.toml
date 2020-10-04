@@ -10,6 +10,6 @@ readme = "README.md"
 keywords = ["accrete", "planetary", "system", "procedural", "generation"]
 
 [dependencies]
-rand = { version = "0.7", features = ["getrandom", "stdweb", "wasm-bindgen"] } 
+rand = { version = "0.7", features = [ "wasm-bindgen"] } 
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
