@@ -1,6 +1,6 @@
 [package]
 name = "accrete"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Leonid <leonidgrr@gmail.com>"]
 license="MIT"
 repository = "https://github.com/LeonidGrr/accrete.git"
