@@ -3,9 +3,9 @@ mod enviro;
 mod structs;
 mod utils;
 
+use crate::consts::*;
 use crate::structs::planetesimal::Planetesimal;
 use crate::structs::system::System;
-use crate::consts::*;
 use crate::utils::*;
 use rand::prelude::*;
 use serde_json::json;
@@ -145,7 +145,7 @@ impl Accrete {
             to_json,
             ..
         } = *self;
-        
+
         let planet = Planetesimal::random_planet(
             stellar_luminosity,
             stellar_mass,
@@ -170,6 +170,7 @@ impl Accrete {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn run_with_default_config() {
         let accrete = Accrete::new();
@@ -293,7 +294,7 @@ mod tests {
     #[test]
     fn random_planet_to_json() {
         let mut accrete = Accrete::new();
-        accrete.to_json = true; 
+        accrete.to_json = true;
         accrete.planet();
     }
 }

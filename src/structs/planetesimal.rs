@@ -186,7 +186,7 @@ impl Planetesimal {
         }
 
         get_day_night_temp_kelvin(self);
-        
+
         self.hill_sphere = hill_sphere_au(&self.a, &self.e, &self.mass, stellar_mass);
         self.earth_masses = get_earth_mass(self.mass);
         self.earth_radii = self.radius / EARTH_RADIUS_IN_KM;
@@ -254,7 +254,6 @@ impl Planetesimal {
         let stellar_surface_temp = stellar_surface_temp(stellar_radius_au, stellar_luminosity);
         let spectral_class = spectral_class(&stellar_surface_temp);
         let ecosphere = ecosphere(&stellar_luminosity, &spectral_class);
-
 
         let mut is_gas_giant = false;
         let crit_mass = critical_limit(&B, &a, &e, &stellar_luminosity);

@@ -475,8 +475,8 @@ pub fn get_day_night_temp_kelvin(planet: &mut Planetesimal) {
         ..
     } = planet;
     let pressmod = 1.0 / (1.0 + 20.0 * *surface_pressure_bar).sqrt();
-    let ppmod= 1.0 / (10.0 + 5.0 * *surface_pressure_bar).sqrt();
-    let tiltmod  = ((*axial_tilt * PI / 180.0).cos() * (1.0 + *e).powf(2.0)).abs();
+    let ppmod = 1.0 / (10.0 + 5.0 * *surface_pressure_bar).sqrt();
+    let tiltmod = ((*axial_tilt * PI / 180.0).cos() * (1.0 + *e).powf(2.0)).abs();
     let daymod = 1.0 / (200.0 / *day_hours + 1.0);
     let mh = (1.0 + daymod).powf(pressmod as f64);
     let ml = (1.0 - daymod).powf(pressmod as f64);
@@ -499,7 +499,7 @@ pub fn get_day_night_temp_kelvin(planet: &mut Planetesimal) {
     let low_temp = soft(&lo, &max, &min);
     let max_temp = soft(&sh, &max, &min);
     let min_temp = soft(&wl, &max, &min);
-    
+
     if (high_temp - max_temp).abs() > 10.0 || (low_temp - min_temp).abs() > 10.0 {
         planet.day_temp_kelvin = high_temp;
         planet.night_temp_kelvin = low_temp;
@@ -507,5 +507,4 @@ pub fn get_day_night_temp_kelvin(planet: &mut Planetesimal) {
 
     planet.day_temp_kelvin = max_temp;
     planet.night_temp_kelvin = min_temp;
-
 }
