@@ -1,6 +1,6 @@
 Accrete.rs
 ========================
-Rust port of Accrete, planetary system generation program. Based on 'Formation of Planetary Systems by Aggregation: A Computer Simulation' by Stephen H. Dole. Improved and extended by many talented people during past ~50 years ([good overview here](https://github.com/zakski/accrete-starform-stargen), also brief history below).
+Rust port of Accrete, planetary system generation algorithm. Based on 'Formation of Planetary Systems by Aggregation: A Computer Simulation' by Stephen H. Dole. Improved and extended by many talented people during past ~50 years ([good overview here](https://github.com/zakski/accrete-starform-stargen), also brief history below).
 This version of Accrete can be used for procedural generation of plausible planetary system for game development or education purposes.
 
 ## Features
@@ -9,10 +9,12 @@ This version of Accrete can be used for procedural generation of plausible plane
 - Moons and rings generation.
 - Extended stellar and planetary data (tectonic activity, magnetosphere).
 - Stand-alone planet generation.
+- [Rust crate](https://crates.io/crates/accrete)
+- [NPM package](https://www.npmjs.com/package/accrete-wasm)
+
+### Examples
 
 ## Generate planetary system
-
-### Default:
 ```rust
 use accrete;
 
@@ -22,6 +24,13 @@ fn main() {
     // accrete.stellar_mass = 1.5;
     accrete.planetary_system();
 }
+```
+
+```javascript
+import('accrete').then(accrete => {
+    const config = accrete.config();
+    const system = accrete.planetary_system_wasm(config);
+});
 ```
 
 Simple way to variate output is to change stellar mass. This accrete implementation is capable of generating planetary system for any stellar mass, but better (most realistic) results achieved for main sequence star class with primary star mass of 0.6 - 1.3 solar masses.
@@ -46,9 +55,7 @@ Simple way to variate output is to change stellar mass. This accrete implementat
 **post_accretion_intensity** - Amount of random planetesimals that will bomb planets of created system after accretion.
 *Default: 1000*
 
-## Generate planet.
-
-### Default:
+## Generate planet
 ```rust
 use accrete;
 
@@ -58,6 +65,13 @@ fn main() {
     // accrete.planet_mass = 2.5;
     accrete.planet();
 }
+```
+
+```javascript
+import('accrete').then(accrete => {
+    const config = accrete.config();
+    const planet = accrete.planet_wasm(config);
+});
 ```
 
 ### Configuration:
