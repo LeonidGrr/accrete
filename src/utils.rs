@@ -81,6 +81,11 @@ pub fn critical_limit(
     b * temp.powf(-0.75)
 }
 
+pub fn set_panic_hook() {
+    #[cfg(feature = "console_error_panic_hook")]
+    console_error_panic_hook::set_once();
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

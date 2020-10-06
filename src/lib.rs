@@ -7,15 +7,9 @@ use crate::consts::*;
 use crate::structs::planetesimal::Planetesimal;
 use crate::structs::system::System;
 use crate::utils::*;
-use rand::prelude::*;
-use serde_json::json;
 
-#[derive(Debug)]
-pub enum AccreteOutput {
-    Planet(Planetesimal),
-    System(System),
-    Json(String),
-}
+use rand::prelude::*;
+use wasm_bindgen::prelude::*;
 
 /// ### Configuration:
 ///
@@ -37,9 +31,6 @@ pub enum AccreteOutput {
 /// **post_accretion_intensity** - Amount of random planetesimals that will bomb planets of created system after accretion.
 /// *Default: 1000*
 ///
-/// **to_json** - Output as JSON string.
-/// *Default: false*
-///
 /// Parameters specific for standalone planet generation
 /// **planet_a** - Planet orbital radius in AU.
 /// *Default: random f64 in a range of 0.3-50.0*
@@ -52,6 +43,7 @@ pub enum AccreteOutput {
 ///
 /// **stellar_luminosity** - Primary star luminosity.
 /// *Default: 1.0*
+#[wasm_bindgen]
 #[derive(Debug)]
 pub struct Accrete {
     pub stellar_mass: f64,
@@ -60,7 +52,6 @@ pub struct Accrete {
     pub cloud_eccentricity: f64,
     pub b: f64,
     pub post_accretion_intensity: u32,
-    pub to_json: bool,
     pub planet_a: f64,
     pub planet_e: f64,
     pub planet_mass: f64,
@@ -83,7 +74,6 @@ impl Default for Accrete {
             cloud_eccentricity: 0.2,
             b: B,
             post_accretion_intensity: 1000,
-            to_json: false,
             stellar_luminosity: 1.0,
             planet_a,
             planet_e,
@@ -98,7 +88,7 @@ impl Accrete {
     }
 
     /// Generate planetary system.
-    pub fn planetary_system(&self) -> AccreteOutput {
+    pub fn planetary_system(&self) -> System {
         let Accrete {
             stellar_mass,
             dust_density_coeff,
@@ -106,7 +96,6 @@ impl Accrete {
             cloud_eccentricity,
             b,
             post_accretion_intensity,
-            to_json,
             ..
         } = *self;
 
@@ -122,19 +111,11 @@ impl Accrete {
         planetary_system.post_accretion(post_accretion_intensity);
         planetary_system.process_planets();
 
-        if to_json {
-            let s = json!({
-                "primary_star": planetary_system.primary_star,
-                "planets": planetary_system.planets,
-            })
-            .to_string();
-            return AccreteOutput::Json(s);
-        }
-        AccreteOutput::System(planetary_system)
+        planetary_system
     }
 
     /// Generate planet.
-    pub fn planet(&self) -> AccreteOutput {
+    pub fn planet(&self) -> Planetesimal {
         let Accrete {
             stellar_mass,
             stellar_luminosity,
@@ -142,29 +123,70 @@ impl Accrete {
             planet_e,
             planet_mass,
             post_accretion_intensity,
-            to_json,
             ..
         } = *self;
 
-        let planet = Planetesimal::random_planet(
+        Planetesimal::random_planet(
             stellar_luminosity,
             stellar_mass,
             planet_a,
             planet_e,
             planet_mass,
             post_accretion_intensity,
-        );
-
-        if to_json {
-            let s = json!({
-                "planet": planet,
-            })
-            .to_string();
-            return AccreteOutput::Json(s);
-        }
-
-        AccreteOutput::Planet(planet)
+        )
     }
+}
+
+/// For wasm_bindgen
+#[wasm_bindgen]
+pub fn generate_system_wasm(accrete: Accrete) -> JsValue {
+    set_panic_hook();
+
+    let Accrete {
+        stellar_mass,
+        dust_density_coeff,
+        k,
+        cloud_eccentricity,
+        b,
+        post_accretion_intensity,
+        ..
+    } = accrete;
+
+    let mut planetary_system =
+        System::set_initial_conditions(stellar_mass, dust_density_coeff, k, cloud_eccentricity, b);
+
+    planetary_system.distribute_planetary_masses();
+    planetary_system.post_accretion(post_accretion_intensity);
+    planetary_system.process_planets();
+
+    JsValue::from_serde(&planetary_system).unwrap()
+}
+
+/// For wasm_bindgen
+#[wasm_bindgen]
+pub fn generate_planet_wasm(accrete: Accrete) -> JsValue {
+    set_panic_hook();
+
+    let Accrete {
+        stellar_mass,
+        stellar_luminosity,
+        planet_a,
+        planet_e,
+        planet_mass,
+        post_accretion_intensity,
+        ..
+    } = accrete;
+
+    let planet = Planetesimal::random_planet(
+        stellar_luminosity,
+        stellar_mass,
+        planet_a,
+        planet_e,
+        planet_mass,
+        post_accretion_intensity,
+    );
+
+    JsValue::from_serde(&planet).unwrap()
 }
 
 #[cfg(test)]
@@ -173,13 +195,6 @@ mod tests {
     #[test]
     fn run_with_default_config() {
         let accrete = Accrete::new();
-        accrete.planetary_system();
-    }
-
-    #[test]
-    fn run_to_json() {
-        let mut accrete = Accrete::new();
-        accrete.to_json = true;
         accrete.planetary_system();
     }
 
@@ -287,13 +302,6 @@ mod tests {
     #[test]
     fn random_planet_default() {
         let accrete = Accrete::new();
-        accrete.planet();
-    }
-
-    #[test]
-    fn random_planet_to_json() {
-        let mut accrete = Accrete::new();
-        accrete.to_json = true;
         accrete.planet();
     }
 }

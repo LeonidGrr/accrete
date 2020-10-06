@@ -9,7 +9,6 @@ This version of Accrete can be used for procedural generation of plausible plane
 - Moons and rings generation.
 - Extended stellar and planetary data (tectonic activity, magnetosphere).
 - Stand-alone planet generation.
-- JSON output.
 
 ## Generate planetary system
 
@@ -20,7 +19,7 @@ use accrete;
 fn main() {
     let mut accrete = Accrete::new();
     // To modify accrete configuration just change public field:
-    // accrete.json = true
+    // accrete.stellar_mass = 1.5;
     accrete.planetary_system();
 }
 ```
@@ -47,9 +46,6 @@ Simple way to variate output is to change stellar mass. This accrete implementat
 **post_accretion_intensity** - Amount of random planetesimals that will bomb planets of created system after accretion.
 *Default: 1000*
 
-**to_json** - Output as JSON string. 
-*Default: false*
-
 ## Generate planet.
 
 ### Default:
@@ -59,7 +55,7 @@ use accrete;
 fn main() {
     let mut accrete = Accrete::new();
     // To modify accrete configuration just change public field:
-    // accrete.json = true
+    // accrete.planet_mass = 2.5;
     accrete.planet();
 }
 ```
@@ -82,9 +78,6 @@ fn main() {
 
 **post_accretion_intensity** - Amount of random planetesimals that will bomb planet after accretion.
 *Default: 100*
-
-**to_json** - Output as JSON string.
-*Default: false*
 
 ## Brief history
 >Accrete's origin dates back to the late 60's when Stephen H. Dole published "Formation of Planetary Systems by Aggregation: A Computer Simulation". 

@@ -4,8 +4,9 @@ use crate::utils::*;
 
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
+use serde::Serialize;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct System {
     pub primary_star: PrimaryStar,
     pub planets: Vec<Planetesimal>,
