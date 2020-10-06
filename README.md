@@ -15,6 +15,8 @@ This version of Accrete can be used for procedural generation of plausible plane
 ### Examples
 
 ## Generate planetary system
+
+Rust:
 ```rust
 use accrete;
 
@@ -26,6 +28,7 @@ fn main() {
 }
 ```
 
+Javascript:
 ```javascript
 import('accrete').then(accrete => {
     const config = accrete.config();
@@ -56,6 +59,8 @@ Simple way to variate output is to change stellar mass. This accrete implementat
 *Default: 1000*
 
 ## Generate planet
+
+Rust:
 ```rust
 use accrete;
 
@@ -67,6 +72,7 @@ fn main() {
 }
 ```
 
+Javascript:
 ```javascript
 import('accrete').then(accrete => {
     const config = accrete.config();
