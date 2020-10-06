@@ -12,8 +12,6 @@ This version of Accrete can be used for procedural generation of plausible plane
 - [Rust crate](https://crates.io/crates/accrete)
 - [NPM package](https://www.npmjs.com/package/accrete-wasm)
 
-### Examples
-
 ## Generate planetary system
 
 Rust:
