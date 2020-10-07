@@ -28,7 +28,7 @@ fn main() {
 
 Javascript:
 ```javascript
-import('accrete').then(accrete => {
+import('accrete-wasm').then(accrete => {
     const config = accrete.config();
     const system = accrete.planetary_system_wasm(config);
 });
@@ -72,7 +72,7 @@ fn main() {
 
 Javascript:
 ```javascript
-import('accrete').then(accrete => {
+import('accrete-wasm').then(accrete => {
     const config = accrete.config();
     const planet = accrete.planet_wasm(config);
 });
