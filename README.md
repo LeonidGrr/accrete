@@ -1,13 +1,13 @@
 Accrete.rs
 ========================
 Rust port of Accrete, planetary system generation algorithm. Based on 'Formation of Planetary Systems by Aggregation: A Computer Simulation' by Stephen H. Dole. Improved and extended by many talented people during past ~50 years ([good overview here](https://github.com/zakski/accrete-starform-stargen), also brief history below).
-This version of Accrete can be used for procedural generation of plausible planetary system for game development or education purposes.
+This version of Accrete can be used for procedural generation of plausible planetary system.
 
 ## Features
 - Planetary system generation from original Accrete.
 - Planet environment generation from Starform / Stargen.
 - Moons and rings generation.
-- Extended stellar and planetary data (tectonic activity, magnetosphere).
+- Extended stellar and planetary data.
 - Stand-alone planet generation.
 - [Rust crate](https://crates.io/crates/accrete)
 - [NPM package](https://www.npmjs.com/package/accrete-wasm)
