@@ -106,7 +106,6 @@ impl Accrete {
         planetary_system.distribute_planetary_masses();
         planetary_system.post_accretion(post_accretion_intensity);
         planetary_system.process_planets();
-
         planetary_system
     }
 
