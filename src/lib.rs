@@ -1,10 +1,17 @@
-mod consts;
+pub mod consts;
 mod enviro;
 mod structs;
 mod utils;
 
-pub mod accrete;
+mod accrete;
 // pub mod wasm;
+
+pub use accrete::Accrete;
+pub use structs::DustBand;
+pub use structs::Planetesimal;
+pub use structs::PrimaryStar;
+pub use structs::Ring;
+pub use structs::System;
 
 #[cfg(test)]
 mod tests {
