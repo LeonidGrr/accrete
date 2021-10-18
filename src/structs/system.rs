@@ -36,8 +36,7 @@ impl System {
         let inner_dust = 0.0;
         let outer_dust = stellar_dust_limit(&stellar_mass);
         let dust_band = DustBand::new(outer_dust, inner_dust, true, true);
-        let mut dust_bands = Vec::new();
-        dust_bands.push(dust_band);
+        let dust_bands = vec![dust_band];
 
         Self {
             primary_star,
@@ -76,22 +75,22 @@ impl System {
         } = primary_star;
 
         while *dust_left {
-            let mut p = Planetesimal::new(&planetesimal_inner_bound, &planetesimal_outer_bound);
+            let mut p = Planetesimal::new(planetesimal_inner_bound, planetesimal_outer_bound);
             let inside_range = inner_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
             let outside_range = outer_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
-            let dust_density = dust_density(&dust_density_coeff, &stellar_mass, &p.a);
-            let crit_mass = critical_limit(&b, &p.a, &p.e, &stellar_luminosity);
+            let dust_density = dust_density(dust_density_coeff, stellar_mass, &p.a);
+            let crit_mass = critical_limit(b, &p.a, &p.e, stellar_luminosity);
 
-            if dust_availible(&dust_bands, &inside_range, &outside_range) {
+            if dust_availible(dust_bands, &inside_range, &outside_range) {
                 accrete_dust(
                     &mut p.mass,
                     &p.a,
                     &p.e,
                     &crit_mass,
                     dust_bands,
-                    &cloud_eccentricity,
+                    cloud_eccentricity,
                     &dust_density,
-                    &k,
+                    k,
                 );
 
                 let min = inner_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
@@ -116,9 +115,9 @@ impl System {
             }
 
             *dust_left = dust_availible(
-                &dust_bands,
-                &planetesimal_inner_bound,
-                &planetesimal_outer_bound,
+                dust_bands,
+                planetesimal_inner_bound,
+                planetesimal_outer_bound,
             );
         }
     }
@@ -216,7 +215,7 @@ pub fn planetesimals_intersect(
 ) {
     // Moon is not likely to capture other moon in a presence of planet
     if p.is_moon {
-        *prev_p = coalesce_two_planets(&prev_p, &p);
+        *prev_p = coalesce_two_planets(prev_p, p);
     } else {
         // Check for larger/smaller planetesimal
         let (larger, smaller) = match p.mass >= prev_p.mass {
@@ -226,7 +225,7 @@ pub fn planetesimals_intersect(
         let roche_limit = roche_limit_au(&larger.mass, &smaller.mass, &smaller.radius);
         // Planetesimals collide or one capture another as moon
         if (prev_p.a - p.a).abs() <= roche_limit * 2.0 {
-            *prev_p = coalesce_two_planets(&prev_p, &p);
+            *prev_p = coalesce_two_planets(prev_p, p);
         } else {
             *prev_p = capture_moon(&larger, &smaller, primary_star_mass);
             prev_p

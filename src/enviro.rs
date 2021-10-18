@@ -370,19 +370,19 @@ pub fn planet_albedo(
 pub fn opacity(molecular_weight: f64, surface_pressure_bar: f64) -> f64 {
     let mut optical_depth = 0.0;
 
-    if molecular_weight >= 0.0 && molecular_weight < 10.0 {
+    if (0.0..10.0).contains(&molecular_weight) {
         optical_depth += 3.0;
     }
-    if molecular_weight >= 10.0 && molecular_weight < 20.0 {
+    if (10.0..20.0).contains(&molecular_weight) {
         optical_depth += 2.34;
     }
-    if molecular_weight >= 20.0 && molecular_weight < 30.0 {
+    if (20.0..30.0).contains(&molecular_weight) {
         optical_depth += 1.0;
     }
-    if molecular_weight >= 30.0 && molecular_weight < 45.0 {
+    if (30.0..45.0).contains(&molecular_weight) {
         optical_depth += 0.15;
     }
-    if molecular_weight >= 45.0 && molecular_weight < 100.0 {
+    if (45.0..100.0).contains(&molecular_weight) {
         optical_depth += 0.05;
     }
 

@@ -5,7 +5,7 @@ use serde::Serialize;
 /// [Additional info](https://www.enchantedlearning.com/subjects/astronomy/stars/startypes.shtml)
 #[derive(Debug, Clone, Serialize)]
 pub enum SpectralClass {
-    ROGUE,
+    Rogue,
     Y,
     T,
     L,

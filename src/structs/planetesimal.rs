@@ -140,8 +140,8 @@ impl Planetesimal {
             self.radius = kothari_radius(&self.mass, &self.is_gas_giant, &self.orbit_zone);
             self.density = volume_density(&self.mass, &self.radius);
         }
-        self.orbital_period_days = period(&self.a, &self.mass, &stellar_mass);
-        self.day_hours = day_length(self, &stellar_mass, main_seq_age);
+        self.orbital_period_days = period(&self.a, &self.mass, stellar_mass);
+        self.day_hours = day_length(self, stellar_mass, main_seq_age);
         self.axial_tilt = inclination(&self.a);
         self.escape_velocity = escape_vel(&self.mass, &self.radius);
         self.surface_accel = acceleration(&self.mass, &self.radius);

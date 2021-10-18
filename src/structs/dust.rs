@@ -92,7 +92,7 @@ pub fn collect_dust(
 
     let density = match !band.gas_present || mass < crit_mass {
         true => *dust_density,
-        false => get_mass_density(k, dust_density, &crit_mass, &mass),
+        false => get_mass_density(k, dust_density, crit_mass, mass),
     };
     let bandwidth = r_outer - r_inner;
     let temp1 = match r_outer - band.outer_edge > 0.0 {

@@ -52,7 +52,7 @@ pub fn luminosity(mass: f64) -> f64 {
 pub fn ecosphere(luminosity: &f64, spectral_class: &SpectralClass) -> (f64, f64) {
     let (outer_normalized_flux_factor, inner_normalized_flux_factor) = match spectral_class {
         // BrownDwarfs. For Y, L , T approzimation is used
-        SpectralClass::ROGUE => (0.0, 0.0),
+        SpectralClass::Rogue => (0.0, 0.0),
         SpectralClass::Y => (0.0, 0.0),
         SpectralClass::T => (0.05, 0.2),
         SpectralClass::L => (0.16, 0.7),
@@ -115,36 +115,36 @@ pub fn bv_to_rgb(bv: f64) -> String {
         bv = 2.0;
     }
 
-    if bv >= -0.40 && bv < 0.00 {
+    if (-0.40..0.00).contains(&bv) {
         t = (bv + 0.40) / 0.40;
         r = 0.61 + (0.11 * t) + (0.1 * t * t);
-    } else if bv >= 0.00 && bv < 0.40 {
+    } else if (0.00..0.40).contains(&bv) {
         t = bv / 0.40;
         r = 0.83 + (0.17 * t);
-    } else if bv >= 0.40 && bv < 2.10 {
+    } else if (0.40..2.10).contains(&bv) {
         r = 1.00;
     }
 
-    if bv >= -0.40 && bv < 0.00 {
+    if (-0.40..0.00).contains(&bv) {
         t = (bv + 0.40) / 0.40;
         g = 0.70 + (0.07 * t) + (0.1 * t * t);
-    } else if bv >= 0.00 && bv < 0.40 {
+    } else if (0.00..0.40).contains(&bv) {
         t = bv / 0.40;
         g = 0.87 + (0.11 * t);
-    } else if bv >= 0.40 && bv < 1.60 {
+    } else if (0.40..1.60).contains(&bv) {
         t = (bv - 0.40) / (1.60 - 0.40);
         g = 0.98 - (0.16 * t);
-    } else if bv >= 1.60 && bv < 2.00 {
+    } else if (1.60..2.00).contains(&bv) {
         t = (bv - 1.60) / (2.00 - 1.60);
         g = 0.82 - (0.5 * t * t);
     }
 
-    if bv >= -0.40 && bv < 0.40 {
+    if (-0.40..0.40).contains(&bv) {
         b = 1.00;
-    } else if bv >= 0.40 && bv < 1.50 {
+    } else if (0.40..1.50).contains(&bv) {
         t = (bv - 0.40) / (1.50 - 0.40);
         b = 1.00 - (0.47 * t) + (0.1 * t * t);
-    } else if bv >= 1.50 && bv < 1.94 {
+    } else if (1.50..1.94).contains(&bv) {
         t = (bv - 1.50) / (1.94 - 1.50);
         b = 0.63 - (0.6 * t * t);
     }
@@ -168,16 +168,16 @@ pub fn bv_to_rgb(bv: f64) -> String {
 pub fn spectral_class(stellar_surface_temp: &f64) -> SpectralClass {
     match *stellar_surface_temp {
         t if t >= 30000.0 => SpectralClass::O,
-        t if t >= 10000.0 && t < 30000.0 => SpectralClass::B,
-        t if t >= 7500.0 && t < 10000.0 => SpectralClass::A,
-        t if t >= 6000.0 && t < 7500.0 => SpectralClass::F,
-        t if t >= 5200.0 && t < 6000.0 => SpectralClass::G,
-        t if t >= 3700.0 && t < 5200.0 => SpectralClass::K,
-        t if t >= 2400.0 && t < 3700.0 => SpectralClass::M,
-        t if t >= 1300.0 && t < 2400.0 => SpectralClass::L,
-        t if t >= 550.0 && t < 1300.0 => SpectralClass::T,
-        t if t >= 273.15 && t < 550.0 => SpectralClass::Y,
-        _ => SpectralClass::ROGUE,
+        t if (10000.0..30000.0).contains(&t) => SpectralClass::B,
+        t if (7500.0..10000.0).contains(&t) => SpectralClass::A,
+        t if (6000.0..7500.0).contains(&t) => SpectralClass::F,
+        t if (5200.0..6000.0).contains(&t) => SpectralClass::G,
+        t if (3700.0..5200.0).contains(&t) => SpectralClass::K,
+        t if (2400.0..3700.0).contains(&t) => SpectralClass::M,
+        t if (1300.0..2400.0).contains(&t) => SpectralClass::L,
+        t if (550.0..1300.0).contains(&t) => SpectralClass::T,
+        t if (273.15..550.0).contains(&t) => SpectralClass::Y,
+        _ => SpectralClass::Rogue,
     }
 }
 
