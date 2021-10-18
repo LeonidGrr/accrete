@@ -4,7 +4,7 @@ mod structs;
 mod utils;
 
 pub mod accrete;
-pub mod wasm;
+// pub mod wasm;
 
 #[cfg(test)]
 mod tests {

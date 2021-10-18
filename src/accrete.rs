@@ -5,8 +5,7 @@ use crate::utils::*;
 
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
-use wasm_bindgen::prelude::*;
-
+// use wasm_bindgen::prelude::*;
 /// ### Configuration:
 ///
 /// **stellar_mass** - Primary star mass in solar masses.
@@ -39,7 +38,6 @@ use wasm_bindgen::prelude::*;
 ///
 /// **stellar_luminosity** - Primary star luminosity.
 /// *Default: 1.0*
-#[wasm_bindgen]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Accrete {
     pub stellar_mass: f64,

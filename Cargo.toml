@@ -1,6 +1,6 @@
 [package]
 name = "accrete"
-version = "0.1.4"
+version = "0.2.0"
 authors = ["Leonid <leonidgrr@gmail.com>"]
 license="MIT"
 repository = "https://github.com/LeonidGrr/accrete.git"
@@ -9,17 +9,6 @@ edition = "2018"
 readme = "README.md"
 keywords = ["accrete", "planetary", "system", "procedural", "generation"]
 
-[lib]
-crate-type = ["cdylib"]
-
-[features]
-default = ["console_error_panic_hook"]
-
 [dependencies]
-rand = { version = "0.7.3", features = ["wasm-bindgen"] }
+rand = { version = "0.7.3" }
 serde = { version = "1.0", features = ["derive"] }
-wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
-console_error_panic_hook = { version = "0.1.1", optional = true }
-
-[package.metadata.wasm-pack.profile.release]
-wasm-opt = ["-Oz", "--enable-mutable-globals"]
