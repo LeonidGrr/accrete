@@ -3,7 +3,7 @@ use crate::enviro::*;
 use crate::structs::*;
 use crate::utils::*;
 
-use rand::prelude::*;
+use rand::{Rng, RngCore};
 use serde::Serialize;
 
 // http://orbitsimulator.com/formulas/
@@ -67,10 +67,13 @@ pub struct Planetesimal {
 }
 
 impl Planetesimal {
-    pub fn new(planetesimal_inner_bound: &f64, planetesimal_outer_bound: &f64) -> Self {
-        let mut rng = rand::thread_rng();
-        let a = rng.gen_range(planetesimal_inner_bound, planetesimal_outer_bound);
-        let e = random_eccentricity();
+    pub fn new(
+        planetesimal_inner_bound: &f64,
+        planetesimal_outer_bound: &f64,
+        rng: &mut dyn RngCore,
+    ) -> Self {
+        let a = rng.gen_range(*planetesimal_inner_bound..*planetesimal_outer_bound);
+        let e = random_eccentricity(rng);
 
         Planetesimal {
             a,
@@ -124,6 +127,7 @@ impl Planetesimal {
         stellar_mass: &f64,
         main_seq_age: &f64,
         ecosphere: &(f64, f64),
+        rng: &mut dyn RngCore,
     ) {
         if !self.is_moon {
             self.orbit_zone = orbital_zone(stellar_luminosity, self.a);
@@ -142,7 +146,7 @@ impl Planetesimal {
         }
         self.orbital_period_days = period(&self.a, &self.mass, stellar_mass);
         self.day_hours = day_length(self, stellar_mass, main_seq_age);
-        self.axial_tilt = inclination(&self.a);
+        self.axial_tilt = inclination(&self.a, rng);
         self.escape_velocity = escape_vel(&self.mass, &self.radius);
         self.surface_accel = acceleration(&self.mass, &self.radius);
         self.rms_velocity = rms_vel(&MOLECULAR_NITROGEN, &self.a);
@@ -155,7 +159,7 @@ impl Planetesimal {
             self.surface_pressure_bar = INCREDIBLY_LARGE_NUMBER;
             self.boiling_point_kelvin = INCREDIBLY_LARGE_NUMBER;
             self.hydrosphere = INCREDIBLY_LARGE_NUMBER;
-            self.albedo = about(GAS_GIANT_ALBEDO, 0.1);
+            self.albedo = about(GAS_GIANT_ALBEDO, 0.1, rng);
             self.surface_temp_kelvin = INCREDIBLY_LARGE_NUMBER;
         } else {
             self.surface_grav = gravity(&self.surface_accel);
@@ -172,6 +176,7 @@ impl Planetesimal {
                 stellar_mass,
                 &self.orbit_zone,
                 &self.greenhouse_effect,
+                rng,
             );
             self.surface_pressure_bar = pressure(
                 &self.volatile_gas_inventory,
@@ -182,7 +187,7 @@ impl Planetesimal {
                 self.boiling_point_kelvin = 0.0;
             } else {
                 self.boiling_point_kelvin = boiling_point_kelvin(&self.surface_pressure_bar);
-                iterate_surface_temp(self, &ecosphere.1);
+                iterate_surface_temp(self, &ecosphere.1, rng);
             }
         }
 
@@ -221,6 +226,7 @@ impl Planetesimal {
                 &self.mass,
                 main_seq_age,
                 ecosphere,
+                rng,
             );
         }
     }
@@ -228,10 +234,11 @@ impl Planetesimal {
     pub fn random_outer_body(
         planetesimal_inner_bound: &f64,
         planetesimal_outer_bound: &f64,
+        rng: &mut dyn RngCore,
     ) -> Self {
-        let mut rng = rand::thread_rng();
-        let mut random_body = Planetesimal::new(planetesimal_inner_bound, planetesimal_outer_bound);
-        random_body.mass = rng.gen_range(PLANETESIMAL_MASS, PROTOPLANET_MASS * 1.0e5);
+        let mut random_body =
+            Planetesimal::new(planetesimal_inner_bound, planetesimal_outer_bound, rng);
+        random_body.mass = rng.gen_range(PLANETESIMAL_MASS..PROTOPLANET_MASS * 1.0e5);
         random_body.orbit_zone = 3;
         random_body.radius = kothari_radius(
             &random_body.mass,
@@ -249,6 +256,7 @@ impl Planetesimal {
         e: f64,
         mass: f64,
         post_accretion_intensity: u32,
+        rng: &mut dyn RngCore,
     ) -> Planetesimal {
         let main_seq_age = main_sequence_age(stellar_mass, stellar_luminosity);
         let stellar_radius_au = stellar_radius_au(stellar_mass);
@@ -317,12 +325,13 @@ impl Planetesimal {
             let Planetesimal { a, e, mass, .. } = random_planet;
             let r_inner = inner_effect_limit(&a, &e, &mass);
             let r_outer = outer_effect_limit(&a, &e, &mass);
-            let mut outer_body = Planetesimal::random_outer_body(&r_inner, &r_outer);
+            let mut outer_body = Planetesimal::random_outer_body(&r_inner, &r_outer, rng);
             planetesimals_intersect(
                 &mut outer_body,
                 &mut random_planet,
                 &stellar_luminosity,
                 &stellar_mass,
+                rng,
             );
         }
 
@@ -331,6 +340,7 @@ impl Planetesimal {
             &stellar_mass,
             &main_seq_age,
             &ecosphere,
+            rng,
         );
 
         random_planet

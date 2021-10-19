@@ -10,5 +10,8 @@ readme = "README.md"
 keywords = ["accrete", "planetary", "system", "procedural", "generation"]
 
 [dependencies]
-rand = { version = "0.7.3" }
+rand = "0.8.3"
 serde = { version = "1.0", features = ["derive"] }
+
+[dev-dependencies]
+rand_chacha = "0.3"
