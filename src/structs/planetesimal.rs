@@ -212,7 +212,7 @@ impl Planetesimal {
             self.tectonic_activity = true;
         }
 
-        // Probability of planet have a tectonic activity:
+        // Probability of planet have a magnetosphere:
         // 1) planet is gas giant
         // 2) planet have tectonic activity
         // 3) planet have atmosphere
