@@ -3,8 +3,7 @@ mod enviro;
 mod structs;
 mod utils;
 
-mod accrete;
-// pub mod wasm;
+pub mod accrete;
 
 pub use accrete::Accrete;
 pub use structs::DustBand;

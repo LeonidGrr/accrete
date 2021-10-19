@@ -5,7 +5,7 @@ use crate::utils::*;
 
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
-// use wasm_bindgen::prelude::*;
+
 /// ### Configuration:
 ///
 /// **stellar_mass** - Primary star mass in solar masses.
