@@ -140,9 +140,7 @@ impl Planetesimal {
                 &ecosphere.1,
                 &self.is_gas_giant,
             );
-            // Warning: temporary disabled due to output equal zero when central star have masse above 10 solar masses.
-            // self.radius = volume_radius(&self.mass, &self.density);
-            self.radius = kothari_radius(&self.mass, &self.is_gas_giant, &self.orbit_zone);
+            self.radius = volume_radius(&self.mass, &self.density);
         } else {
             self.density = volume_density(&self.mass, &self.radius);
             self.radius = kothari_radius(&self.mass, &self.is_gas_giant, &self.orbit_zone);
@@ -221,16 +219,6 @@ impl Planetesimal {
         // 3) planet have atmosphere
         if self.is_gas_giant || self.tectonic_activity || self.surface_pressure_bar > 0.0 {
             self.magnetosphere = true;
-        }
-
-        for moon in self.moons.iter_mut() {
-            moon.derive_planetary_environment(
-                stellar_luminosity,
-                &self.mass,
-                main_seq_age,
-                ecosphere,
-                rng,
-            );
         }
     }
 
@@ -345,6 +333,16 @@ impl Planetesimal {
             &ecosphere,
             rng,
         );
+
+        for moon in random_planet.moons.iter_mut() {
+            moon.derive_planetary_environment(
+                &stellar_luminosity,
+                &random_planet.mass,
+                &main_seq_age,
+                &ecosphere,
+                rng,
+            );
+        }
 
         random_planet
     }

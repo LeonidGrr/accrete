@@ -17,6 +17,8 @@ pub struct PrimaryStar {
 
 impl PrimaryStar {
     pub fn new(stellar_mass: f64) -> Self {
+        // Warning - stallar mass higher than 10 solar masses probably refer to non-regular and supermassive stars (short lived giants, black holes, wolf-rayet stars, etc..) and require other calculation methods
+        // Possibly can be useful https://www.fabiopacucci.com/resources/black-hole-calculator/formulas-black-hole-calculator/
         let stellar_luminosity = luminosity(stellar_mass);
         let main_seq_age = main_sequence_age(stellar_mass, stellar_luminosity);
         let stellar_radius_au = stellar_radius_au(stellar_mass);
