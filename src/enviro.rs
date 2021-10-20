@@ -15,7 +15,8 @@ pub fn orbital_zone(luminosity: &f64, distance_to_primary_star: f64) -> i32 {
 }
 
 /// The mass is in units of solar masses, and the density is in units of grams/cc. The radius returned is in units of km.
-pub fn volume_radius(mass: &f64, density: &f64) -> f64 {
+/// Warning: temporary disabled due to output equal zero when central star have masse above 10 solar masses.
+pub fn _volume_radius(mass: &f64, density: &f64) -> f64 {
     let volume = mass * SOLAR_MASS_IN_GRAMS / density;
     ((3.0 * volume) / (4.0 * PI)).powf(0.33) / CM_PER_KM
 }

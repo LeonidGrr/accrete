@@ -129,6 +129,7 @@ impl Planetesimal {
         ecosphere: &(f64, f64),
         rng: &mut dyn RngCore,
     ) {
+        
         if !self.is_moon {
             self.orbit_zone = orbital_zone(stellar_luminosity, self.a);
         }
@@ -139,10 +140,12 @@ impl Planetesimal {
                 &ecosphere.1,
                 &self.is_gas_giant,
             );
-            self.radius = volume_radius(&self.mass, &self.density);
-        } else {
+            // Warning: temporary disabled due to output equal zero when central star have masse above 10 solar masses.
+            // self.radius = volume_radius(&self.mass, &self.density);
             self.radius = kothari_radius(&self.mass, &self.is_gas_giant, &self.orbit_zone);
+        } else {
             self.density = volume_density(&self.mass, &self.radius);
+            self.radius = kothari_radius(&self.mass, &self.is_gas_giant, &self.orbit_zone);
         }
         self.orbital_period_days = period(&self.a, &self.mass, stellar_mass);
         self.day_hours = day_length(self, stellar_mass, main_seq_age);
