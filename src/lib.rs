@@ -206,8 +206,12 @@ mod tests {
         let mut accrete = Accrete::new(Default::default());
         accrete.planet();
         let path = "./src/fixtures/random_planet_default";
-        let fixture = get_fixture(path, &mut accrete);
-        let system = format!("{:?}", accrete.planetary_system());
+        if GENERATE_FIXTURES {
+            write_to_file(&format!("{:?}", accrete.planet()), path)
+                .expect("Failed to write fixture");
+        }
+        let fixture = read_file(path);
+        let system = format!("{:?}", accrete.planet());
         assert_eq!(system, fixture);
     }
 }
