@@ -3,8 +3,8 @@ use crate::structs::planetesimal::Planetesimal;
 use crate::structs::system::System;
 use crate::utils::*;
 
-use rand::{Rng, RngCore};
-use serde::{Deserialize, Serialize};
+use rand::{Rng, SeedableRng};
+use rand_chacha::ChaCha8Rng;
 
 /// ### Configuration:
 ///
@@ -38,7 +38,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// **stellar_luminosity** - Primary star luminosity.
 /// *Default: 1.0*
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct Accrete {
     pub stellar_mass: f64,
     pub dust_density_coeff: f64,
@@ -50,37 +50,15 @@ pub struct Accrete {
     pub planet_e: f64,
     pub planet_mass: f64,
     pub stellar_luminosity: f64,
+    rng: ChaCha8Rng,
 }
 
-// impl Default for Accrete {
-//     fn default() -> Self {
-//         let mut rng = rand::thread_rng();
-//         let random_stellar_mass = rng.gen_range(0.6..1.3);
-//         let planet_a = rng.gen_range(0.3..50.0);
-//         let planet_e = random_eccentricity(&mut rng);
-//         let planet_mass = rng.gen_range(PROTOPLANET_MASS * EARTH_MASSES_PER_SOLAR_MASS..500.0)
-//             / EARTH_MASSES_PER_SOLAR_MASS;
-
-//         Accrete {
-//             stellar_mass: random_stellar_mass,
-//             dust_density_coeff: DUST_DENSITY_COEFF,
-//             k: K,
-//             cloud_eccentricity: 0.2,
-//             b: B,
-//             post_accretion_intensity: 1000,
-//             stellar_luminosity: 1.0,
-//             planet_a,
-//             planet_e,
-//             planet_mass,
-//         }
-//     }
-// }
-
-impl Accrete {
-    pub fn new(rng: &mut dyn RngCore) -> Self {
+impl Default for Accrete {
+    fn default() -> Self {
+        let mut rng = ChaCha8Rng::from_seed(Default::default());
         let random_stellar_mass = rng.gen_range(0.6..1.3);
         let planet_a = rng.gen_range(0.3..50.0);
-        let planet_e = random_eccentricity(rng);
+        let planet_e = random_eccentricity(&mut rng);
         let planet_mass = rng.gen_range(PROTOPLANET_MASS * EARTH_MASSES_PER_SOLAR_MASS..500.0)
             / EARTH_MASSES_PER_SOLAR_MASS;
 
@@ -95,11 +73,37 @@ impl Accrete {
             planet_a,
             planet_e,
             planet_mass,
+            rng,
+        }
+    }
+}
+
+impl Accrete {
+    pub fn new(seed: u64) -> Self {
+        let mut rng = ChaCha8Rng::seed_from_u64(seed);
+        let random_stellar_mass = rng.gen_range(0.6..1.3);
+        let planet_a = rng.gen_range(0.3..50.0);
+        let planet_e = random_eccentricity(&mut rng);
+        let planet_mass = rng.gen_range(PROTOPLANET_MASS * EARTH_MASSES_PER_SOLAR_MASS..500.0)
+            / EARTH_MASSES_PER_SOLAR_MASS;
+
+        Accrete {
+            stellar_mass: random_stellar_mass,
+            dust_density_coeff: DUST_DENSITY_COEFF,
+            k: K,
+            cloud_eccentricity: 0.2,
+            b: B,
+            post_accretion_intensity: 1000,
+            stellar_luminosity: 1.0,
+            planet_a,
+            planet_e,
+            planet_mass,
+            rng,
         }
     }
 
     /// Generate planetary system.
-    pub fn planetary_system(&self, rng: &mut dyn RngCore) -> System {
+    pub fn planetary_system(&mut self) -> System {
         let Accrete {
             stellar_mass,
             dust_density_coeff,
@@ -107,25 +111,26 @@ impl Accrete {
             cloud_eccentricity,
             b,
             post_accretion_intensity,
+            rng,
             ..
-        } = *self;
+        } = self;
 
         let mut planetary_system = System::set_initial_conditions(
-            stellar_mass,
-            dust_density_coeff,
-            k,
-            cloud_eccentricity,
-            b,
+            *stellar_mass,
+            *dust_density_coeff,
+            *k,
+            *cloud_eccentricity,
+            *b,
         );
 
         planetary_system.distribute_planetary_masses(rng);
-        planetary_system.post_accretion(post_accretion_intensity, rng);
+        planetary_system.post_accretion(*post_accretion_intensity, rng);
         planetary_system.process_planets(rng);
         planetary_system
     }
 
     /// Generate planet.
-    pub fn planet(&self, rng: &mut dyn RngCore) -> Planetesimal {
+    pub fn planet(&mut self) -> Planetesimal {
         let Accrete {
             stellar_mass,
             stellar_luminosity,
@@ -133,16 +138,17 @@ impl Accrete {
             planet_e,
             planet_mass,
             post_accretion_intensity,
+            rng,
             ..
-        } = *self;
+        } = self;
 
         Planetesimal::random_planet(
-            stellar_luminosity,
-            stellar_mass,
-            planet_a,
-            planet_e,
-            planet_mass,
-            post_accretion_intensity,
+            *stellar_luminosity,
+            *stellar_mass,
+            *planet_a,
+            *planet_e,
+            *planet_mass,
+            *post_accretion_intensity,
             rng,
         )
     }
