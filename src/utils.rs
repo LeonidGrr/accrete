@@ -1,9 +1,8 @@
 use crate::consts::*;
-use rand::prelude::*;
+use rand::{Rng, RngCore};
 
-pub fn about(value: f64, variation: f64) -> f64 {
-    let mut rng = rand::thread_rng();
-    rng.gen_range(value - variation, value + variation)
+pub fn about(value: f64, variation: f64, rng: &mut dyn RngCore) -> f64 {
+    rng.gen_range(value - variation..value + variation)
 }
 
 pub fn reduced_mass(mass: &f64) -> f64 {
@@ -38,9 +37,8 @@ pub fn aphelion_distance(radius: &f64, eccentricity: &f64) -> f64 {
     radius * (1.0 + eccentricity)
 }
 
-pub fn random_eccentricity() -> f64 {
-    let mut rng = rand::thread_rng();
-    let random = rng.gen_range(0.0, 1.0);
+pub fn random_eccentricity(rng: &mut dyn RngCore) -> f64 {
+    let random = rng.gen_range(0.0..1.0);
     1.0 - (1.0 - random as f64).powf(ECCENTRICITY_COEFF)
 }
 

@@ -19,7 +19,8 @@ Rust:
 use accrete;
 
 fn main() {
-    let mut accrete = Accrete::new();
+    let u64_seed = 123;
+    let mut accrete = Accrete::new(u64_seed);
     // To modify accrete configuration just change public field:
     // accrete.stellar_mass = 1.5;
     accrete.planetary_system();
@@ -34,7 +35,11 @@ import('accrete-wasm').then(accrete => {
 });
 ```
 
-Simple way to variate output is to change stellar mass. This accrete implementation is capable of generating planetary system for any stellar mass, but better (most realistic) results achieved for main sequence star class with primary star mass of 0.6 - 1.3 solar masses.
+Simple way to variate output is to change stellar mass. This accrete implementation is capable of generating planetary system for any stellar mass, but better (most realistic) results achieved for main sequence star class with primary star mass of 0.6 - 1.3 solar masses. Approximate stellar masses:
+
+| Spectral class | W  | O  | B  | A | F   | G | K   | M   |
+|----------------|----|----|----|---|-----|---|-----|-----|
+| Stellar mass   | 40 | 30 | 10 | 3 | 1.5 | 1 | 0.7 | 0.4 |
 
 ### Configuration:
 
@@ -63,7 +68,8 @@ Rust:
 use accrete;
 
 fn main() {
-    let mut accrete = Accrete::new();
+    let u64_seed = 123;
+    let mut accrete = Accrete::new(u64_seed);
     // To modify accrete configuration just change public field:
     // accrete.planet_mass = 2.5;
     accrete.planet();

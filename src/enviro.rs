@@ -1,3 +1,5 @@
+use rand::RngCore;
+
 use crate::consts::*;
 use crate::structs::planetesimal::*;
 use crate::utils::*;
@@ -146,8 +148,8 @@ pub fn day_length(planet: &mut Planetesimal, stellar_mass: &f64, main_sequence_a
 
 /// The orbital radius is expected in units of Astronomical Units (AU).
 /// Inclination is returned in units of degrees.
-pub fn inclination(orbital_radius: &f64) -> f64 {
-    let inclination = orbital_radius.powf(0.2) * about(EARTH_AXIAL_TILT, 0.4);
+pub fn inclination(orbital_radius: &f64, rng: &mut dyn RngCore) -> f64 {
+    let inclination = orbital_radius.powf(0.2) * about(EARTH_AXIAL_TILT, 0.4, rng);
     inclination % 360.0
 }
 
@@ -203,6 +205,7 @@ pub fn vol_inventory(
     stellar_mass: &f64,
     zone: &i32,
     greenhouse_effect: &bool,
+    rng: &mut dyn RngCore,
 ) -> f64 {
     let velocity_ratio = escape_vel / rms_vel;
 
@@ -219,7 +222,7 @@ pub fn vol_inventory(
 
     let mass_in_earth_units = mass * EARTH_MASSES_PER_SOLAR_MASS;
     let temp1 = proportion_const * mass_in_earth_units / stellar_mass;
-    let temp2 = about(temp1, 0.2);
+    let temp2 = about(temp1, 0.2, rng);
 
     if *greenhouse_effect {
         return temp2;
@@ -318,6 +321,7 @@ pub fn planet_albedo(
     cloud_fraction: &f64,
     ice_fraction: &f64,
     surface_pressure_bar: &f64,
+    rng: &mut dyn RngCore,
 ) -> f64 {
     let mut rock_fraction = 1.0 - *water_fraction - *ice_fraction;
     let mut components = 0.0;
@@ -350,16 +354,16 @@ pub fn planet_albedo(
         false => 0.0,
     };
 
-    let cloud_contribution = *cloud_fraction * about(CLOUD_ALBEDO, 0.2);
-    let water_contribution = water_fraction * about(WATER_ALBEDO, 0.2);
+    let cloud_contribution = *cloud_fraction * about(CLOUD_ALBEDO, 0.2, rng);
+    let water_contribution = water_fraction * about(WATER_ALBEDO, 0.2, rng);
     let (rock_contribution, ice_contribution) = match *surface_pressure_bar == 0.0 {
         true => (
-            rock_fraction * about(AIRLESS_ROCKY_ALBEDO, 0.3),
-            ice_fraction * about(AIRLESS_ICE_ALBEDO, 0.4),
+            rock_fraction * about(AIRLESS_ROCKY_ALBEDO, 0.3, rng),
+            ice_fraction * about(AIRLESS_ICE_ALBEDO, 0.4, rng),
         ),
         false => (
-            rock_fraction * about(ROCKY_ALBEDO, 0.1),
-            ice_fraction * about(ICE_ALBEDO, 0.1),
+            rock_fraction * about(ROCKY_ALBEDO, 0.1, rng),
+            ice_fraction * about(ICE_ALBEDO, 0.1, rng),
         ),
     };
 
@@ -370,19 +374,19 @@ pub fn planet_albedo(
 pub fn opacity(molecular_weight: f64, surface_pressure_bar: f64) -> f64 {
     let mut optical_depth = 0.0;
 
-    if molecular_weight >= 0.0 && molecular_weight < 10.0 {
+    if (0.0..10.0).contains(&molecular_weight) {
         optical_depth += 3.0;
     }
-    if molecular_weight >= 10.0 && molecular_weight < 20.0 {
+    if (10.0..20.0).contains(&molecular_weight) {
         optical_depth += 2.34;
     }
-    if molecular_weight >= 20.0 && molecular_weight < 30.0 {
+    if (20.0..30.0).contains(&molecular_weight) {
         optical_depth += 1.0;
     }
-    if molecular_weight >= 30.0 && molecular_weight < 45.0 {
+    if (30.0..45.0).contains(&molecular_weight) {
         optical_depth += 0.15;
     }
-    if molecular_weight >= 45.0 && molecular_weight < 100.0 {
+    if (45.0..100.0).contains(&molecular_weight) {
         optical_depth += 0.05;
     }
 
@@ -407,7 +411,11 @@ pub fn get_earth_mass(mass: f64) -> f64 {
 }
 
 /// The temperature calculated is in degrees Kelvin.
-pub fn iterate_surface_temp(planet: &mut Planetesimal, ecosphere_radius: &f64) -> f64 {
+pub fn iterate_surface_temp(
+    planet: &mut Planetesimal,
+    ecosphere_radius: &f64,
+    rng: &mut dyn RngCore,
+) -> f64 {
     let mut albedo = 0.0;
     let mut water = 0.0;
     let mut clouds = 0.0;
@@ -436,7 +444,7 @@ pub fn iterate_surface_temp(planet: &mut Planetesimal, ecosphere_radius: &f64) -
         {
             water = 0.0;
         }
-        albedo = planet_albedo(&water, &clouds, &ice, &planet.surface_pressure_bar);
+        albedo = planet_albedo(&water, &clouds, &ice, &planet.surface_pressure_bar, rng);
         optical_depth = opacity(planet.molecule_weight, planet.surface_pressure_bar);
         effective_temp = eff_temp(ecosphere_radius, &planet.a, &albedo);
         greenhouse_rise = green_rise(optical_depth, effective_temp, planet.surface_pressure_bar);

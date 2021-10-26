@@ -36,8 +36,7 @@ impl System {
         let inner_dust = 0.0;
         let outer_dust = stellar_dust_limit(&stellar_mass);
         let dust_band = DustBand::new(outer_dust, inner_dust, true, true);
-        let mut dust_bands = Vec::new();
-        dust_bands.push(dust_band);
+        let dust_bands = vec![dust_band];
 
         Self {
             primary_star,
@@ -55,7 +54,7 @@ impl System {
         }
     }
 
-    pub fn distribute_planetary_masses(&mut self) {
+    pub fn distribute_planetary_masses(&mut self, rng: &mut dyn RngCore) {
         let Self {
             primary_star,
             planets,
@@ -76,22 +75,22 @@ impl System {
         } = primary_star;
 
         while *dust_left {
-            let mut p = Planetesimal::new(&planetesimal_inner_bound, &planetesimal_outer_bound);
+            let mut p = Planetesimal::new(planetesimal_inner_bound, planetesimal_outer_bound, rng);
             let inside_range = inner_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
             let outside_range = outer_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
-            let dust_density = dust_density(&dust_density_coeff, &stellar_mass, &p.a);
-            let crit_mass = critical_limit(&b, &p.a, &p.e, &stellar_luminosity);
+            let dust_density = dust_density(dust_density_coeff, stellar_mass, &p.a);
+            let crit_mass = critical_limit(b, &p.a, &p.e, stellar_luminosity);
 
-            if dust_availible(&dust_bands, &inside_range, &outside_range) {
+            if dust_availible(dust_bands, &inside_range, &outside_range) {
                 accrete_dust(
                     &mut p.mass,
                     &p.a,
                     &p.e,
                     &crit_mass,
                     dust_bands,
-                    &cloud_eccentricity,
+                    cloud_eccentricity,
                     &dust_density,
-                    &k,
+                    k,
                 );
 
                 let min = inner_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
@@ -112,18 +111,18 @@ impl System {
 
                 planets.push(p);
                 planets.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
-                coalesce_planetesimals(stellar_luminosity, stellar_mass, planets);
+                coalesce_planetesimals(stellar_luminosity, stellar_mass, planets, rng);
             }
 
             *dust_left = dust_availible(
-                &dust_bands,
-                &planetesimal_inner_bound,
-                &planetesimal_outer_bound,
+                dust_bands,
+                planetesimal_inner_bound,
+                planetesimal_outer_bound,
             );
         }
     }
 
-    pub fn post_accretion(&mut self, intensity: u32) {
+    pub fn post_accretion(&mut self, intensity: u32, rng: &mut dyn RngCore) {
         let Self {
             primary_star,
             planets,
@@ -136,24 +135,24 @@ impl System {
         }
 
         let dist = WeightedIndex::new(&weights).unwrap();
-        let mut rng = thread_rng();
         for _i in 0..intensity {
-            let p = &mut planets[dist.sample(&mut rng)];
+            let p = &mut planets[dist.sample(rng)];
             let Planetesimal { a, e, mass, .. } = p;
             let r_inner = inner_effect_limit(a, e, mass);
             let r_outer = outer_effect_limit(a, e, mass);
-            let mut outer_body = Planetesimal::random_outer_body(&r_inner, &r_outer);
+            let mut outer_body = Planetesimal::random_outer_body(&r_inner, &r_outer, rng);
 
             planetesimals_intersect(
                 &mut outer_body,
                 p,
                 &primary_star.stellar_luminosity,
                 &primary_star.stellar_mass,
+                rng,
             );
         }
     }
 
-    pub fn process_planets(&mut self) {
+    pub fn process_planets(&mut self, rng: &mut dyn RngCore) {
         let System {
             primary_star,
             planets,
@@ -173,6 +172,7 @@ impl System {
                 stellar_mass,
                 main_seq_age,
                 ecosphere,
+                rng,
             );
             for moon in planet.moons.iter_mut() {
                 moon.derive_planetary_environment(
@@ -180,6 +180,7 @@ impl System {
                     &planet.mass,
                     main_seq_age,
                     ecosphere,
+                    rng,
                 );
             }
         }
@@ -191,6 +192,7 @@ pub fn coalesce_planetesimals(
     primary_star_luminosity: &f64,
     primary_star_mass: &f64,
     planets: &mut Vec<Planetesimal>,
+    rng: &mut dyn RngCore,
 ) {
     let mut next_planets = Vec::new();
     for (i, p) in planets.iter_mut().enumerate() {
@@ -198,7 +200,7 @@ pub fn coalesce_planetesimals(
             next_planets.push(p.clone());
         } else if let Some(prev_p) = next_planets.last_mut() {
             if check_orbits_intersect(p.a, p.e, p.mass, prev_p.a, prev_p.e, prev_p.mass) {
-                planetesimals_intersect(p, prev_p, primary_star_luminosity, primary_star_mass);
+                planetesimals_intersect(p, prev_p, primary_star_luminosity, primary_star_mass, rng);
             } else {
                 next_planets.push(p.clone());
             }
@@ -213,10 +215,11 @@ pub fn planetesimals_intersect(
     prev_p: &mut Planetesimal,
     primary_star_luminosity: &f64,
     primary_star_mass: &f64,
+    rng: &mut dyn RngCore,
 ) {
     // Moon is not likely to capture other moon in a presence of planet
     if p.is_moon {
-        *prev_p = coalesce_two_planets(&prev_p, &p);
+        *prev_p = coalesce_two_planets(prev_p, p);
     } else {
         // Check for larger/smaller planetesimal
         let (larger, smaller) = match p.mass >= prev_p.mass {
@@ -226,9 +229,9 @@ pub fn planetesimals_intersect(
         let roche_limit = roche_limit_au(&larger.mass, &smaller.mass, &smaller.radius);
         // Planetesimals collide or one capture another as moon
         if (prev_p.a - p.a).abs() <= roche_limit * 2.0 {
-            *prev_p = coalesce_two_planets(&prev_p, &p);
+            *prev_p = coalesce_two_planets(prev_p, p);
         } else {
-            *prev_p = capture_moon(&larger, &smaller, primary_star_mass);
+            *prev_p = capture_moon(&larger, &smaller, primary_star_mass, rng);
             prev_p
                 .moons
                 .sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
@@ -236,6 +239,7 @@ pub fn planetesimals_intersect(
                 primary_star_luminosity,
                 primary_star_mass,
                 &mut prev_p.moons,
+                rng,
             );
             moons_to_rings(prev_p);
         }
@@ -291,7 +295,12 @@ fn coalesce_two_planets(a: &Planetesimal, b: &Planetesimal) -> Planetesimal {
 }
 
 /// Larger planetsimal capture smaller as moon
-fn capture_moon(larger: &Planetesimal, smaller: &Planetesimal, stellar_mass: &f64) -> Planetesimal {
+fn capture_moon(
+    larger: &Planetesimal,
+    smaller: &Planetesimal,
+    stellar_mass: &f64,
+    rng: &mut dyn RngCore,
+) -> Planetesimal {
     let mut planet = larger.clone();
     let mut moon = smaller.clone();
     moon.is_moon = true;
@@ -310,13 +319,12 @@ fn capture_moon(larger: &Planetesimal, smaller: &Planetesimal, stellar_mass: &f6
     planet.hill_sphere = hill_sphere_au(&planet.a, &planet.e, &planet.mass, stellar_mass);
 
     // Add moon to planetary moons, recalculate disturbed orbits of moons
-    let mut rng = rand::thread_rng();
     planet.moons.append(&mut moon.moons);
     planet.moons.push(moon);
 
     for m in planet.moons.iter_mut() {
-        m.a = rng.gen_range(0.0, planet.hill_sphere);
-        m.e = random_eccentricity();
+        m.a = rng.gen_range(0.0..planet.hill_sphere);
+        m.e = random_eccentricity(rng);
         m.distance_to_primary_star = planet.a;
     }
     planet
