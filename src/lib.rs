@@ -11,7 +11,6 @@ pub use structs::PrimaryStar;
 pub use structs::Ring;
 pub use structs::System;
 
-
 #[cfg(test)]
 mod tests {
     use crate::Accrete;
@@ -24,14 +23,15 @@ mod tests {
         let mut output = fs::File::create(path)?;
         write!(output, "{}", data)
     }
-    
+
     fn read_file(path: &str) -> String {
         fs::read_to_string(path).expect("Failed to read fixture")
     }
 
     fn get_fixture(path: &str, accrete: &mut Accrete) -> String {
         if GENERATE_FIXTURES {
-            write_to_file(&format!("{:?}", accrete.planetary_system()), path).expect("Failed to write fixture");
+            write_to_file(&format!("{:?}", accrete.planetary_system()), path)
+                .expect("Failed to write fixture");
         }
         let fixture = read_file(path);
         fixture
@@ -55,7 +55,6 @@ mod tests {
         let fixture = get_fixture(path, &mut accrete);
         let system = format!("{:?}", accrete.planetary_system());
         assert_eq!(system, fixture);
-        
     }
 
     #[test]

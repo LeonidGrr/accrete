@@ -129,7 +129,6 @@ impl Planetesimal {
         ecosphere: &(f64, f64),
         rng: &mut dyn RngCore,
     ) {
-        
         if !self.is_moon {
             self.orbit_zone = orbital_zone(stellar_luminosity, self.a);
         }
