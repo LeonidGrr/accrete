@@ -104,7 +104,7 @@ import('accrete-wasm').then(accrete => {
 **post_accretion_intensity** - Amount of random planetesimals that will bomb planet after accretion.
 *Default: 100*
 
-##[Check full examples](https://github.com/LeonidGrr/accrete/tree/master/examples)
+## [Check full examples](https://github.com/LeonidGrr/accrete/tree/master/examples)
 
 ## Brief history
 >Accrete's origin dates back to the late 60's when Stephen H. Dole published "Formation of Planetary Systems by Aggregation: A Computer Simulation". 
