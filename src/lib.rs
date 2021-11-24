@@ -1,5 +1,7 @@
 pub mod accrete;
 pub mod consts;
+pub mod wasm;
+
 mod enviro;
 mod structs;
 mod utils;

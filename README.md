@@ -13,7 +13,6 @@ This version of Accrete can be used for procedural generation of plausible plane
 - [NPM package](https://www.npmjs.com/package/accrete-wasm)
 
 ## Generate planetary system
-
 Rust:
 ```rust
 use accrete;
@@ -30,8 +29,9 @@ fn main() {
 Javascript:
 ```javascript
 import('accrete-wasm').then(accrete => {
-    const config = accrete.config();
-    const system = accrete.planetary_system_wasm(config);
+    const seed = 1;
+    const accrete = generate(BigInt(seed));
+    const planet = accrete.planetary_system(accrete);
 });
 ```
 
@@ -79,8 +79,9 @@ fn main() {
 Javascript:
 ```javascript
 import('accrete-wasm').then(accrete => {
-    const config = accrete.config();
-    const planet = accrete.planet_wasm(config);
+    const seed = 1;
+    const accrete = generate(BigInt(seed));
+    const planet = accrete.planet(accrete);
 });
 ```
 
@@ -102,6 +103,8 @@ import('accrete-wasm').then(accrete => {
 
 **post_accretion_intensity** - Amount of random planetesimals that will bomb planet after accretion.
 *Default: 100*
+
+##[Check full examples](https://github.com/LeonidGrr/accrete/tree/master/examples)
 
 ## Brief history
 >Accrete's origin dates back to the late 60's when Stephen H. Dole published "Formation of Planetary Systems by Aggregation: A Computer Simulation". 

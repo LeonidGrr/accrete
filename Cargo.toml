@@ -9,7 +9,21 @@ edition = "2018"
 readme = "README.md"
 keywords = ["accrete", "planetary", "system", "procedural", "generation"]
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["console_error_panic_hook", "wee_alloc"]
+
 [dependencies]
 rand = "0.8.3"
+getrandom = { version = "0.2.3", features = ["js"] }
 serde = { version = "1.0", features = ["derive"] }
-rand_chacha = "0.3"
+rand_chacha = { version = "0.3.1", features = ["serde1"] }
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+console_error_panic_hook = { version = "0.1.7", optional = true }
+wee_alloc = { version = "0.4.5", optional = true }
+
+[profile.release]
+lto = true
+opt-level = 's'

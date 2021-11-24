@@ -5,6 +5,8 @@ use crate::utils::*;
 
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
+use serde::{Serialize, Deserialize};
+use wasm_bindgen::prelude::*;
 
 /// ### Configuration:
 ///
@@ -38,7 +40,8 @@ use rand_chacha::ChaCha8Rng;
 ///
 /// **stellar_luminosity** - Primary star luminosity.
 /// *Default: 1.0*
-#[derive(Debug)]
+#[wasm_bindgen]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Accrete {
     pub stellar_mass: f64,
     pub dust_density_coeff: f64,

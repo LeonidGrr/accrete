@@ -1,6 +1,19 @@
 use crate::consts::*;
 use rand::{Rng, RngCore};
 
+extern crate wee_alloc;
+
+// When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
+// allocator.
+#[cfg(feature = "wee_alloc")]
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
+pub fn set_panic_hook() {
+    #[cfg(feature = "console_error_panic_hook")]
+    console_error_panic_hook::set_once();
+}
+
 pub fn about(value: f64, variation: f64, rng: &mut dyn RngCore) -> f64 {
     rng.gen_range(value - variation..value + variation)
 }
