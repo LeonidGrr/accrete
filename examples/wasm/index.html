@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Accrete</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <p>Accrete WASM example</p>
+        <input type="number" id="seed" placeholder="seed" />
+        <input type="button" id="accrete_system" value="System" disabled />
+        <input type="button" id="accrete_planet" value="Planet" disabled />
+        <br />
+        <pre id="output"></pre>
+        <script type="module">
+            import init, { generate, planetary_system, planet } from './pkg/accrete.js';
+
+            function syntaxHighlight(json) {
+                json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                    var cls = 'number';
+                    if (/^"/.test(match)) {
+                        if (/:$/.test(match)) {
+                            cls = 'key';
+                        } else {
+                            cls = 'string';
+                        }
+                    } else if (/true|false/.test(match)) {
+                        cls = 'boolean';
+                    } else if (/null/.test(match)) {
+                        cls = 'null';
+                    }
+                    return '<span class="' + cls + '">' + match + '</span>';
+                });
+            }
+
+            async function run() {
+                await init();
+        
+                Object.assign(document.getElementById('accrete_system'), {
+                    async onclick() {
+                        const seed = document.getElementById('seed').value;
+                        const accrete = generate(BigInt(seed));
+                        const output = planetary_system(accrete);
+                        document.getElementById('output').innerHTML = syntaxHighlight(JSON.stringify(output, undefined, 2));
+                    },
+                    disabled: false
+                });
+
+                Object.assign(document.getElementById('accrete_planet'), {
+                    async onclick() {
+                        const seed = document.getElementById('seed').value;
+                        const accrete = generate(BigInt(seed));
+                        const output = planet(accrete);
+                        document.getElementById('output').innerHTML = syntaxHighlight(JSON.stringify(output, undefined, 4));
+                    },
+                    disabled: false
+                });
+            }
+      
+            run();
+          </script>
+    </body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "scripts": {
+    "serve": "cp -r ../../pkg . && serve"
+  },
+  "devDependencies": {
+    "serve": "^12.0.0"
+  }
+}

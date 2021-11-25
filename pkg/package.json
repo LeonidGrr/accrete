@@ -1,0 +1,28 @@
+{
+  "name": "accrete",
+  "collaborators": [
+    "Leonid <leonidgrr@gmail.com>"
+  ],
+  "description": "Rust port of Accrete, planetary system generation algorithm. Based on 'Formation of Planetary Systems by Aggregation: A Computer Simulation' by Stephen H. Dole. Improved and extended by many talented people during past ~50 years.",
+  "version": "0.1.9",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LeonidGrr/accrete.git"
+  },
+  "files": [
+    "accrete_bg.wasm",
+    "accrete.js",
+    "accrete.d.ts"
+  ],
+  "module": "accrete.js",
+  "types": "accrete.d.ts",
+  "sideEffects": false,
+  "keywords": [
+    "accrete",
+    "planetary",
+    "system",
+    "procedural",
+    "generation"
+  ]
+}

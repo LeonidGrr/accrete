@@ -1,0 +1,6 @@
+pre { outline: 1px solid #ccc; padding: 5px; margin: 5px; }
+.string { color: rgb(0, 0, 0); }
+.number { color: rgb(0, 4, 255); }
+.boolean { color: rgb(11, 138, 0); }
+.null { color: rgb(255, 0, 0); }
+.key { color: rgb(0, 0, 0); }
