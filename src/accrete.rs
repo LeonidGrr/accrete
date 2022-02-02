@@ -2,6 +2,7 @@ use crate::consts::*;
 use crate::structs::planetesimal::Planetesimal;
 use crate::structs::system::System;
 use crate::utils::*;
+use crate::event_store::{event, AccreteEvent};
 
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
@@ -41,7 +42,7 @@ use wasm_bindgen::prelude::*;
 /// **stellar_luminosity** - Primary star luminosity.
 /// *Default: 1.0*
 #[wasm_bindgen]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Accrete {
     pub stellar_mass: f64,
     pub dust_density_coeff: f64,
@@ -65,7 +66,7 @@ impl Default for Accrete {
         let planet_mass = rng.gen_range(PROTOPLANET_MASS * EARTH_MASSES_PER_SOLAR_MASS..500.0)
             / EARTH_MASSES_PER_SOLAR_MASS;
 
-        Accrete {
+        let accrete = Accrete {
             stellar_mass: random_stellar_mass,
             dust_density_coeff: DUST_DENSITY_COEFF,
             k: K,
@@ -77,7 +78,11 @@ impl Default for Accrete {
             planet_e,
             planet_mass,
             rng,
-        }
+        };
+
+        event(AccreteEvent::AccreteInstaceCreated(accrete.clone()));
+
+        accrete
     }
 }
 
@@ -90,7 +95,7 @@ impl Accrete {
         let planet_mass = rng.gen_range(PROTOPLANET_MASS * EARTH_MASSES_PER_SOLAR_MASS..500.0)
             / EARTH_MASSES_PER_SOLAR_MASS;
 
-        Accrete {
+        let accrete = Accrete {
             stellar_mass: random_stellar_mass,
             dust_density_coeff: DUST_DENSITY_COEFF,
             k: K,
@@ -102,7 +107,11 @@ impl Accrete {
             planet_e,
             planet_mass,
             rng,
-        }
+        };
+
+        event(AccreteEvent::AccreteInstaceCreated(accrete.clone()));
+
+        accrete
     }
 
     /// Generate planetary system.
@@ -129,6 +138,8 @@ impl Accrete {
         planetary_system.distribute_planetary_masses(rng);
         planetary_system.post_accretion(*post_accretion_intensity, rng);
         planetary_system.process_planets(rng);
+
+        event(AccreteEvent::PlanetarySystemComplete(planetary_system.clone()));
         planetary_system
     }
 

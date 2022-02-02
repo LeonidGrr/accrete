@@ -23,6 +23,8 @@ rand_chacha = { version = "0.3.1", features = ["serde1"] }
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 console_error_panic_hook = { version = "0.1.7", optional = true }
 wee_alloc = { version = "0.4.5", optional = true }
+once_cell = "1.9.0"
+nanoid = "0.4.0"
 
 [profile.release]
 lto = true

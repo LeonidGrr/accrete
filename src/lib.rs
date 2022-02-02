@@ -1,6 +1,7 @@
 pub mod accrete;
 pub mod consts;
 pub mod wasm;
+pub mod event_store;
 
 mod enviro;
 mod structs;
