@@ -1,7 +1,7 @@
 use crate::consts::*;
 use crate::utils::*;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct DustBand {

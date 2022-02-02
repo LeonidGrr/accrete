@@ -3,10 +3,10 @@ use crate::event_store::{event, AccreteEvent};
 use crate::structs::*;
 use crate::utils::*;
 
+use nanoid::nanoid;
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
-use serde::{Serialize, Deserialize};
-use nanoid::nanoid;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct System {
@@ -22,7 +22,7 @@ pub struct System {
     pub outer_dust: f64,
     pub dust_bands: Vec<DustBand>,
     pub dust_left: bool,
-    pub id: String
+    pub id: String,
 }
 
 impl System {
@@ -55,10 +55,10 @@ impl System {
             outer_dust,
             dust_bands,
             dust_left: true,
-            id
+            id,
         };
 
-        event(AccreteEvent::PlanetarySystemCreated(system.clone()));
+        event(AccreteEvent::PlanetarySystemSetup(system.clone()));
 
         system
     }
@@ -85,6 +85,9 @@ impl System {
 
         while *dust_left {
             let mut p = Planetesimal::new(planetesimal_inner_bound, planetesimal_outer_bound, rng);
+
+            event(AccreteEvent::PlanetesimalCreated(p.clone()));
+
             let inside_range = inner_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
             let outside_range = outer_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
             let dust_density = dust_density(dust_density_coeff, stellar_mass, &p.a);
@@ -105,12 +108,12 @@ impl System {
                 let min = inner_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
                 let max = outer_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
 
-                event(AccreteEvent::PlanetesimalCollectedDust(p.clone()));
+                event(AccreteEvent::PlanetesimalAccreteDust(p.clone()));
 
                 update_dust_lanes(dust_bands, min, max, &p.mass, &crit_mass);
                 compress_dust_lanes(dust_bands);
-                
-                event(AccreteEvent::DustBandUpdated(dust_bands.clone()));
+
+                event(AccreteEvent::DustBandsUpdated(dust_bands.clone()));
 
                 if p.mass > crit_mass {
                     p.is_gas_giant = true;
@@ -157,6 +160,8 @@ impl System {
             let r_inner = inner_effect_limit(a, e, mass);
             let r_outer = outer_effect_limit(a, e, mass);
             let mut outer_body = Planetesimal::random_outer_body(&r_inner, &r_outer, rng);
+
+            event(AccreteEvent::OuterBodyInjected(outer_body.clone()));
 
             planetesimals_intersect(
                 &mut outer_body,
@@ -310,9 +315,12 @@ fn coalesce_two_planets(a: &Planetesimal, b: &Planetesimal) -> Planetesimal {
         &coalesced.orbit_zone,
     );
     coalesced.has_collision = true;
-    
-    event(AccreteEvent::PlanetesimalsCoalesced { smaller: b.clone(), larger: coalesced.clone() });
-    
+
+    event(AccreteEvent::PlanetesimalsCoalesced {
+        smaller: b.clone(),
+        larger: coalesced.clone(),
+    });
+
     coalesced
 }
 
@@ -350,9 +358,12 @@ fn capture_moon(
         m.e = random_eccentricity(rng);
         m.distance_to_primary_star = planet.a;
     }
-    
-    event(AccreteEvent::PlanetesimalCaptureMoon { moon_id, planet: planet.clone() });
-    
+
+    event(AccreteEvent::PlanetesimalCaptureMoon {
+        moon_id,
+        planet: planet.clone(),
+    });
+
     planet
 }
 
@@ -370,7 +381,7 @@ fn moons_to_rings(planet: &mut Planetesimal) {
     }
 
     event(AccreteEvent::PlanetesimalMoonToRing(planet.clone()));
-    
+
     planet.moons = next_moons;
 }
 

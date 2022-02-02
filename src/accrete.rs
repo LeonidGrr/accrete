@@ -1,12 +1,12 @@
 use crate::consts::*;
+use crate::event_store::{event, AccreteEvent};
 use crate::structs::planetesimal::Planetesimal;
 use crate::structs::system::System;
 use crate::utils::*;
-use crate::event_store::{event, AccreteEvent};
 
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
 /// ### Configuration:
@@ -66,7 +66,7 @@ impl Default for Accrete {
         let planet_mass = rng.gen_range(PROTOPLANET_MASS * EARTH_MASSES_PER_SOLAR_MASS..500.0)
             / EARTH_MASSES_PER_SOLAR_MASS;
 
-        let accrete = Accrete {
+        Accrete {
             stellar_mass: random_stellar_mass,
             dust_density_coeff: DUST_DENSITY_COEFF,
             k: K,
@@ -78,11 +78,7 @@ impl Default for Accrete {
             planet_e,
             planet_mass,
             rng,
-        };
-
-        event(AccreteEvent::AccreteInstaceCreated(accrete.clone()));
-
-        accrete
+        }
     }
 }
 
@@ -108,8 +104,6 @@ impl Accrete {
             planet_mass,
             rng,
         };
-
-        event(AccreteEvent::AccreteInstaceCreated(accrete.clone()));
 
         accrete
     }
@@ -139,7 +133,9 @@ impl Accrete {
         planetary_system.post_accretion(*post_accretion_intensity, rng);
         planetary_system.process_planets(rng);
 
-        event(AccreteEvent::PlanetarySystemComplete(planetary_system.clone()));
+        event(AccreteEvent::PlanetarySystemComplete(
+            planetary_system.clone(),
+        ));
         planetary_system
     }
 

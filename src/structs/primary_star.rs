@@ -1,7 +1,7 @@
 use crate::consts::*;
 
-use serde::{Serialize, Deserialize};
 use nanoid::nanoid;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PrimaryStar {
@@ -14,7 +14,7 @@ pub struct PrimaryStar {
     pub color: String,
     pub main_seq_age: f64,
     pub ecosphere: (f64, f64),
-    pub id: String
+    pub id: String,
 }
 
 impl PrimaryStar {
@@ -41,7 +41,7 @@ impl PrimaryStar {
             spectral_class,
             bv_color_index,
             color,
-            id
+            id,
         }
     }
 }

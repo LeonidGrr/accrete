@@ -1,14 +1,14 @@
 use crate::structs::Planetesimal;
 
 use nanoid::nanoid;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ring {
     pub a: f64,
     pub mass: f64,
     pub width: f64,
-    pub id: String
+    pub id: String,
 }
 
 impl Ring {
@@ -18,7 +18,7 @@ impl Ring {
             a: roche_limit,
             mass: moon.mass,
             width: moon.radius * 2.0,
-            id
+            id,
         }
     }
 

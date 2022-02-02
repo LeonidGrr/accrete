@@ -1,12 +1,12 @@
 use crate::consts::*;
 use crate::enviro::*;
+use crate::event_store::{event, AccreteEvent};
 use crate::structs::*;
 use crate::utils::*;
-use crate::event_store::{event, AccreteEvent};
 
-use rand::{Rng, RngCore};
-use serde::{Serialize, Deserialize};
 use nanoid::nanoid;
+use rand::{Rng, RngCore};
+use serde::{Deserialize, Serialize};
 
 // http://orbitsimulator.com/formulas/
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -79,7 +79,7 @@ impl Planetesimal {
         let e = random_eccentricity(rng);
         let id = nanoid!();
 
-        let planetesimal = Planetesimal {
+        Planetesimal {
             a,
             e,
             distance_to_primary_star: a,
@@ -122,12 +122,8 @@ impl Planetesimal {
             tectonic_activity: false,
             magnetosphere: false,
             has_collision: false,
-            id
-        };
-
-        event(AccreteEvent::PlanetesimalCreated(planetesimal.clone()));
-
-        planetesimal
+            id,
+        }
     }
 
     pub fn derive_planetary_environment(
@@ -319,7 +315,7 @@ impl Planetesimal {
             tectonic_activity: false,
             magnetosphere: false,
             has_collision: false,
-            id
+            id,
         };
 
         for _i in 0..post_accretion_intensity {
