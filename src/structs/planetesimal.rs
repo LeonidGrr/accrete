@@ -4,7 +4,7 @@ use crate::event_store::{event, AccreteEvent};
 use crate::structs::*;
 use crate::utils::*;
 
-use nanoid::nanoid;
+use rand::distributions::Alphanumeric;
 use rand::{Rng, RngCore};
 use serde::{Deserialize, Serialize};
 
@@ -77,7 +77,7 @@ impl Planetesimal {
     ) -> Self {
         let a = rng.gen_range(*planetesimal_inner_bound..*planetesimal_outer_bound);
         let e = random_eccentricity(rng);
-        let id = nanoid!();
+        let id = random_id(rng);
 
         Planetesimal {
             a,
@@ -270,7 +270,7 @@ impl Planetesimal {
         if orbit_clearing < 1.0 {
             is_dwarf_planet = true;
         }
-        let id = nanoid!();
+        let id = random_id(rng);
 
         let mut random_planet = Planetesimal {
             a,

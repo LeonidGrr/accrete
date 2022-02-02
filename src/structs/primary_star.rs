@@ -1,6 +1,5 @@
 use crate::consts::*;
 
-use nanoid::nanoid;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -14,7 +13,6 @@ pub struct PrimaryStar {
     pub color: String,
     pub main_seq_age: f64,
     pub ecosphere: (f64, f64),
-    pub id: String,
 }
 
 impl PrimaryStar {
@@ -29,7 +27,6 @@ impl PrimaryStar {
         let bv_color_index = bv_color_index(stellar_surface_temp);
         let color = bv_to_rgb(bv_color_index);
         let ecosphere = ecosphere(&stellar_luminosity, &spectral_class);
-        let id = nanoid!();
 
         Self {
             stellar_mass,
@@ -41,7 +38,6 @@ impl PrimaryStar {
             spectral_class,
             bv_color_index,
             color,
-            id,
         }
     }
 }

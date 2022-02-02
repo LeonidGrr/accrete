@@ -1,6 +1,6 @@
-use crate::structs::Planetesimal;
+use crate::{structs::Planetesimal, utils::random_id};
 
-use nanoid::nanoid;
+use rand::RngCore;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -13,17 +13,20 @@ pub struct Ring {
 
 impl Ring {
     pub fn from_planet(roche_limit: f64, moon: &Planetesimal) -> Self {
-        let id = nanoid!();
         Ring {
             a: roche_limit,
             mass: moon.mass,
             width: moon.radius * 2.0,
-            id,
+            id: moon.id.clone(),
         }
     }
 
-    pub fn new(a: f64, mass: f64, width: f64) -> Self {
-        let id = nanoid!();
-        Ring { a, mass, width, id }
+    pub fn new(a: f64, mass: f64, width: f64, rng: &mut dyn RngCore) -> Self {
+        Ring {
+            a,
+            mass,
+            width,
+            id: random_id(rng),
+        }
     }
 }

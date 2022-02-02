@@ -3,7 +3,6 @@ use crate::event_store::{event, AccreteEvent};
 use crate::structs::*;
 use crate::utils::*;
 
-use nanoid::nanoid;
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -22,7 +21,6 @@ pub struct System {
     pub outer_dust: f64,
     pub dust_bands: Vec<DustBand>,
     pub dust_left: bool,
-    pub id: String,
 }
 
 impl System {
@@ -40,7 +38,6 @@ impl System {
         let outer_dust = stellar_dust_limit(&stellar_mass);
         let dust_band = DustBand::new(outer_dust, inner_dust, true, true);
         let dust_bands = vec![dust_band];
-        let id = nanoid!();
 
         let system = Self {
             primary_star,
@@ -55,7 +52,6 @@ impl System {
             outer_dust,
             dust_bands,
             dust_left: true,
-            id,
         };
 
         event(AccreteEvent::PlanetarySystemSetup(system.clone()));
