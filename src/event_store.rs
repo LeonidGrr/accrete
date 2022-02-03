@@ -3,11 +3,41 @@ use std::sync::Mutex;
 use crate::{DustBand, Planetesimal, System};
 use once_cell::sync::Lazy;
 
+type EventStore = Vec<AccreteEvent>;
+
+pub trait EventSource: Clone {
+    fn event(&self, event_type: &str) {}
+}
+
+impl EventSource for System {
+    fn event(&self, event_type: &str) {
+        let mut event_store = EVENT_STORE.lock().expect("Failed to access EVENT_STORE");
+        let event = match event_type {
+            "system_setup" => Some(AccreteEvent::PlanetarySystemSetup(event_type.to_string(), self.clone())),
+            "system_complete" => Some(AccreteEvent::PlanetarySystemComplete(event_type.to_string(), self.clone())),
+            _ => None,
+        };
+
+        if let Some(e) = event {
+            event_store.push(e)
+        }
+    }
+}
+
+impl EventSource for Planetesimal {
+    fn event(&self, event_type: &str) {}
+}
+
+impl EventSource for DustBand {
+    fn event(&self, event_type: &str) {}
+
+}
+
 /// List of events emitted during system generation
 #[derive(Debug)]
 pub enum AccreteEvent {
     /// once at the very start of accretion
-    PlanetarySystemSetup(System),
+    PlanetarySystemSetup(String, System),
     /// new planetesimal created during accretion process
     PlanetesimalCreated(Planetesimal),
     ///planetesimal finished accretion of dust and gas
@@ -35,12 +65,19 @@ pub enum AccreteEvent {
     /// planetary environment generated for all planets
     PlanetaryEnvironmentGenerated,
     /// planetary system generation completed
-    PlanetarySystemComplete(System),
+    PlanetarySystemComplete(String, System),
 }
 
-pub fn event(event: AccreteEvent) {
-    let mut event_store = EVENT_STORE.lock().expect("Failed to access EVENT_STORE");
-    event_store.push(event)
-}
+// pub fn event<T: EventSource>(event_type: &str, ctx: &T) {
+//     let mut event_store = EVENT_STORE.lock().expect("Failed to access EVENT_STORE");
+//     let event = match event_type {
+//         "system_complete" => Some(AccreteEvent::PlanetarySystemComplete(System::into_orig(ctx))),
+//         _ => None,
+//     };
 
-pub static EVENT_STORE: Lazy<Mutex<Vec<AccreteEvent>>> = Lazy::new(|| Mutex::new(Vec::new()));
+//     if let Some(e) = event {
+//         event_store.push(e)
+//     }
+// }
+
+pub static EVENT_STORE: Lazy<Mutex<EventStore>> = Lazy::new(|| Mutex::new(Vec::new()));

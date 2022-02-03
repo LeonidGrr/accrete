@@ -1,5 +1,5 @@
 use crate::enviro::*;
-use crate::event_store::{event, AccreteEvent};
+use crate::event_store::EventSource;
 use crate::structs::*;
 use crate::utils::*;
 
@@ -54,7 +54,7 @@ impl System {
             dust_left: true,
         };
 
-        event(AccreteEvent::PlanetarySystemSetup(system.clone()));
+        system.event("system_setup");
 
         system
     }
@@ -82,7 +82,7 @@ impl System {
         while *dust_left {
             let mut p = Planetesimal::new(planetesimal_inner_bound, planetesimal_outer_bound, rng);
 
-            event(AccreteEvent::PlanetesimalCreated(p.clone()));
+            // event(AccreteEvent::PlanetesimalCreated(p.clone()));
 
             let inside_range = inner_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
             let outside_range = outer_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
@@ -104,16 +104,16 @@ impl System {
                 let min = inner_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
                 let max = outer_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
 
-                event(AccreteEvent::PlanetesimalAccreteDust(p.clone()));
+                // event(AccreteEvent::PlanetesimalAccreteDust(p.clone()));
 
                 update_dust_lanes(dust_bands, min, max, &p.mass, &crit_mass);
                 compress_dust_lanes(dust_bands);
 
-                event(AccreteEvent::DustBandsUpdated(dust_bands.clone()));
+                // event(AccreteEvent::DustBandsUpdated(dust_bands.clone()));
 
                 if p.mass > crit_mass {
                     p.is_gas_giant = true;
-                    event(AccreteEvent::PlanetesimalToGasGiant(p.clone()));
+                    // event(AccreteEvent::PlanetesimalToGasGiant(p.clone()));
                 }
                 p.orbit_clearing = clearing_neightbourhood(&p.mass, &p.a, stellar_mass);
                 if p.orbit_clearing < 1.0 {
@@ -136,7 +136,7 @@ impl System {
     }
 
     pub fn post_accretion(&mut self, intensity: u32, rng: &mut dyn RngCore) {
-        event(AccreteEvent::PostAccretionStarted);
+        // event(AccreteEvent::PostAccretionStarted);
 
         let Self {
             primary_star,
@@ -157,7 +157,7 @@ impl System {
             let r_outer = outer_effect_limit(a, e, mass);
             let mut outer_body = Planetesimal::random_outer_body(&r_inner, &r_outer, rng);
 
-            event(AccreteEvent::OuterBodyInjected(outer_body.clone()));
+            // event(AccreteEvent::OuterBodyInjected(outer_body.clone()));
 
             planetesimals_intersect(
                 &mut outer_body,
@@ -170,7 +170,7 @@ impl System {
     }
 
     pub fn process_planets(&mut self, rng: &mut dyn RngCore) {
-        event(AccreteEvent::PlanetaryEnvironmentGenerated);
+        // event(AccreteEvent::PlanetaryEnvironmentGenerated);
 
         let System {
             primary_star,
@@ -312,10 +312,10 @@ fn coalesce_two_planets(a: &Planetesimal, b: &Planetesimal) -> Planetesimal {
     );
     coalesced.has_collision = true;
 
-    event(AccreteEvent::PlanetesimalsCoalesced {
-        smaller: b.clone(),
-        larger: coalesced.clone(),
-    });
+    // event(AccreteEvent::PlanetesimalsCoalesced {
+    //     smaller: b.clone(),
+    //     larger: coalesced.clone(),
+    // });
 
     coalesced
 }
@@ -355,10 +355,10 @@ fn capture_moon(
         m.distance_to_primary_star = planet.a;
     }
 
-    event(AccreteEvent::PlanetesimalCaptureMoon {
-        moon_id,
-        planet: planet.clone(),
-    });
+    // event(AccreteEvent::PlanetesimalCaptureMoon {
+    //     moon_id,
+    //     planet: planet.clone(),
+    // });
 
     planet
 }
@@ -376,7 +376,7 @@ fn moons_to_rings(planet: &mut Planetesimal) {
         }
     }
 
-    event(AccreteEvent::PlanetesimalMoonToRing(planet.clone()));
+    // event(AccreteEvent::PlanetesimalMoonToRing(planet.clone()));
 
     planet.moons = next_moons;
 }

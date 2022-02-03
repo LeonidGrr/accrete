@@ -1,5 +1,5 @@
 use crate::consts::*;
-use crate::event_store::{event, AccreteEvent};
+use crate::event_store::EventSource;
 use crate::structs::planetesimal::Planetesimal;
 use crate::structs::system::System;
 use crate::utils::*;
@@ -133,9 +133,7 @@ impl Accrete {
         planetary_system.post_accretion(*post_accretion_intensity, rng);
         planetary_system.process_planets(rng);
 
-        event(AccreteEvent::PlanetarySystemComplete(
-            planetary_system.clone(),
-        ));
+        planetary_system.event("system_complete");
         planetary_system
     }
 
