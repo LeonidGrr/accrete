@@ -13,8 +13,14 @@ impl EventSource for System {
     fn event(&self, event_type: &str) {
         let mut event_store = EVENT_STORE.lock().expect("Failed to access EVENT_STORE");
         let event = match event_type {
-            "system_setup" => Some(AccreteEvent::PlanetarySystemSetup(event_type.to_string(), self.clone())),
-            "system_complete" => Some(AccreteEvent::PlanetarySystemComplete(event_type.to_string(), self.clone())),
+            "system_setup" => Some(AccreteEvent::PlanetarySystemSetup(
+                event_type.to_string(),
+                self.clone(),
+            )),
+            "system_complete" => Some(AccreteEvent::PlanetarySystemComplete(
+                event_type.to_string(),
+                self.clone(),
+            )),
             _ => None,
         };
 
@@ -30,7 +36,6 @@ impl EventSource for Planetesimal {
 
 impl EventSource for DustBand {
     fn event(&self, event_type: &str) {}
-
 }
 
 /// List of events emitted during system generation
@@ -67,17 +72,5 @@ pub enum AccreteEvent {
     /// planetary system generation completed
     PlanetarySystemComplete(String, System),
 }
-
-// pub fn event<T: EventSource>(event_type: &str, ctx: &T) {
-//     let mut event_store = EVENT_STORE.lock().expect("Failed to access EVENT_STORE");
-//     let event = match event_type {
-//         "system_complete" => Some(AccreteEvent::PlanetarySystemComplete(System::into_orig(ctx))),
-//         _ => None,
-//     };
-
-//     if let Some(e) = event {
-//         event_store.push(e)
-//     }
-// }
 
 pub static EVENT_STORE: Lazy<Mutex<EventStore>> = Lazy::new(|| Mutex::new(Vec::new()));
