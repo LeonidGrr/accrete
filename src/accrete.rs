@@ -1,5 +1,5 @@
 use crate::consts::*;
-use crate::event_store::EventSource;
+use crate::events::EventSource;
 use crate::structs::planetesimal::Planetesimal;
 use crate::structs::system::System;
 use crate::utils::*;
@@ -91,7 +91,7 @@ impl Accrete {
         let planet_mass = rng.gen_range(PROTOPLANET_MASS * EARTH_MASSES_PER_SOLAR_MASS..500.0)
             / EARTH_MASSES_PER_SOLAR_MASS;
 
-        let accrete = Accrete {
+        Accrete {
             stellar_mass: random_stellar_mass,
             dust_density_coeff: DUST_DENSITY_COEFF,
             k: K,
@@ -103,9 +103,7 @@ impl Accrete {
             planet_e,
             planet_mass,
             rng,
-        };
-
-        accrete
+        }
     }
 
     /// Generate planetary system.

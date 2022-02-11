@@ -3,6 +3,7 @@ use crate::utils::*;
 
 use serde::{Deserialize, Serialize};
 
+pub type DustBands = Vec<DustBand>;
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct DustBand {
     pub outer_edge: f64,

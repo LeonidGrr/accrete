@@ -1,4 +1,4 @@
-use accrete::event_store::{EVENT_STORE, AccreteEvent};
+use accrete::events::{AccreteEvent, EVENTS};
 use accrete::Accrete;
 
 // TODO
@@ -7,7 +7,7 @@ fn main() {
     accrete.stellar_mass = 2.0;
     accrete.planetary_system();
 
-    let log = EVENT_STORE.lock().unwrap();
+    let log = EVENTS.lock().unwrap();
     println!("{:#?}", log.len());
 
     for event in log.iter() {
