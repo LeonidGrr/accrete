@@ -1,5 +1,5 @@
 use crate::consts::*;
-use rand::{Rng, RngCore};
+use rand::{distributions::Alphanumeric, Rng, RngCore};
 
 extern crate wee_alloc;
 
@@ -12,6 +12,13 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 pub fn set_panic_hook() {
     #[cfg(feature = "console_error_panic_hook")]
     console_error_panic_hook::set_once();
+}
+
+pub fn random_id(rng: &mut dyn RngCore) -> String {
+    rng.sample_iter(&Alphanumeric)
+        .take(7)
+        .map(char::from)
+        .collect()
 }
 
 pub fn about(value: f64, variation: f64, rng: &mut dyn RngCore) -> f64 {

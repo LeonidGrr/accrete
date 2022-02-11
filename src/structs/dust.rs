@@ -1,9 +1,9 @@
 use crate::consts::*;
 use crate::utils::*;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Copy, Clone, Serialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct DustBand {
     pub outer_edge: f64,
     pub inner_edge: f64,

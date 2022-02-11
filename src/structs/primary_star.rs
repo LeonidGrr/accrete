@@ -1,8 +1,8 @@
 use crate::consts::*;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PrimaryStar {
     pub stellar_mass: f64,
     pub stellar_luminosity: f64,
