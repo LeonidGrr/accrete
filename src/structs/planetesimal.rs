@@ -11,8 +11,10 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Planetesimal {
     // "In an anonymous footnote to his 1766 translation of Charles Bonnet's Contemplation de la Nature, the astronomer Johann Daniel Titius of Wittenberg noted an apparent pattern in the layout of the planets, now known as the Titius-Bode Law. If one began a numerical sequence at 0, then included 3, 6, 12, 24, 48, etc., doubling each time, and added four to each number and divided by 10, this produced a remarkably close approximation to the radii of the orbits of the known planets as measured in astronomic units."
-    // axis, AU
+    // Semi-major axis, AU
     pub a: f64,
+    // Semi-minor axis, AU
+    pub b: f64,
     // eccentricity of the orbit, unitless
     pub e: f64,
     pub distance_to_primary_star: f64,
@@ -76,10 +78,12 @@ impl Planetesimal {
     ) -> Self {
         let a = rng.gen_range(*planetesimal_inner_bound..*planetesimal_outer_bound);
         let e = random_eccentricity(rng);
+        let b = a * (1.0 - e.powf(2.0)).sqrt();
         let id = random_id(rng);
 
         Planetesimal {
             a,
+            b,
             e,
             distance_to_primary_star: a,
             mass: PROTOPLANET_MASS,
@@ -270,9 +274,11 @@ impl Planetesimal {
             is_dwarf_planet = true;
         }
         let id = random_id(rng);
+        let b = a * (1.0 - e.powf(2.0)).sqrt();
 
         let mut random_planet = Planetesimal {
             a,
+            b,
             e,
             distance_to_primary_star: a,
             mass,

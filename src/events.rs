@@ -136,4 +136,23 @@ pub enum AccreteEvent {
     PlanetarySystemComplete(String, System),
 }
 
+impl AccreteEvent {
+    pub fn name(&self) -> &str {
+        match self {
+            AccreteEvent::PlanetarySystemSetup(name, _) => name,
+            AccreteEvent::PlanetesimalCreated(name, _) => name,
+            AccreteEvent::PlanetesimalAccretedDust(name, _) => name,
+            AccreteEvent::PlanetesimalToGasGiant(name, _) => name,
+            AccreteEvent::DustBandsUpdated(name, _) => name,
+            AccreteEvent::PlanetesimalsCoalesced(name, _, _, _) => name,
+            AccreteEvent::PlanetesimalCaptureMoon(name, _, _, _) => name,
+            AccreteEvent::PlanetesimalMoonToRing(name, _) => name,
+            AccreteEvent::PostAccretionStarted(name) => name,
+            AccreteEvent::OuterBodyInjected(name, _) => name,
+            AccreteEvent::PlanetaryEnvironmentGenerated(name, _) => name,
+            AccreteEvent::PlanetarySystemComplete(name, _) => name,
+        }
+    }
+}
+
 pub static EVENTS: Lazy<Mutex<Events>> = Lazy::new(|| Mutex::new(Vec::new()));
