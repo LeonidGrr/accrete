@@ -5,13 +5,9 @@ use macroquad::prelude::*;
 
 mod planet;
 mod state;
-use crate::state::State;
+mod orbit;
 
-pub struct Orbit {
-    a: f32,
-    b: f32,
-    focus: f32
-}
+use crate::state::State;
 
 #[macroquad::main("Accrete")]
 async fn main() {
@@ -47,7 +43,8 @@ async fn main() {
         }
     
         for p in state.planets.iter_mut() {
-            p.render(&screen);            
+            p.render(&screen);
+            p.orbit.render(&screen);      
         }
 
         render_star(&system.primary_star, &screen);
