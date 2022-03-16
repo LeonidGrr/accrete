@@ -6,13 +6,14 @@ pub struct State<'a> {
     pub event_idx: usize,
     pub current_event: &'a AccreteEvent,
     pub step: f64,
+    pub scale_factor: f32,
 }
 
 impl State<'_> {
     pub fn event_handler(&mut self) {
         match self.current_event {
             AccreteEvent::PlanetarySystemSetup(_, _) => (),
-            AccreteEvent::PlanetesimalCreated(_, planet) => self.planets.push(Planet::new(planet)),
+            AccreteEvent::PlanetesimalCreated(_, planet) => self.planets.push(Planet::new(planet, self.scale_factor)),
             // AccreteEvent::PlanetesimalAccretedDust(name, _) => name,
             // AccreteEvent::PlanetesimalToGasGiant(name, _) => name,
             // AccreteEvent::DustBandsUpdated(name, _) => name,

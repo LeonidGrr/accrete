@@ -1,13 +1,13 @@
-use accrete::events::{AccreteEvent, EVENTS};
-use accrete::PrimaryStar;
-use accrete::Accrete;
-use macroquad::prelude::*;
 
 mod planet;
 mod state;
 mod orbit;
 
-use crate::state::State;
+use accrete::events::{AccreteEvent, EVENTS};
+use accrete::PrimaryStar;
+use accrete::Accrete;
+use macroquad::prelude::*;
+use state::State;
 
 #[macroquad::main("Accrete")]
 async fn main() {
@@ -25,11 +25,17 @@ async fn main() {
         }
     }
 
+    let outer_a = match system.planets.last() {
+        Some(p) => p.a as f32 * 3.3,
+        None => 200.0,
+    };
+
     let mut state = State {
         step: 1.0,
         event_idx: 0,
         current_event: &log[0],
         planets: vec![],
+        scale_factor: screen_height() / outer_a,
     };
     let screen = (screen_width() / 2.0, screen_height() / 2.0);
 
