@@ -19,7 +19,7 @@ impl<'a> State<'a> {
                     let p = Planet::new(planet);
                     self.planets.push(p);
                 }
-            },
+            }
             // AccreteEvent::PlanetesimalAccretedDust(name, _) => name,
             // AccreteEvent::PlanetesimalToGasGiant(name, _) => name,
             AccreteEvent::DustBandsUpdated(_, dust_bands) => self.dust = dust_bands.to_vec(),
