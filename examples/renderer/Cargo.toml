@@ -8,3 +8,6 @@ edition = "2021"
 [dependencies]
 accrete = { path = "../.." }
 macroquad = "0.3"
+
+[profile.dev.package.'*']
+opt-level = 3

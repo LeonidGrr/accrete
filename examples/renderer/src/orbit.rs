@@ -1,5 +1,4 @@
 use macroquad::prelude::*;
-
 pub struct Orbit {
     pub a: f32,
     pub b: f32,
@@ -37,13 +36,20 @@ impl Orbit {
     }
 
     pub fn get_positions(&mut self) {
-        let Orbit { a, b, focus, ba, u, dt, .. } = *self;
+        let Orbit {
+            a,
+            b,
+            focus,
+            ba,
+            u,
+            dt,
+            ..
+        } = *self;
         let mut s = 1.0;
         let mut xi = -(a - 0.001);
         let mut vx = 0.0;
         let mut next_positions = vec![];
-
-        for key in 0..(a as usize * 10) {
+        for _ in 0..(a as usize * 10) {
             let mut px = xi + vx * dt * 100.0;
             if s * px > ba {
                 px = s * ba;
@@ -58,11 +64,12 @@ impl Orbit {
         self.positions = next_positions;
     }
 
-    pub fn render(&self, screen: &(f32, f32)) {
+    pub fn render(&self) {
+        let color = Color::new(1.0, 1.0, 1.0, 0.25);
         self.positions.windows(2).for_each(|v| {
             let (x1, y1) = v[0];
             let (x2, y2) = v[1];
-            draw_line(screen.0 + x1 - self.focus, screen.1 + y1, screen.0 + x2 - self.focus, screen.1 + y2, 0.2, WHITE);
+            draw_line(x1 - self.focus, y1, x2 - self.focus, y2, 0.2, color);
         });
     }
 }
