@@ -1,6 +1,8 @@
 use accrete::{DustBand, PrimaryStar};
 use macroquad::prelude::*;
 
+use crate::orbit::Orbit;
+
 pub trait Render {
     fn render(&self) {}
 }
@@ -8,7 +10,6 @@ pub trait Render {
 impl Render for DustBand {
     fn render(&self) {
         let DustBand {
-            inner_edge,
             outer_edge,
             dust_present,
             ..
@@ -30,11 +31,22 @@ impl Render for PrimaryStar {
     }
 }
 
+impl Render for Orbit {
+    fn render(&self) {
+        let color = Color::new(1.0, 1.0, 1.0, 0.25);
+        self.positions.windows(2).for_each(|v| {
+            let (x1, y1) = v[0];
+            let (x2, y2) = v[1];
+            draw_line(x1 - self.focus, y1, x2 - self.focus, y2, 0.2, color);
+        });
+    }
+}
+
 pub fn get_scale_factor() -> f32 {
     // let outer_a = match system.planets.last() {
-    //     // Some(p) => p.a as f32 * 3.3,
-    //     None => 200.0,
+    //     Some(p) => p.a as f32,
+    //     None => 50.0,
     // };
-    let outer_a = 150.0;
-    screen_width() / outer_a
+    // screen_width() / outer_a
+    screen_width() / 75.0
 }

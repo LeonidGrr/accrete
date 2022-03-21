@@ -1,4 +1,6 @@
 use macroquad::prelude::*;
+
+#[derive(Debug, Clone)]
 pub struct Orbit {
     pub a: f32,
     pub b: f32,
@@ -10,17 +12,15 @@ pub struct Orbit {
     pub u: f32,
     // Orbital period
     pub t: f32,
-    // A slice of time
-    pub dt: f32,
 }
 
 impl Orbit {
-    pub fn new(a: f32, b: f32) -> Self {
+    pub fn new(a: f32, b: f32, dt: f32) -> Self {
         let focus = (a.powf(2.0) - b.powf(2.0)).sqrt();
         let ba: f32 = a - 0.001;
         let u: f32 = 1.0;
         let t: f32 = 2.0 * std::f32::consts::PI * a.powf(1.5) / u.powf(0.5);
-        let dt: f32 = 10000.0 / t;
+        let dt: f32 = dt * 1000.0 / t;
         let mut orbit = Orbit {
             a,
             b,
@@ -29,20 +29,18 @@ impl Orbit {
             ba,
             u,
             t,
-            dt,
         };
-        orbit.get_positions();
+        orbit.update_positions(dt);
         orbit
     }
 
-    pub fn get_positions(&mut self) {
+    pub fn update_positions(&mut self, dt: f32) {
         let Orbit {
             a,
             b,
             focus,
             ba,
             u,
-            dt,
             ..
         } = *self;
         let mut s = 1.0;
@@ -62,14 +60,5 @@ impl Orbit {
         }
 
         self.positions = next_positions;
-    }
-
-    pub fn render(&self) {
-        let color = Color::new(1.0, 1.0, 1.0, 0.25);
-        self.positions.windows(2).for_each(|v| {
-            let (x1, y1) = v[0];
-            let (x2, y2) = v[1];
-            draw_line(x1 - self.focus, y1, x2 - self.focus, y2, 0.2, color);
-        });
     }
 }

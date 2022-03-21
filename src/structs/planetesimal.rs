@@ -1,5 +1,6 @@
 use crate::consts::*;
 use crate::enviro::*;
+use crate::events::EventSource;
 use crate::structs::*;
 use crate::utils::*;
 
@@ -81,7 +82,7 @@ impl Planetesimal {
         let b = a * (1.0 - e.powf(2.0)).sqrt();
         let id = random_id(rng);
 
-        Planetesimal {
+        let p = Planetesimal {
             a,
             b,
             e,
@@ -126,7 +127,11 @@ impl Planetesimal {
             magnetosphere: false,
             has_collision: false,
             id,
-        }
+        };
+
+        p.event("planetesimal_created");
+
+        p
     }
 
     pub fn derive_planetary_environment(

@@ -1,7 +1,8 @@
 mod orbit;
-mod planet;
+mod planet_model;
 mod render;
 mod state;
+mod coalescence;
 
 use crate::render::Render;
 use accrete::events::{AccreteEvent, EVENTS};
@@ -11,31 +12,28 @@ use state::State;
 
 #[macroquad::main("Accrete")]
 async fn main() {
-    let mut accrete = Accrete::new(33);
+    let mut accrete = Accrete::new(1);
     let system = accrete.planetary_system();
 
     let log = EVENTS.lock().unwrap();
     println!("Total {:#?} events.", log.len());
     let mut planetesimals = 0;
+    let mut coalescences = 0;
     for event in log.iter() {
         match event {
             AccreteEvent::PlanetarySystemSetup(s1, _) => println!("{:#?}", s1),
             AccreteEvent::PlanetesimalCreated(_, _) => planetesimals += 1,
+            AccreteEvent::PlanetesimalsCoalesced(_, _, _, _) => coalescences += 1,
             AccreteEvent::PlanetarySystemComplete(s1, _) => println!("{:#?}", s1),
             _ => (),
         }
     }
 
     println!("Planetesimals created: {:#?}", planetesimals);
+    println!("Planets coalesced: {:#?}", coalescences);
     println!("Planets created: {:#?}", system.planets.len());
 
-    let mut state = State {
-        step: 1.0,
-        event_idx: 0,
-        current_event: &log[0],
-        planets: vec![],
-        dust: vec![],
-    };
+    let mut state = State::new();
 
     loop {
         clear_background(DARKGRAY);
@@ -47,22 +45,24 @@ async fn main() {
         });
 
         let passed = get_time();
-        if passed > state.step * (state.event_idx + 1) as f64 {
+        let current_event = &log[state.event_idx];
+        // if passed as f32 > state.dt * (state.event_idx + 1) as f32 && state.event_idx < log.len() {
             state.event_idx += 1;
-            state.current_event = &log[state.event_idx];
-            state.event_handler();
-        }
+            state.event_handler(current_event);
+        // }
+        
+        state.update_planets();
+        state.update_coalescences();
 
-        for p in state.planets.iter_mut() {
+        for p in state.planet_models.iter_mut() {
             p.render();
-            p.orbit.render();
+            // p.orbit.render();
         }
 
         system.primary_star.render();
 
         set_default_camera();
-        draw_text(state.current_event.name(), 10.0, 20.0, 30.0, WHITE);
-
+        draw_text(current_event.name(), 10.0, 20.0, 30.0, WHITE);
         next_frame().await;
     }
 }
