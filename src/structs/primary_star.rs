@@ -10,7 +10,7 @@ pub struct PrimaryStar {
     pub stellar_radius_au: f64,
     pub spectral_class: SpectralClass,
     pub bv_color_index: f64,
-    pub color: [f64;3],
+    pub color: [f64; 3],
     pub main_seq_age: f64,
     pub ecosphere: (f64, f64),
 }
@@ -102,7 +102,7 @@ pub fn bv_color_index(stellar_surface_temp: f64) -> f64 {
 /// Star RGB color from color index
 /// [Reference table](http://www.vendian.org/mncharity/dir3/starcolor/details.html)
 /// [StackOverflow](https://stackoverflow.com/questions/21977786/star-b-v-color-index-to-apparent-rgb-color)
-pub fn bv_to_rgb(bv: f64) -> [f64;3] {
+pub fn bv_to_rgb(bv: f64) -> [f64; 3] {
     let mut r = 0.0;
     let mut g = 0.0;
     let mut b = 0.0;

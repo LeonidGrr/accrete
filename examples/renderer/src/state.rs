@@ -40,7 +40,7 @@ impl State {
             // AccreteEvent::PlanetesimalToGasGiant(name, _) => name,
             AccreteEvent::DustBandsUpdated(_, dust_bands) => self.dust = dust_bands.to_vec(),
             AccreteEvent::PlanetesimalsCoalesced(_, source_planet_id, target_planet_id, coalesced) => {
-                let c = Coalescence::new(source_planet_id.to_owned(), target_planet_id.to_owned(), coalesced.clone());
+                let c = Coalescence::new(source_planet_id.to_owned(), target_planet_id.to_owned(), coalesced.clone(), self.dt);
                 self.coalescences.push(c);
             },
             // AccreteEvent::PlanetesimalCaptureMoon(name, _, _, _) => name,
@@ -85,12 +85,11 @@ impl State {
                         if current_distance < coalesce_distance * 1.05 {
                             planet_models[source_planet_idx].coalescence_target = Some(planet_models[target_planet_idx].position);
                         }
-                    //     if current_distance <= 1.0 {
-                    //         planet_models.remove(source_planet_idx);
-                    //         let coalesced = PlanetModel::new(&c.coalescence_result, self.dt);
-                    //         planet_models[target_planet_idx].coalescence_target = Some(coalesced.position);
-                    //         *status = CoalescenceStatus::Coalescing;
-                    //     }
+                        if current_distance <= 1.0 {
+                            planet_models.remove(source_planet_idx);
+                            planet_models[target_planet_idx].coalescence_target = Some(c.coalesced_model.position);
+                            *status = CoalescenceStatus::Coalescing;
+                        }
                     }
                 },
                 CoalescenceStatus::Coalescing => {},
