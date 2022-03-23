@@ -55,11 +55,10 @@ impl State {
 
     pub fn update_planets(&mut self) {
         for p in self.planet_models.iter_mut() {
-            if let Some(target) = p.coalescence_target {
-                p.update_position_by_target(target);
-            } else {
-                p.update_position(self.dt);
+            if let Some(coalescence_a) = p.coalescence_a {
+                p.update_a(coalescence_a);
             }
+            p.update_position(self.dt);
         }
     }
 
@@ -67,34 +66,36 @@ impl State {
         let State { planet_models, .. } = self;
         for c in self.coalescences.iter_mut() {
             let Coalescence { target_planet_id, source_planet_id, status, .. } = c;
-            
-            match status {
-                CoalescenceStatus::Approaching => {
-                    let mut source_planet_idx = None;
-                    let mut target_planet_idx = None;
-                    for (idx, p) in planet_models.iter_mut().enumerate() {
-                        match &p.planet_id {
-                            id if id == source_planet_id => source_planet_idx = Some(idx),
-                            id if id == target_planet_id => target_planet_idx = Some(idx),
-                            _ => (),
-                        }
-                    }
-                    if let (Some(source_planet_idx), Some(target_planet_idx)) = (source_planet_idx, target_planet_idx) {
-                        let coalesce_distance = (planet_models[target_planet_idx].a - planet_models[source_planet_idx].a).abs();
-                        let current_distance = planet_models[source_planet_idx].position.distance(planet_models[target_planet_idx].position);
-                        if current_distance < coalesce_distance * 1.05 {
-                            planet_models[source_planet_idx].coalescence_target = Some(planet_models[target_planet_idx].position);
-                        }
-                        if current_distance <= 1.0 {
-                            planet_models.remove(source_planet_idx);
-                            planet_models[target_planet_idx].coalescence_target = Some(c.coalesced_model.position);
-                            *status = CoalescenceStatus::Coalescing;
-                        }
-                    }
-                },
-                CoalescenceStatus::Coalescing => {},
-                CoalescenceStatus::Done => {},
+            let mut source_planet_idx = None;
+            let mut target_planet_idx = None;
+            for (idx, p) in planet_models.iter_mut().enumerate() {
+                match &p.planet_id {
+                    id if id == source_planet_id => source_planet_idx = Some(idx),
+                    id if id == target_planet_id => target_planet_idx = Some(idx),
+                    _ => (),
+                }
             };
+            
+            if let (Some(source_planet_idx), Some(target_planet_idx)) = (source_planet_idx, target_planet_idx) {
+                match status {
+                    CoalescenceStatus::Approaching => {
+                        let current_distance = planet_models[source_planet_idx].position.distance(planet_models[target_planet_idx].position);
+                        if let None = planet_models[source_planet_idx].coalescence_a {
+                            planet_models[source_planet_idx].coalescence_a = Some(planet_models[target_planet_idx].a);
+                        }
+                        if current_distance <= 0.5 {
+                            *status = CoalescenceStatus::Coalescing;
+                        } 
+                    },
+                    CoalescenceStatus::Coalescing => {
+                        planet_models.remove(source_planet_idx);
+                        planet_models[target_planet_idx].coalescence_a = Some(c.coalesced_model.a);
+                        
+                    },
+                    CoalescenceStatus::Done => {
+                    },
+                };
+            }
         }
     }
 }

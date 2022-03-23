@@ -46,10 +46,11 @@ async fn main() {
 
         let passed = get_time();
         let current_event = &log[state.event_idx];
+        if state.event_idx < log.len() - 1 {
         // if passed as f32 > state.dt * (state.event_idx + 1) as f32 && state.event_idx < log.len() {
             state.event_idx += 1;
             state.event_handler(current_event);
-        // }
+        }
         
         state.update_planets();
         state.update_coalescences();

@@ -14,7 +14,7 @@ pub enum CoalescenceStatus {
     pub source_planet_id: String,
     pub target_planet_id: String,
     pub coalescence_result: Planetesimal,
-    pub coalesced_model: PlanetModel
+    pub coalesced_model: PlanetModel,
     pub status: CoalescenceStatus
 }
 
