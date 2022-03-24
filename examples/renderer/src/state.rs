@@ -1,17 +1,17 @@
 use macroquad::prelude::*;
 use crate::planet_model::PlanetModel;
 use crate::coalescence::{Coalescence, CoalescenceStatus};
-use accrete::events::{AccreteEvent, EVENTS};
-use accrete::{DustBand, Planetesimal};
+use accrete::events::AccreteEvent;
+use accrete::DustBand;
 
 pub struct State {
-    pub planets: Vec<Planetesimal>,
     pub planet_models: Vec<PlanetModel>,
-    pub coalescences: Vec<Coalescence>,
-    pub dust: Vec<DustBand>,
+    pub coalescence: Option<Coalescence>,
+    pub dust_model: Vec<DustBand>,
     pub event_idx: usize,
     // Delta time step
     pub dt: f32,
+    pub event_lock: bool,
 }
 
 impl State {
@@ -19,29 +19,30 @@ impl State {
         State {
             dt: 1.0,
             event_idx: 0,
-            planets: vec![],
             planet_models: vec![],
-            coalescences: vec![],
-            dust: vec![],
+            coalescence: None,
+            dust_model: vec![],
+            event_lock: false,
         }
     }
  
-    pub fn event_handler(&mut self, current_event: &AccreteEvent) {
+    pub fn event_handler(&mut self, current_event: &AccreteEvent, time: f64) {
         match current_event {
             AccreteEvent::PlanetarySystemSetup(_, _) => (),
             AccreteEvent::PlanetesimalCreated(_, planet) => {
                 if !planet.is_moon && (planet.id == "Q5okvuf" || planet.id == "6tdVpJl") {
-                    let p = PlanetModel::new(&planet, self.dt);
+                // if !planet.is_moon {
+                    let p = PlanetModel::new(planet.clone(), time);
                     self.planet_models.push(p);
-                    self.planets.push(planet.clone());
                 }
             }
             // AccreteEvent::PlanetesimalAccretedDust(name, _) => name,
             // AccreteEvent::PlanetesimalToGasGiant(name, _) => name,
-            AccreteEvent::DustBandsUpdated(_, dust_bands) => self.dust = dust_bands.to_vec(),
+            AccreteEvent::DustBandsUpdated(_, dust_bands) => self.dust_model = dust_bands.to_vec(),
             AccreteEvent::PlanetesimalsCoalesced(_, source_planet_id, target_planet_id, coalesced) => {
-                let c = Coalescence::new(source_planet_id.to_owned(), target_planet_id.to_owned(), coalesced.clone(), self.dt);
-                self.coalescences.push(c);
+                let c = Coalescence::new(source_planet_id, target_planet_id, coalesced.clone(), time);
+                self.coalescence = Some(c);
+                self.event_lock = true;
             },
             // AccreteEvent::PlanetesimalCaptureMoon(name, _, _, _) => name,
             // AccreteEvent::PlanetesimalMoonToRing(name, _) => name,
@@ -53,48 +54,24 @@ impl State {
         }
     }
 
-    pub fn update_planets(&mut self) {
+    pub fn update_planets(&mut self, time: f64) {
         for p in self.planet_models.iter_mut() {
             if let Some(coalescence_a) = p.coalescence_a {
                 p.update_a(coalescence_a);
             }
-            p.update_position(self.dt);
+            p.update_position(time);
         }
     }
 
     pub fn update_coalescences(&mut self) {
-        let State { planet_models, .. } = self;
-        for c in self.coalescences.iter_mut() {
-            let Coalescence { target_planet_id, source_planet_id, status, .. } = c;
-            let mut source_planet_idx = None;
-            let mut target_planet_idx = None;
-            for (idx, p) in planet_models.iter_mut().enumerate() {
-                match &p.planet_id {
-                    id if id == source_planet_id => source_planet_idx = Some(idx),
-                    id if id == target_planet_id => target_planet_idx = Some(idx),
-                    _ => (),
-                }
-            };
-            
-            if let (Some(source_planet_idx), Some(target_planet_idx)) = (source_planet_idx, target_planet_idx) {
-                match status {
-                    CoalescenceStatus::Approaching => {
-                        let current_distance = planet_models[source_planet_idx].position.distance(planet_models[target_planet_idx].position);
-                        if let None = planet_models[source_planet_idx].coalescence_a {
-                            planet_models[source_planet_idx].coalescence_a = Some(planet_models[target_planet_idx].a);
-                        }
-                        if current_distance <= 0.5 {
-                            *status = CoalescenceStatus::Coalescing;
-                        } 
-                    },
-                    CoalescenceStatus::Coalescing => {
-                        planet_models.remove(source_planet_idx);
-                        planet_models[target_planet_idx].coalescence_a = Some(c.coalesced_model.a);
-                        
-                    },
-                    CoalescenceStatus::Done => {
-                    },
-                };
+        let State { planet_models, coalescence, .. } = self;
+        if let Some(c) = coalescence {
+            match c.status {
+                CoalescenceStatus::Done => {
+                    self.event_lock = false;
+                    debug!("{} {:?}", self.event_lock, c.status);
+                },
+                _ => c.update_status(planet_models),
             }
         }
     }

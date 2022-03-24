@@ -15,7 +15,7 @@ pub struct Orbit {
 }
 
 impl Orbit {
-    pub fn new(a: f32, b: f32, dt: f32) -> Self {
+    pub fn _new(a: f32, b: f32, dt: f32) -> Self {
         let focus = (a.powf(2.0) - b.powf(2.0)).sqrt();
         let ba: f32 = a - 0.001;
         let u: f32 = 1.0;
@@ -30,11 +30,11 @@ impl Orbit {
             u,
             t,
         };
-        orbit.update_positions(dt);
+        orbit._update_positions(dt);
         orbit
     }
 
-    pub fn update_positions(&mut self, dt: f32) {
+    pub fn _update_positions(&mut self, dt: f32) {
         let Orbit {
             a,
             b,
