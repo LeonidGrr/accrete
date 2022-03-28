@@ -36,12 +36,7 @@ impl Orbit {
 
     pub fn _update_positions(&mut self, dt: f32) {
         let Orbit {
-            a,
-            b,
-            focus,
-            ba,
-            u,
-            ..
+            a, b, focus, ba, u, ..
         } = *self;
         let mut s = 1.0;
         let mut xi = -(a - 0.001);

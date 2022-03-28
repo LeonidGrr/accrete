@@ -82,7 +82,7 @@ impl Planetesimal {
         let b = a * (1.0 - e.powf(2.0)).sqrt();
         let id = random_id(rng);
 
-        let p = Planetesimal {
+        Planetesimal {
             a,
             b,
             e,
@@ -127,11 +127,7 @@ impl Planetesimal {
             magnetosphere: false,
             has_collision: false,
             id,
-        };
-
-        p.event("planetesimal_created");
-
-        p
+        }
     }
 
     pub fn derive_planetary_environment(

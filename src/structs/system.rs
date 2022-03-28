@@ -81,6 +81,7 @@ impl System {
 
         while *dust_left {
             let mut p = Planetesimal::new(planetesimal_inner_bound, planetesimal_outer_bound, rng);
+            p.event("planetesimal_created");
 
             let inside_range = inner_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
             let outside_range = outer_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);

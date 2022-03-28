@@ -45,6 +45,7 @@ impl PlanetModel {
         let current_t = (time / (t * 360.0) as f64) * 100000.0;
         position.x = focus + (a as f64 * current_t.cos()) as f32;
         position.y = (b as f64 * current_t.sin()) as f32;
+        // TODO speed up near star
     }
 
     pub fn update_a(&mut self, target_a: f32) {
@@ -53,19 +54,29 @@ impl PlanetModel {
             match self.a < target_a {
                 true => {
                     self.a += 0.5;
-                },
+                }
                 false => {
                     self.a -= 0.5;
-                },
+                }
             }
         }
     }
 
     pub fn render(&mut self) {
-        let color = match self.planet.has_collision {
-            true => RED,
-            false => BLUE,
+        if self.planet.is_moon {
+            return;
+        }
+
+        let mut color = BLUE;
+
+        if self.planet.has_collision {
+            color = RED;
+        }
+
+        if self.planet.is_gas_giant {
+            color = GREEN;
         };
+
         draw_sphere(self.position, 1.0, None, color);
     }
 }

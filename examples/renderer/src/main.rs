@@ -1,8 +1,8 @@
+mod coalescence;
 mod orbit;
 mod planet_model;
 mod render;
 mod state;
-mod coalescence;
 
 use crate::render::Render;
 use accrete::events::{AccreteEvent, EVENTS};
@@ -45,25 +45,28 @@ async fn main() {
         });
 
         let passed = get_time();
-        let current_event = &log[state.event_idx];
-        if state.event_idx < log.len() - 1 && !state.event_lock {
-        // if passed as f32 > state.dt * (state.event_idx + 1) as f32 && state.event_idx < log.len() {
-            state.event_idx += 1;
-            state.event_handler(current_event, passed);
-        }
-        
         state.update_planets(passed);
         state.update_coalescences();
 
+        system.primary_star.render();
         for p in state.planet_models.iter_mut() {
             p.render();
             // p.orbit.render();
         }
 
-        system.primary_star.render();
+        let current_event = &log[state.event_idx];
+        if state.event_idx < log.len() - 1 && !state.event_lock {
+            state.event_idx += 1;
+            state.event_handler(current_event, passed);
+        }
 
         set_default_camera();
-        draw_text(current_event.name(), 10.0, 20.0, 30.0, WHITE);
+
+        if state.event_idx > 0 {
+            let last_event = &log[state.event_idx - 1];
+            draw_text(last_event.name(), 10.0, 20.0, 30.0, WHITE);
+        }
+
         next_frame().await;
     }
 }
