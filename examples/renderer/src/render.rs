@@ -1,7 +1,6 @@
 use accrete::{DustBand, PrimaryStar};
 use macroquad::prelude::*;
-
-use crate::orbit::Orbit;
+use crate::{orbit::Orbit, state::State};
 
 pub trait Render {
     fn render(&self) {}
@@ -49,4 +48,13 @@ pub fn get_scale_factor() -> f32 {
     // };
     // screen_width() / outer_a
     screen_width() / 75.0
+}
+
+impl Render for State {
+    fn render(&self) {
+        for p in self.planet_models.values() {
+            p.render();
+            // p.orbit.render();
+        }
+    }
 }

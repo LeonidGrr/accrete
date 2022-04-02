@@ -1,4 +1,5 @@
 mod coalescence;
+mod moon_capture;
 mod orbit;
 mod planet_model;
 mod render;
@@ -47,13 +48,12 @@ async fn main() {
         let passed = get_time();
         state.update_planets(passed);
         state.update_coalescences();
+        state.update_moon_capture();
 
         system.primary_star.render();
-        for p in state.planet_models.iter_mut() {
-            p.render();
-            // p.orbit.render();
-        }
 
+        state.render();
+        
         let current_event = &log[state.event_idx];
         if state.event_idx < log.len() - 1 && !state.event_lock {
             state.event_idx += 1;

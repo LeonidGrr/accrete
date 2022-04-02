@@ -1,4 +1,4 @@
-use crate::planet_model::PlanetModel;
+use crate::{planet_model::PlanetModel, state::PlanetModels};
 use accrete::Planetesimal;
 
 #[derive(Debug, Clone)]
@@ -32,7 +32,7 @@ impl Coalescence {
             status: CoalescenceStatus::Created,
         }
     }
-    pub fn update_status(&mut self, planet_models: &mut Vec<PlanetModel>) {
+    pub fn update_status(&mut self, planet_models: &mut PlanetModels) {
         let Coalescence {
             target_planet_id,
             source_planet_id,
@@ -43,22 +43,22 @@ impl Coalescence {
         let mut source_planet = None;
         let mut target_planet = None;
 
-        for p in planet_models.iter_mut() {
+        for p in planet_models.values_mut() {
             match &p.planet.id {
                 id if id == source_planet_id => source_planet = Some(p),
                 id if id == target_planet_id => target_planet = Some(p),
                 _ => (),
             }
         }
-
+    
         match self.status {
             CoalescenceStatus::Created => self.status = CoalescenceStatus::Approaching,
             CoalescenceStatus::Approaching => {
                 if let (Some(source_planet), Some(target_planet)) = (source_planet, target_planet) {
                     let current_distance = source_planet.position.distance(target_planet.position);
-                    if source_planet.coalescence_a.is_none() {
-                        source_planet.coalescence_a = Some(coalesced_model.a);
-                        target_planet.coalescence_a = Some(coalesced_model.a);
+                    if source_planet.target_a.is_none() {
+                        source_planet.target_a = Some(coalesced_model.a);
+                        target_planet.target_a = Some(coalesced_model.a);
                     }
                     if current_distance <= 1.0 {
                         self.status = CoalescenceStatus::Coalescing;
@@ -66,10 +66,10 @@ impl Coalescence {
                 }
             }
             CoalescenceStatus::Coalescing => {
-                if let (Some(_), Some(_)) = (source_planet, target_planet) {
-                    planet_models.retain(|p| p.planet.id == *source_planet_id);
-                    planet_models.retain(|p| p.planet.id == *target_planet_id);
-                    planet_models.push(coalesced_model.clone());
+                if planet_models.get_mut(source_planet_id).is_some() && planet_models.get_mut(target_planet_id).is_some() {
+                    planet_models.remove(source_planet_id);
+                    planet_models.remove(target_planet_id);
+                    planet_models.insert(coalesced_model.id.clone(), coalesced_model.clone());
                     self.status = CoalescenceStatus::Done;
                 }
             }
