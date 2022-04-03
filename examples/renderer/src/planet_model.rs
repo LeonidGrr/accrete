@@ -27,9 +27,14 @@ impl PlanetModel {
         let Planetesimal { a, e, .. } = planet;
         let scale_factor = get_scale_factor();
         let a = a as f32 * scale_factor;
+        let moon_models = planet.moons.iter().fold(HashMap::new(), |mut acc, m| {
+            let moon = PlanetModel::new(m.clone(), time);
+            acc.insert(moon.id.clone(), moon);
+            acc
+        });
         let mut p = PlanetModel {
             planet,
-            moon_models: HashMap::new(),
+            moon_models,
             position: vec3(-(a - 0.001), 0.0, 0.0),
             barycenter: vec3(0.0, 0.0, 0.0),
             a,
@@ -58,13 +63,8 @@ impl PlanetModel {
         position.x = barycenter.x + focus + (a as f64 * current_t.cos()) as f32;
         position.y = barycenter.y + (b as f64 * current_t.sin()) as f32;
 
-        if barycenter.x != 0.0 {
-            println!("{} - {}", position, barycenter);
-
-        }
-
         for m in moon_models.values_mut() {
-            m.barycenter = position.clone();
+            m.barycenter = *position;
             m.update_position(time);
         }
         // TODO speed up near star
@@ -84,23 +84,5 @@ impl PlanetModel {
                 }
             }
         }
-    }
-    
-    pub fn render(&self) {
-        let mut color = BLUE;
-
-        if self.planet.has_collision {
-            color = RED;
-        }
-
-        if self.planet.is_gas_giant {
-            color = GREEN;
-        };
-
-        if self.planet.is_gas_giant {
-            color = PINK;
-        };
-
-        draw_sphere(self.position, 1.0, None, color);
     }
 }

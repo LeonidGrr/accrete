@@ -1,10 +1,10 @@
-use std::collections::HashMap;
 use crate::coalescence::{Coalescence, CoalescenceStatus};
 use crate::moon_capture::{MoonCapture, MoonCaptureStatus};
 use crate::planet_model::PlanetModel;
 use accrete::events::AccreteEvent;
 use accrete::DustBand;
 use macroquad::prelude::*;
+use std::collections::HashMap;
 
 pub type PlanetModels = HashMap<String, PlanetModel>;
 
@@ -36,15 +36,16 @@ impl State {
         match current_event {
             // AccreteEvent::PlanetarySystemSetup(_, _) => (),
             AccreteEvent::PlanetesimalCreated(_, planet) => {
-                if self.planet_models.len() <= 20 {
-                    let p = PlanetModel::new(planet.clone(), time);
-                    self.planet_models.insert(p.id.clone(), p);
-                }
+                let p = PlanetModel::new(planet.clone(), time);
+                self.planet_models.insert(p.id.clone(), p);
             }
             // AccreteEvent::PlanetesimalAccretedDust(name, _) => name,
             AccreteEvent::PlanetesimalToGasGiant(_, gas_giant) => {
                 if self.planet_models.get(&gas_giant.id).is_some() {
-                    self.planet_models.insert(gas_giant.id.clone(), PlanetModel::new(gas_giant.clone(), time));
+                    self.planet_models.insert(
+                        gas_giant.id.clone(),
+                        PlanetModel::new(gas_giant.clone(), time),
+                    );
                 }
             }
             // AccreteEvent::DustBandsUpdated(_, _) => (),
@@ -59,7 +60,7 @@ impl State {
                 self.event_lock = true;
             }
             // AccreteEvent::PlanetesimalMoonToRing(name, _) => name,
-            // AccreteEvent::PostAccretionStarted(name) => name,
+            AccreteEvent::PostAccretionStarted(_) => self.event_lock = true,
             // AccreteEvent::OuterBodyInjected(name, _) => name,
             // AccreteEvent::PlanetaryEnvironmentGenerated(name, _) => name,
             AccreteEvent::PlanetarySystemComplete(_, _) => (),
@@ -82,7 +83,10 @@ impl State {
         } = self;
         if let Some(c) = coalescence {
             match c.status {
-                CoalescenceStatus::Done => self.event_lock = false,
+                CoalescenceStatus::Done => {
+                    self.event_lock = false;
+                    self.coalescence = None;
+                },
                 _ => c.update_status(planet_models),
             }
         }
@@ -96,7 +100,10 @@ impl State {
         } = self;
         if let Some(m) = moon_capture {
             match m.status {
-                MoonCaptureStatus::Done => self.event_lock = false,
+                MoonCaptureStatus::Done => {
+                    self.event_lock = false;
+                    self.moon_capture = None;
+                },
                 _ => m.update_status(planet_models),
             }
         }

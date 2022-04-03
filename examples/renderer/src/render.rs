@@ -1,6 +1,6 @@
+use crate::{orbit::Orbit, planet_model::PlanetModel, state::State};
 use accrete::{DustBand, PrimaryStar};
 use macroquad::prelude::*;
-use crate::{orbit::Orbit, state::State};
 
 pub trait Render {
     fn render(&self) {}
@@ -56,5 +56,25 @@ impl Render for State {
             p.render();
             // p.orbit.render();
         }
+    }
+}
+
+impl Render for PlanetModel {
+    fn render(&self) {
+        let mut color = BLUE;
+
+        if self.planet.has_collision {
+            color = RED;
+        }
+
+        if self.planet.is_gas_giant {
+            color = GREEN;
+        };
+
+        if self.planet.is_gas_giant {
+            color = PINK;
+        };
+
+        draw_sphere(self.position, 1.0, None, color);
     }
 }

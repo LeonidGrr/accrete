@@ -1,4 +1,4 @@
-use crate::{planet_model::PlanetModel, state::PlanetModels};
+use crate::{planet_model::PlanetModel, state::PlanetModels, consts::COALESCE_DISTANCE};
 use accrete::Planetesimal;
 
 #[derive(Debug, Clone)]
@@ -50,23 +50,25 @@ impl Coalescence {
                 _ => (),
             }
         }
-    
+
         match self.status {
             CoalescenceStatus::Created => self.status = CoalescenceStatus::Approaching,
             CoalescenceStatus::Approaching => {
                 if let (Some(source_planet), Some(target_planet)) = (source_planet, target_planet) {
-                    let current_distance = source_planet.position.distance(target_planet.position);
                     if source_planet.target_a.is_none() {
                         source_planet.target_a = Some(coalesced_model.a);
                         target_planet.target_a = Some(coalesced_model.a);
                     }
-                    if current_distance <= 1.0 {
+
+                    let distance = source_planet.position.distance(target_planet.position);
+                    println!("Distance to coalesce: {} au", distance);
+                    if distance <= COALESCE_DISTANCE {
                         self.status = CoalescenceStatus::Coalescing;
                     }
                 }
             }
             CoalescenceStatus::Coalescing => {
-                if planet_models.get_mut(source_planet_id).is_some() && planet_models.get_mut(target_planet_id).is_some() {
+                if source_planet.is_some() && target_planet.is_some() {
                     planet_models.remove(source_planet_id);
                     planet_models.remove(target_planet_id);
                     planet_models.insert(coalesced_model.id.clone(), coalesced_model.clone());

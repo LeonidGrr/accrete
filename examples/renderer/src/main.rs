@@ -4,6 +4,7 @@ mod orbit;
 mod planet_model;
 mod render;
 mod state;
+mod consts;
 
 use crate::render::Render;
 use accrete::events::{AccreteEvent, EVENTS};
@@ -53,7 +54,7 @@ async fn main() {
         system.primary_star.render();
 
         state.render();
-        
+
         let current_event = &log[state.event_idx];
         if state.event_idx < log.len() - 1 && !state.event_lock {
             state.event_idx += 1;

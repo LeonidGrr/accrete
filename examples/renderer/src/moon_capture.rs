@@ -1,9 +1,10 @@
-use crate::{planet_model::PlanetModel, state::PlanetModels};
+use crate::{planet_model::PlanetModel, state::PlanetModels, consts::MOON_CAPTURE_DISTANCE};
 use accrete::Planetesimal;
 
 #[derive(Debug, Clone)]
 pub enum MoonCaptureStatus {
     Created,
+    Approaching,
     Capturing,
     Done,
 }
@@ -37,8 +38,12 @@ impl MoonCapture {
 
         let mut moon = None;
         let mut planet = None;
-        let resulting_moon = resulting_model.planet.moons.last().expect("No moons present.");
-    
+        let resulting_moon = resulting_model
+            .planet
+            .moons
+            .last()
+            .expect("No moons present.");
+
         for p in planet_models.values_mut() {
             match &p.planet.id {
                 id if id == moon_id => moon = Some(p),
@@ -48,14 +53,28 @@ impl MoonCapture {
         }
 
         match self.status {
-            MoonCaptureStatus::Created => self.status = MoonCaptureStatus::Capturing,
-            MoonCaptureStatus::Capturing => {
+            MoonCaptureStatus::Created => self.status = MoonCaptureStatus::Approaching,
+            MoonCaptureStatus::Approaching => {
                 if let (Some(moon), Some(planet)) = (moon, planet) {
                     moon.barycenter = planet.position;
                     moon.target_a = Some(resulting_moon.a as f32);
-                    // self.status = MoonCaptureStatus::Capturing;
+
+                    let distance = planet.position.distance(moon.position);
+
+                    println!("Distance to moon capture: {} au", distance);
+                    if distance <= MOON_CAPTURE_DISTANCE {
+                        self.status = MoonCaptureStatus::Capturing;
+                    }
                 }
-            },
+            }
+            MoonCaptureStatus::Capturing => {
+                if moon.is_some() && planet.is_some() {
+                    planet_models.remove(moon_id);
+                    planet_models.remove(planet_id);
+                    planet_models.insert(resulting_model.id.clone(), resulting_model.clone());
+                    self.status = MoonCaptureStatus::Done;
+                }
+            }
             MoonCaptureStatus::Done => (),
         };
     }
