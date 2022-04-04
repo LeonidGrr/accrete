@@ -311,7 +311,12 @@ fn coalesce_two_planets(a: &Planetesimal, b: &Planetesimal) -> Planetesimal {
     );
     coalesced.has_collision = true;
 
-    coalesced.event(format!("planetesimals_coalesced:{}:{}", a.id, b.id).as_str());
+    let event_type = match a.is_moon && b.is_moon {
+        true => format!("moons_coalesced:{}:{}", a.id, b.id),
+        false => format!("planetesimals_coalesced:{}:{}", a.id, b.id),
+    };
+
+    coalesced.event(event_type.as_str());
 
     coalesced
 }

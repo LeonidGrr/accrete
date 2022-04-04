@@ -1,20 +1,21 @@
 mod coalescence;
+mod consts;
 mod moon_capture;
 mod orbit;
 mod planet_model;
 mod render;
 mod state;
-mod consts;
 
 use crate::render::Render;
 use accrete::events::{AccreteEvent, EVENTS};
+use macroquad::ui::{hash, root_ui, widgets};
 use accrete::Accrete;
 use macroquad::prelude::*;
 use state::State;
 
 #[macroquad::main("Accrete")]
 async fn main() {
-    let mut accrete = Accrete::new(1);
+    let mut accrete = Accrete::new(2);
     let system = accrete.planetary_system();
 
     let log = EVENTS.lock().unwrap();
@@ -52,14 +53,31 @@ async fn main() {
         state.update_moon_capture();
 
         system.primary_star.render();
-
         state.render();
 
-        let current_event = &log[state.event_idx];
-        if state.event_idx < log.len() - 1 && !state.event_lock {
-            state.event_idx += 1;
-            state.event_handler(current_event, passed);
-        }
+        root_ui().window(hash!(), Vec2::new(20., 20.), Vec2::new(450., 200.), |ui| {
+            let (mouse_x, mouse_y) = mouse_position();
+            ui.label(None, &format!("Mouse position: {} {}", mouse_x, mouse_y));
+
+            let (mouse_wheel_x, mouse_wheel_y) = mouse_wheel();
+            ui.label(None, &format!("Mouse wheel x: {}", mouse_wheel_x));
+            ui.label(None, &format!("Mouse wheel y: {}", mouse_wheel_y));
+
+            widgets::Group::new(hash!(), Vec2::new(200., 90.))
+                .position(Vec2::new(240., 92.))
+                .ui(ui, |ui| {
+                    ui.label(None, "Pressed mouse keys");
+
+                    if is_mouse_button_down(MouseButton::Left) {
+                        ui.label(None, "Left");
+
+                        if state.event_idx < log.len() - 1 && !state.event_lock {
+                            state.event_handler(&log[state.event_idx], passed);
+                            state.event_idx += 1;
+                        }
+                    }
+                });
+        });
 
         set_default_camera();
 

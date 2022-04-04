@@ -74,6 +74,16 @@ impl EventSource for Planetesimal {
             ));
         }
 
+        if event_type.contains("moons_coalesced") {
+            let data: Vec<&str> = event_type.split(':').collect();
+            event = Some(AccreteEvent::MoonsCoalesced(
+                data[0].to_string(),
+                data[1].to_string(),
+                data[2].to_string(),
+                self.clone(),
+            ));
+        }
+
         if event_type.contains("planetesimal_capture_moon") {
             let data: Vec<&str> = event_type.split(':').collect();
             event = Some(AccreteEvent::PlanetesimalCaptureMoon(
@@ -122,6 +132,8 @@ pub enum AccreteEvent {
     DustBandsUpdated(String, DustBands),
     /// two planetesimals coalesce
     PlanetesimalsCoalesced(String, String, String, Planetesimal),
+    /// two moons coalesce
+    MoonsCoalesced(String, String, String, Planetesimal),
     /// one planetesimal catch another as moon
     PlanetesimalCaptureMoon(String, String, String, Planetesimal),
     /// moons turned into rings
@@ -145,6 +157,7 @@ impl AccreteEvent {
             AccreteEvent::PlanetesimalToGasGiant(name, _) => name,
             AccreteEvent::DustBandsUpdated(name, _) => name,
             AccreteEvent::PlanetesimalsCoalesced(name, _, _, _) => name,
+            AccreteEvent::MoonsCoalesced(name, _, _, _) => name,
             AccreteEvent::PlanetesimalCaptureMoon(name, _, _, _) => name,
             AccreteEvent::PlanetesimalMoonToRing(name, _) => name,
             AccreteEvent::PostAccretionStarted(name) => name,

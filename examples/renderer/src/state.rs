@@ -1,5 +1,5 @@
-use crate::coalescence::{Coalescence, CoalescenceStatus};
-use crate::moon_capture::{MoonCapture, MoonCaptureStatus};
+use crate::coalescence::CoalescenceOption;
+use crate::moon_capture::MoonCaptureOption;
 use crate::planet_model::PlanetModel;
 use accrete::events::AccreteEvent;
 use accrete::DustBand;
@@ -10,8 +10,8 @@ pub type PlanetModels = HashMap<String, PlanetModel>;
 
 pub struct State {
     pub planet_models: PlanetModels,
-    pub coalescence: Option<Coalescence>,
-    pub moon_capture: Option<MoonCapture>,
+    pub coalescence: CoalescenceOption,
+    pub moon_capture: MoonCaptureOption,
     pub dust_model: HashMap<String, DustBand>,
     pub event_idx: usize,
     // Delta time step
@@ -25,8 +25,8 @@ impl State {
             dt: 1.0,
             event_idx: 0,
             planet_models: HashMap::new(),
-            coalescence: None,
-            moon_capture: None,
+            coalescence: CoalescenceOption::none(),
+            moon_capture: MoonCaptureOption::none(),
             dust_model: HashMap::new(),
             event_lock: false,
         }
@@ -50,20 +50,23 @@ impl State {
             }
             // AccreteEvent::DustBandsUpdated(_, _) => (),
             AccreteEvent::PlanetesimalsCoalesced(_, source_planet_id, target_planet_id, result) => {
-                let c = Coalescence::new(source_planet_id, target_planet_id, result.clone(), time);
-                self.coalescence = Some(c);
-                self.event_lock = true;
+                self.coalescence = CoalescenceOption::new(
+                    source_planet_id,
+                    target_planet_id,
+                    result.clone(),
+                    time,
+                );
             }
+            // AccreteEvent::MoonsCoalesced(_, source_moon_id, target_moon_id, result) => {},
             AccreteEvent::PlanetesimalCaptureMoon(_, planet_id, moon_id, result) => {
-                let m = MoonCapture::new(planet_id, moon_id, result.clone(), time);
-                self.moon_capture = Some(m);
-                self.event_lock = true;
+                self.moon_capture =
+                    MoonCaptureOption::new(planet_id, moon_id, result.clone(), time);
             }
             // AccreteEvent::PlanetesimalMoonToRing(name, _) => name,
             AccreteEvent::PostAccretionStarted(_) => self.event_lock = true,
             // AccreteEvent::OuterBodyInjected(name, _) => name,
             // AccreteEvent::PlanetaryEnvironmentGenerated(name, _) => name,
-            AccreteEvent::PlanetarySystemComplete(_, _) => (),
+            // AccreteEvent::PlanetarySystemComplete(_, _) => (),
             _ => (),
         }
     }
@@ -79,33 +82,19 @@ impl State {
         let State {
             planet_models,
             coalescence,
+            event_lock,
             ..
         } = self;
-        if let Some(c) = coalescence {
-            match c.status {
-                CoalescenceStatus::Done => {
-                    self.event_lock = false;
-                    self.coalescence = None;
-                },
-                _ => c.update_status(planet_models),
-            }
-        }
+        coalescence.update_status(planet_models, event_lock);
     }
 
     pub fn update_moon_capture(&mut self) {
         let State {
             planet_models,
             moon_capture,
+            event_lock,
             ..
         } = self;
-        if let Some(m) = moon_capture {
-            match m.status {
-                MoonCaptureStatus::Done => {
-                    self.event_lock = false;
-                    self.moon_capture = None;
-                },
-                _ => m.update_status(planet_models),
-            }
-        }
+        moon_capture.update_status(planet_models, event_lock);
     }
 }

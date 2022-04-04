@@ -71,10 +71,18 @@ impl Render for PlanetModel {
             color = GREEN;
         };
 
-        if self.planet.is_gas_giant {
+        if self.planet.is_moon {
             color = PINK;
         };
 
+        if self.planet.is_dwarf_planet {
+            return;
+        }
+
         draw_sphere(self.position, 1.0, None, color);
+
+        for m in self.moon_models.values() {
+            m.render();
+        }
     }
 }
