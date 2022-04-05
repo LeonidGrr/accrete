@@ -14,8 +14,6 @@ pub struct State {
     pub moon_capture: MoonCaptureOption,
     pub dust_model: HashMap<String, DustBand>,
     pub event_idx: usize,
-    // Delta time step
-    pub dt: f32,
     pub event_lock: bool,
 }
 
@@ -37,23 +35,23 @@ impl State {
             // AccreteEvent::PlanetarySystemSetup(_, _) => (),
             AccreteEvent::PlanetesimalCreated(_, planet) => {
                 let new_planet_model = PlanetModel::new(planet.clone(), time);
-                self.planet_models.insert(planet.id.clone(), new_planet_model);
+                self.planet_models
+                    .insert(planet.id.clone(), new_planet_model);
             }
             AccreteEvent::PlanetesimalUpdated(_, planet) => {
                 if let Some(current_planet_model) = self.planet_models.get(&planet.id) {
                     let mut next_planet_model = PlanetModel::new(planet.clone(), time);
                     next_planet_model.position = current_planet_model.position;
-                    self.planet_models.insert(planet.id.clone(), next_planet_model);
+                    self.planet_models
+                        .insert(planet.id.clone(), next_planet_model);
                 }
             }
             AccreteEvent::PlanetesimalToGasGiant(_, gas_giant) => {
                 if let Some(current_planet_model) = self.planet_models.get(&gas_giant.id) {
                     let mut next_planet_model = PlanetModel::new(gas_giant.clone(), time);
                     next_planet_model.position = current_planet_model.position;
-                    self.planet_models.insert(
-                        gas_giant.id.clone(),
-                        next_planet_model,
-                    );
+                    self.planet_models
+                        .insert(gas_giant.id.clone(), next_planet_model);
                 }
             }
             // AccreteEvent::DustBandsUpdated(_, _) => (),

@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 
-use crate::{render::get_scale_factor, state::PlanetModels, consts::COALESCE_DISTANCE};
+use crate::{consts::COALESCE_DISTANCE, render::get_scale_factor, state::PlanetModels};
 use accrete::Planetesimal;
-use macroquad::prelude::*;
+// use macroquad::prelude::*;
+use bevy::prelude::*;
+use bevy::math::vec3;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Component)]
 pub struct PlanetModel {
     pub planet: Planetesimal,
     pub moon_models: PlanetModels,
