@@ -45,7 +45,7 @@ impl EventSource for Planetesimal {
                 event_type.to_string(),
                 self.clone(),
             )),
-            "planetesimal_accreted_dust" => Some(AccreteEvent::PlanetesimalAccretedDust(
+            "planetesimal_updated" => Some(AccreteEvent::PlanetesimalUpdated(
                 event_type.to_string(),
                 self.clone(),
             )),
@@ -125,7 +125,7 @@ pub enum AccreteEvent {
     /// new planetesimal created during accretion process
     PlanetesimalCreated(String, Planetesimal),
     ///planetesimal finished accretion of dust and gas
-    PlanetesimalAccretedDust(String, Planetesimal),
+    PlanetesimalUpdated(String, Planetesimal),
     /// planetesimal become gas giant
     PlanetesimalToGasGiant(String, Planetesimal),
     /// dust bands recalculated every time planetesimal finish accretion
@@ -153,7 +153,7 @@ impl AccreteEvent {
         match self {
             AccreteEvent::PlanetarySystemSetup(name, _) => name,
             AccreteEvent::PlanetesimalCreated(name, _) => name,
-            AccreteEvent::PlanetesimalAccretedDust(name, _) => name,
+            AccreteEvent::PlanetesimalUpdated(name, _) => name,
             AccreteEvent::PlanetesimalToGasGiant(name, _) => name,
             AccreteEvent::DustBandsUpdated(name, _) => name,
             AccreteEvent::PlanetesimalsCoalesced(name, _, _, _) => name,

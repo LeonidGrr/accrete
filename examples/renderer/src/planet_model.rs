@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{render::get_scale_factor, state::PlanetModels};
+use crate::{render::get_scale_factor, state::PlanetModels, consts::COALESCE_DISTANCE};
 use accrete::Planetesimal;
 use macroquad::prelude::*;
 
@@ -73,13 +73,13 @@ impl PlanetModel {
     pub fn update_a(&mut self) {
         if let Some(target_a) = self.target_a {
             let coalesce_distance = (target_a - self.a).abs();
-            if coalesce_distance > 1.0 {
+            if coalesce_distance > COALESCE_DISTANCE {
                 match self.a < target_a {
                     true => {
-                        self.a += 0.5;
+                        self.a += 0.25;
                     }
                     false => {
-                        self.a -= 0.5;
+                        self.a -= 0.25;
                     }
                 }
             }

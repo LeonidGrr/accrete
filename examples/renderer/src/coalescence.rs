@@ -80,7 +80,8 @@ impl CoalescenceOption {
                     }
                 }
                 CoalescenceStatus::Coalescing => {
-                    if source_planet.is_some() && target_planet.is_some() {
+                    if let (Some(_), Some(target_planet)) = (source_planet, target_planet) {
+                        coalesced_model.position = target_planet.position;
                         planet_models.remove(source_planet_id);
                         planet_models.remove(target_planet_id);
                         planet_models.insert(coalesced_model.id.clone(), coalesced_model.clone());

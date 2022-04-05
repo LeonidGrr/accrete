@@ -36,15 +36,23 @@ impl State {
         match current_event {
             // AccreteEvent::PlanetarySystemSetup(_, _) => (),
             AccreteEvent::PlanetesimalCreated(_, planet) => {
-                let p = PlanetModel::new(planet.clone(), time);
-                self.planet_models.insert(p.id.clone(), p);
+                let new_planet_model = PlanetModel::new(planet.clone(), time);
+                self.planet_models.insert(planet.id.clone(), new_planet_model);
             }
-            // AccreteEvent::PlanetesimalAccretedDust(name, _) => name,
+            AccreteEvent::PlanetesimalUpdated(_, planet) => {
+                if let Some(current_planet_model) = self.planet_models.get(&planet.id) {
+                    let mut next_planet_model = PlanetModel::new(planet.clone(), time);
+                    next_planet_model.position = current_planet_model.position;
+                    self.planet_models.insert(planet.id.clone(), next_planet_model);
+                }
+            }
             AccreteEvent::PlanetesimalToGasGiant(_, gas_giant) => {
-                if self.planet_models.get(&gas_giant.id).is_some() {
+                if let Some(current_planet_model) = self.planet_models.get(&gas_giant.id) {
+                    let mut next_planet_model = PlanetModel::new(gas_giant.clone(), time);
+                    next_planet_model.position = current_planet_model.position;
                     self.planet_models.insert(
                         gas_giant.id.clone(),
-                        PlanetModel::new(gas_giant.clone(), time),
+                        next_planet_model,
                     );
                 }
             }

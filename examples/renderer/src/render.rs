@@ -47,7 +47,7 @@ pub fn get_scale_factor() -> f32 {
     //     None => 50.0,
     // };
     // screen_width() / outer_a
-    screen_width() / 75.0
+    screen_width() / 150.0
 }
 
 impl Render for State {
@@ -79,7 +79,8 @@ impl Render for PlanetModel {
             return;
         }
 
-        draw_sphere(self.position, 1.0, None, color);
+        let radius = (self.planet.radius * 0.0005) as f32;
+        draw_sphere(self.position, radius, None, color);
 
         for m in self.moon_models.values() {
             m.render();

@@ -103,8 +103,6 @@ impl System {
                 let min = inner_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
                 let max = outer_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
 
-                p.event("planetesimal_accreted_dust");
-
                 update_dust_lanes(dust_bands, min, max, &p.mass, &crit_mass);
                 compress_dust_lanes(dust_bands);
 
@@ -114,12 +112,15 @@ impl System {
                     p.is_gas_giant = true;
                     p.event("planetesimal_to_gas_giant");
                 }
+
                 p.orbit_clearing = clearing_neightbourhood(&p.mass, &p.a, stellar_mass);
                 if p.orbit_clearing < 1.0 {
                     p.is_dwarf_planet = true;
                 }
                 p.orbit_zone = orbital_zone(stellar_luminosity, p.distance_to_primary_star);
                 p.radius = kothari_radius(&p.mass, &p.is_gas_giant, &p.orbit_zone);
+
+                p.event("planetesimal_updated");
 
                 planets.push(p);
                 planets.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());

@@ -79,7 +79,10 @@ impl MoonCaptureOption {
                     }
                 }
                 MoonCaptureStatus::Capturing => {
-                    if moon.is_some() && planet.is_some() {
+                    if let (Some(moon), Some(planet)) = (moon, planet) {
+                        resulting_model.position = planet.position;
+                        let resulting_moon_model = resulting_model.moon_models.get_mut(moon_id).expect("Failed to find moon by id.");
+                        resulting_moon_model.position = moon.position;
                         planet_models.remove(moon_id);
                         planet_models.remove(planet_id);
                         planet_models.insert(resulting_model.id.clone(), resulting_model.clone());
