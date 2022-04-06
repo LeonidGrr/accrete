@@ -118,7 +118,7 @@ impl EventSource for DustBands {
 }
 
 /// List of events emitted during system generation
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum AccreteEvent {
     /// once at the very start of accretion
     PlanetarySystemSetup(String, System),

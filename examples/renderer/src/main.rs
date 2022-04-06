@@ -16,7 +16,7 @@ fn main() {
     let mut accrete = Accrete::new(2);
     let system = accrete.planetary_system();
 
-    let log = EVENTS.lock().unwrap();
+    let log = EVENTS.lock().expect("Failed to lock EVENTS mutex");
     println!("Total {:#?} events.", log.len());
     let mut planetesimals = 0;
     let mut coalescences = 0;
@@ -35,5 +35,5 @@ fn main() {
     println!("Planets created: {:#?}", system.planets.len());
 
     // macroquad_render::macroquad_render();
-    run();
+    run(log.to_vec());
 }
