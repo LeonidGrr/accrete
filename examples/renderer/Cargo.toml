@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 accrete = { path = "../.." }
-macroquad = "0.3"
 bevy = "0.6"
 
 [profile.dev.package.'*']

@@ -1,12 +1,8 @@
 // mod coalescence;
 mod consts;
-// mod macroquad_render;
 mod bevy_render;
-// mod moon_capture;
-// mod orbit;
-// mod planet_model;
-// mod render;
-// mod state;
+mod planet_model;
+mod simulation_state;
 
 use accrete::events::{AccreteEvent, EVENTS};
 use accrete::Accrete;
@@ -34,6 +30,5 @@ fn main() {
     println!("Planets coalesced: {:#?}", coalescences);
     println!("Planets created: {:#?}", system.planets.len());
 
-    // macroquad_render::macroquad_render();
     run(log.to_vec());
 }
