@@ -1,6 +1,6 @@
 // mod coalescence;
-mod consts;
 mod bevy_render;
+mod consts;
 mod planet_model;
 mod simulation_state;
 

@@ -1,9 +1,16 @@
-use crate::{simulation_state::{EventPlugin, SimulationState}, planet_model::PlanetsPlugin};
+use crate::{
+    planet_model::PlanetsPlugin,
+    simulation_state::{EventPlugin, SimulationState},
+};
 use accrete::events::AccreteEvent;
 use bevy::prelude::*;
 
 pub fn run(log: Vec<AccreteEvent>) {
     App::new()
+        .insert_resource(WindowDescriptor {
+            title: "Accrete simulation".to_string(),
+            ..Default::default()
+        })
         .add_plugins(DefaultPlugins)
         .add_plugin(EventPlugin)
         .add_plugin(PlanetsPlugin)

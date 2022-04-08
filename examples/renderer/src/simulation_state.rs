@@ -1,5 +1,5 @@
 use crate::{
-    consts::SCALE_FACTOR,
+    consts::{SCALE_FACTOR, PLANET_RADIUS_SCALE_FACTOR},
     planet_model::{Orbit, PlanetBarycenter, PlanetId, PlanetModel, PlanetPosition},
 };
 use accrete::{events::AccreteEvent, Planetesimal};
@@ -87,12 +87,13 @@ impl SimulationState {
 }
 
 fn event_handler_system(
-    time: Res<Time>,
-    mut state: ResMut<SimulationState>,
     mut commands: Commands,
+    time: Res<Time>,
     log: Res<Vec<AccreteEvent>>,
+    mut state: ResMut<SimulationState>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    query: Query<(&PlanetId, &Handle<Mesh>)>
 ) {
     let passed_time = time.seconds_since_startup();
     let current_event = &log[state.event_idx];
@@ -121,21 +122,32 @@ fn event_handler_system(
                         orbit,
                     })
                     .insert_bundle(PbrBundle {
-                        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
+                        mesh: meshes.add(Mesh::from(shape::Icosphere {
+                            radius: planet.radius as f32 * PLANET_RADIUS_SCALE_FACTOR,
+                            subdivisions: 32,
+                        })),
                         material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
                         transform: Transform::from_translation(position.0),
                         ..Default::default()
                     });
             }
-            _ => (),
-            // AccreteEvent::PlanetesimalUpdated(_, planet) => {
-            //     if let Some(current_planet_model) = self.planet_models.get(&planet.id) {
-            //         let mut next_planet_model = PlanetModel::new(planet.clone(), time);
-            //         next_planet_model.position = current_planet_model.position;
-            //         self.planet_models
-            //             .insert(planet.id.clone(), next_planet_model);
-            //     }
-            // }
+            AccreteEvent::PlanetesimalUpdated(_, planet) => {
+                for (planet_id, mesh_handle) in query.iter() {
+                    if planet_id.0 == planet.id {
+                        if let Some(mesh) = meshes.get_mut(mesh_handle) {
+                            let next_mesh = Mesh::from(shape::Icosphere {
+                                radius: planet.radius as f32 * PLANET_RADIUS_SCALE_FACTOR,
+                                subdivisions: 32,
+                            });
+                            mesh.clone_from(&next_mesh);                    
+                        }
+                        
+                        state.planets.insert(planet.id.to_owned(), planet.clone());
+                    }
+                }
+                    
+                // }
+            }
             // AccreteEvent::PlanetesimalToGasGiant(_, gas_giant) => {
             //     if let Some(current_planet_model) = self.planet_models.get(&gas_giant.id) {
             //         let mut next_planet_model = PlanetModel::new(gas_giant.clone(), time);
@@ -163,7 +175,7 @@ fn event_handler_system(
             // // AccreteEvent::OuterBodyInjected(name, _) => name,
             // // AccreteEvent::PlanetaryEnvironmentGenerated(name, _) => name,
             // // AccreteEvent::PlanetarySystemComplete(_, _) => (),
-            // _ => (),
+            _ => (),
         }
         state.event_idx += 1;
     }

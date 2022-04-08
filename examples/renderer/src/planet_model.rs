@@ -1,5 +1,5 @@
 use crate::consts::COALESCE_DISTANCE;
-use bevy::{prelude::*, render::camera::CameraProjection};
+use bevy::prelude::*;
 
 // pub type PlanetModels = HashMap<String, PlanetModel>;
 
@@ -100,8 +100,7 @@ pub struct PlanetsPlugin;
 
 impl Plugin for PlanetsPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_system(update_orbits_system)
+        app.add_system(update_orbits_system)
             .add_system(update_planets_position_system);
     }
 }
@@ -112,11 +111,18 @@ fn update_orbits_system(mut query: Query<&mut Orbit>) {
     }
 }
 
-
-fn update_planets_position_system(time: Res<Time>, mut query: Query<(&mut PlanetPosition, &PlanetBarycenter, &Orbit, &mut Transform)>) {
+fn update_planets_position_system(
+    time: Res<Time>,
+    mut query: Query<(
+        &mut PlanetPosition,
+        &PlanetBarycenter,
+        &Orbit,
+        &mut Transform,
+    )>,
+) {
     let passed_time = time.seconds_since_startup();
     for (mut planet_position, barycenter, orbit, mut transform) in query.iter_mut() {
-        planet_position.update_position(barycenter, &orbit, passed_time);
+        planet_position.update_position(barycenter, orbit, passed_time);
         transform.translation.x = planet_position.0.x;
         transform.translation.z = planet_position.0.z;
     }
