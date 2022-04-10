@@ -1,4 +1,5 @@
 // mod coalescence;
+mod active_event;
 mod bevy_render;
 mod consts;
 mod planet_model;

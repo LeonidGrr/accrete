@@ -1,70 +1,9 @@
-use crate::{
-    consts::{SCALE_FACTOR, PLANET_RADIUS_SCALE_FACTOR},
-    planet_model::{Orbit, PlanetBarycenter, PlanetId, PlanetModel, PlanetPosition},
-};
+use crate::active_event::{active_event_system, AccreteEventStatus, ActiveEvent};
+use crate::consts::{PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR};
+use crate::planet_model::{Orbit, PlanetBarycenter, PlanetId, PlanetModel, PlanetPosition};
 use accrete::{events::AccreteEvent, Planetesimal};
 use bevy::{math::vec3, prelude::*};
 use std::collections::HashMap;
-
-// use crate::coalescence::CoalescenceOption;
-// use crate::moon_capture::MoonCaptureOption;
-// use crate::planet_model::PlanetModel;
-// use accrete::events::AccreteEvent;
-// use accrete::DustBand;
-// use macroquad::prelude::*;
-// use std::collections::HashMap;
-
-// pub type PlanetModels = HashMap<String, PlanetModel>;
-
-// pub struct SimulationState {
-//     pub planet_models: PlanetModels,
-//     pub coalescence: CoalescenceOption,
-//     pub moon_capture: MoonCaptureOption,
-//     pub dust_model: HashMap<String, DustBand>,
-//     pub event_idx: usize,
-//     pub event_lock: bool,
-// }
-
-// impl SimulationState {
-//     pub fn new() -> Self {
-//         SimulationState {
-//             dt: 1.0,
-//             event_idx: 0,
-//             planet_models: HashMap::new(),
-//             coalescence: CoalescenceOption::none(),
-//             moon_capture: MoonCaptureOption::none(),
-//             dust_model: HashMap::new(),
-//             event_lock: false,
-//         }
-//     }
-
-//     pub fn update_planets(&mut self, time: f64) {
-//         for p in self.planet_models.values_mut() {
-//             p.update_position(time);
-//             p.update_a();
-//         }
-//     }
-
-//     pub fn update_coalescences(&mut self) {
-//         let SimulationState {
-//             planet_models,
-//             coalescence,
-//             event_lock,
-//             ..
-//         } = self;
-//         coalescence.update_status(planet_models, event_lock);
-//     }
-
-//     pub fn update_moon_capture(&mut self) {
-//         let SimulationState {
-//             planet_models,
-//             moon_capture,
-//             event_lock,
-//             ..
-//         } = self;
-//         moon_capture.update_status(planet_models, event_lock);
-//     }
-// }
 
 #[derive(Component)]
 struct EventText;
@@ -72,17 +11,25 @@ struct EventText;
 #[derive(Debug, Default)]
 pub struct SimulationState {
     pub event_idx: usize,
-    pub event_lock: bool,
     pub planets: HashMap<String, Planetesimal>,
+    pub active_event: ActiveEvent,
 }
 
 impl SimulationState {
     pub fn new() -> Self {
         SimulationState {
             event_idx: 0,
-            event_lock: false,
             planets: HashMap::new(),
+            active_event: ActiveEvent::default(),
         }
+    }
+
+    pub fn is_locked(&self, passed_time: f64, total_events: usize) -> bool {
+        let SimulationState { event_idx, .. } = *self;
+        passed_time > (event_idx as f64 + 1.0)
+            && event_idx < total_events - 1
+            && (self.active_event.status == AccreteEventStatus::None
+                || self.active_event.status == AccreteEventStatus::Done)
     }
 }
 
@@ -93,16 +40,12 @@ fn event_handler_system(
     mut state: ResMut<SimulationState>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    query: Query<(&PlanetId, &Handle<Mesh>)>
+    query: Query<(&PlanetId, &Handle<Mesh>)>,
 ) {
     let passed_time = time.seconds_since_startup();
     let current_event = &log[state.event_idx];
-    if passed_time > (state.event_idx as f64 + 1.0)
-        && state.event_idx < log.len() - 1
-        && !state.event_lock
-    {
+    if !state.is_locked(passed_time, log.len()) {
         match current_event {
-            AccreteEvent::PlanetarySystemSetup(_, _) => (),
             AccreteEvent::PlanetesimalCreated(_, planet) => {
                 let Planetesimal { id, a, e, .. } = planet;
                 let a = *a as f32 * SCALE_FACTOR;
@@ -139,32 +82,22 @@ fn event_handler_system(
                                 radius: planet.radius as f32 * PLANET_RADIUS_SCALE_FACTOR,
                                 subdivisions: 32,
                             });
-                            mesh.clone_from(&next_mesh);                    
+                            mesh.clone_from(&next_mesh);
+
+                            state.planets.insert(planet.id.to_owned(), planet.clone());
                         }
-                        
-                        state.planets.insert(planet.id.to_owned(), planet.clone());
                     }
                 }
-                    
-                // }
             }
-            // AccreteEvent::PlanetesimalToGasGiant(_, gas_giant) => {
-            //     if let Some(current_planet_model) = self.planet_models.get(&gas_giant.id) {
-            //         let mut next_planet_model = PlanetModel::new(gas_giant.clone(), time);
-            //         next_planet_model.position = current_planet_model.position;
-            //         self.planet_models
-            //             .insert(gas_giant.id.clone(), next_planet_model);
-            //     }
-            // }
-            // // AccreteEvent::DustBandsUpdated(_, _) => (),
-            // AccreteEvent::PlanetesimalsCoalesced(_, source_planet_id, target_planet_id, result) => {
-            //     self.coalescence = CoalescenceOption::new(
-            //         source_planet_id,
-            //         target_planet_id,
-            //         result.clone(),
-            //         time,
-            //     );
-            // }
+            AccreteEvent::PlanetesimalsCoalesced(_, _, _, _) => {
+                state.active_event = ActiveEvent::from(current_event);
+                // self.coalescence = CoalescenceOption::new(
+                //     source_planet_id,
+                //     target_planet_id,
+                //     result.clone(),
+                //     time,
+                // );
+            }
             // // AccreteEvent::MoonsCoalesced(_, source_moon_id, target_moon_id, result) => {},
             // AccreteEvent::PlanetesimalCaptureMoon(_, planet_id, moon_id, result) => {
             //     self.moon_capture =
@@ -233,6 +166,7 @@ impl Plugin for EventPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(setup_event_system)
             .add_system(event_handler_system)
+            .add_system(active_event_system)
             .add_system(render_event_system);
     }
 }
