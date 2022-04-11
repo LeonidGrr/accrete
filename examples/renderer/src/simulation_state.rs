@@ -1,8 +1,8 @@
-use crate::active_event::{active_event_system, AccreteEventStatus, ActiveEvent};
-use crate::consts::{PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR};
-use crate::planet_model::{Orbit, PlanetBarycenter, PlanetId, PlanetModel, PlanetPosition};
+use crate::active_event::{active_event_system, ActiveEventStatus, ActiveEvent};
+use crate::consts::{PLANET_RADIUS_SCALE_FACTOR, EVENT_TIME_SCALE};
+use crate::planet_model::{PlanetId, PlanetModel};
 use accrete::{events::AccreteEvent, Planetesimal};
-use bevy::{math::vec3, prelude::*};
+use bevy::prelude::*;
 use std::collections::HashMap;
 
 #[derive(Component)]
@@ -24,12 +24,11 @@ impl SimulationState {
         }
     }
 
-    pub fn is_locked(&self, passed_time: f64, total_events: usize) -> bool {
+    pub fn is_open(&self, passed_time: f64, total_events: usize) -> bool {
         let SimulationState { event_idx, .. } = *self;
-        passed_time > (event_idx as f64 + 1.0)
-            && event_idx < total_events - 1
-            && (self.active_event.status == AccreteEventStatus::None
-                || self.active_event.status == AccreteEventStatus::Done)
+        event_idx < total_events - 1
+            && passed_time > (event_idx as f64 * EVENT_TIME_SCALE)
+            && (self.active_event.status == ActiveEventStatus::None || self.active_event.status == ActiveEventStatus::Done)
     }
 }
 
@@ -44,35 +43,25 @@ fn event_handler_system(
 ) {
     let passed_time = time.seconds_since_startup();
     let current_event = &log[state.event_idx];
-    if !state.is_locked(passed_time, log.len()) {
+    if state.is_open(passed_time, log.len()) {
         match current_event {
             AccreteEvent::PlanetesimalCreated(_, planet) => {
-                let Planetesimal { id, a, e, .. } = planet;
-                let a = *a as f32 * SCALE_FACTOR;
-                let planet_id = PlanetId(id.to_owned());
-                let mut position = PlanetPosition(vec3(-(a - 0.001), 0.0, 0.0));
-                let barycenter = PlanetBarycenter(vec3(0.0, 0.0, 0.0));
-                let orbit = Orbit::new(a, *e as f32);
-
-                position.update_position(&barycenter, &orbit, passed_time);
-                state.planets.insert(id.to_owned(), planet.clone());
+                let mut planet_model = PlanetModel::from(planet);
+                planet_model.position.update_position(&planet_model.barycenter, &planet_model.orbit, passed_time);
+                state.planets.insert(planet.id.to_owned(), planet.clone());
+                
                 commands
                     .spawn()
-                    .insert_bundle(PlanetModel {
-                        planet_id,
-                        position,
-                        barycenter,
-                        orbit,
-                    })
                     .insert_bundle(PbrBundle {
                         mesh: meshes.add(Mesh::from(shape::Icosphere {
                             radius: planet.radius as f32 * PLANET_RADIUS_SCALE_FACTOR,
                             subdivisions: 32,
                         })),
                         material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
-                        transform: Transform::from_translation(position.0),
+                        transform: Transform::from_translation(planet_model.position.0),
                         ..Default::default()
-                    });
+                    })
+                    .insert_bundle(planet_model);
             }
             AccreteEvent::PlanetesimalUpdated(_, planet) => {
                 for (planet_id, mesh_handle) in query.iter() {
@@ -89,15 +78,8 @@ fn event_handler_system(
                     }
                 }
             }
-            AccreteEvent::PlanetesimalsCoalesced(_, _, _, _) => {
-                state.active_event = ActiveEvent::from(current_event);
-                // self.coalescence = CoalescenceOption::new(
-                //     source_planet_id,
-                //     target_planet_id,
-                //     result.clone(),
-                //     time,
-                // );
-            }
+            AccreteEvent::PlanetesimalCaptureMoon(_, _, _, _) |
+            AccreteEvent::PlanetesimalsCoalesced(_, _, _, _) => state.active_event = ActiveEvent::from(current_event),
             // // AccreteEvent::MoonsCoalesced(_, source_moon_id, target_moon_id, result) => {},
             // AccreteEvent::PlanetesimalCaptureMoon(_, planet_id, moon_id, result) => {
             //     self.moon_capture =
@@ -110,7 +92,9 @@ fn event_handler_system(
             // // AccreteEvent::PlanetarySystemComplete(_, _) => (),
             _ => (),
         }
-        state.event_idx += 1;
+        if state.active_event.status == ActiveEventStatus::None || state.active_event.status == ActiveEventStatus::Done {
+            state.event_idx += 1;
+        }
     }
 }
 
