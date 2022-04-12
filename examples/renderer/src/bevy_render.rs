@@ -1,6 +1,7 @@
 use crate::{
+    active_event::ActiveEvent,
     planet_model::PlanetsPlugin,
-    simulation_state::{EventPlugin, SimulationState}, active_event::ActiveEvent,
+    simulation_state::{EventPlugin, SimulationState},
 };
 use accrete::events::AccreteEvent;
 use bevy::prelude::*;

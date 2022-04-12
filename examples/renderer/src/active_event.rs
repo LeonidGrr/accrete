@@ -1,8 +1,11 @@
+use crate::consts::{COALESCE_DISTANCE, PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR};
+use crate::planet_model::{
+    udpate_planet_mesh_from_planetesimal, MoonsIds, Orbit, PlanetBarycenter, PlanetId, PlanetModel,
+    PlanetPosition,
+};
+use crate::simulation_state::SimulationState;
 use accrete::events::*;
 use bevy::prelude::*;
-use crate::planet_model::{PlanetId, PlanetBarycenter, Orbit, PlanetPosition, udpate_planet_mesh_from_planetesimal, PlanetModel, MoonsIds};
-use crate::simulation_state::SimulationState;
-use crate::consts::{SCALE_FACTOR, COALESCE_DISTANCE, PLANET_RADIUS_SCALE_FACTOR};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ActiveEventStatus {
@@ -44,7 +47,14 @@ impl ActiveEvent {
         mut state: ResMut<SimulationState>,
         mut meshes: ResMut<Assets<Mesh>>,
         mut materials: ResMut<Assets<StandardMaterial>>,
-        mut query: Query<(&PlanetId, &PlanetPosition, &mut PlanetBarycenter, &mut Orbit, &mut MoonsIds, &Handle<Mesh>)>,
+        mut query: Query<(
+            &PlanetId,
+            &PlanetPosition,
+            &mut PlanetBarycenter,
+            &mut Orbit,
+            &mut MoonsIds,
+            &Handle<Mesh>,
+        )>,
     ) {
         let mut resulting_status = active_event.status.clone();
         let mut mesh_to_update = None;
@@ -54,9 +64,13 @@ impl ActiveEvent {
                 AccreteEvent::PlanetesimalCreated(_, planet) => {
                     let passed_time = time.seconds_since_startup();
                     let mut planet_model = PlanetModel::from(planet);
-                    planet_model.position.update_position(&planet_model.barycenter, &planet_model.orbit, passed_time);
+                    planet_model.position.update_position(
+                        &planet_model.barycenter,
+                        &planet_model.orbit,
+                        passed_time,
+                    );
                     state.planets.insert(planet.id.to_owned(), planet.clone());
-                    
+
                     commands
                         .spawn()
                         .insert_bundle(PbrBundle {
@@ -71,11 +85,11 @@ impl ActiveEvent {
                         .insert_bundle(planet_model);
 
                     resulting_status = ActiveEventStatus::Done;
-                },
+                }
                 AccreteEvent::PlanetesimalUpdated(_, planet) => {
                     for (planet_id, _, _, _, _, mesh_handle) in query.iter() {
                         if planet_id.0 == planet.id {
-                            mesh_to_update = Some((mesh_handle, planet)); 
+                            mesh_to_update = Some((mesh_handle, planet));
                             state.planets.insert(planet.id.to_owned(), planet.clone());
                             resulting_status = ActiveEventStatus::Done;
                         }
@@ -90,8 +104,13 @@ impl ActiveEvent {
                             }
                         }
                     }
-                },
-                AccreteEvent::PlanetesimalCaptureMoon(_, target_id, source_id, resulting_planet) => {
+                }
+                AccreteEvent::PlanetesimalCaptureMoon(
+                    _,
+                    target_id,
+                    source_id,
+                    resulting_planet,
+                ) => {
                     for (planet_id, _, _, mut orbit, _, _) in query.iter_mut() {
                         if target_id == &planet_id.0 || source_id == &planet_id.0 {
                             orbit.update_orbit(resulting_planet.a as f32 * SCALE_FACTOR);
@@ -100,7 +119,7 @@ impl ActiveEvent {
                             }
                         }
                     }
-                },
+                }
                 _ => resulting_status = ActiveEventStatus::Done,
             }
         }
@@ -116,17 +135,27 @@ impl ActiveEvent {
         mut active_event: ResMut<ActiveEvent>,
         mut state: ResMut<SimulationState>,
         mut meshes: ResMut<Assets<Mesh>>,
-        mut query: Query<(&PlanetId, &PlanetPosition, &mut PlanetBarycenter, &mut Orbit, &mut MoonsIds, &Handle<Mesh>)>,
+        mut query: Query<(
+            &PlanetId,
+            &PlanetPosition,
+            &mut PlanetBarycenter,
+            &mut Orbit,
+            &mut MoonsIds,
+            &Handle<Mesh>,
+        )>,
     ) {
         let mut mesh_to_remove = None;
         let mut mesh_to_update = None;
         let mut resulting_status = active_event.status.clone();
-    
+
         if let Some(event) = &active_event.event {
             match event {
                 AccreteEvent::PlanetesimalsCoalesced(_, target_id, source_id, resulting_planet) => {
                     let mut iter = query.iter_combinations_mut();
-                    while let Some([(id, position, _, _, _, mesh_handle), (id2, position2, _, _, _, mesh_handle2)]) = iter.fetch_next() {
+                    while let Some(
+                        [(id, position, _, _, _, mesh_handle), (id2, position2, _, _, _, mesh_handle2)],
+                    ) = iter.fetch_next()
+                    {
                         let first_is_source = &id.0 == source_id && &id2.0 == target_id;
                         let second_is_source = &id2.0 == source_id && &id.0 == target_id;
                         if first_is_source || second_is_source {
@@ -135,24 +164,34 @@ impl ActiveEvent {
                             if distance <= COALESCE_DISTANCE {
                                 if first_is_source {
                                     mesh_to_remove = Some(mesh_handle);
-                                    mesh_to_update = Some((mesh_handle2, resulting_planet));                                    
+                                    mesh_to_update = Some((mesh_handle2, resulting_planet));
                                 }
 
                                 if second_is_source {
                                     mesh_to_remove = Some(mesh_handle2);
-                                    mesh_to_update = Some((mesh_handle, resulting_planet)); 
+                                    mesh_to_update = Some((mesh_handle, resulting_planet));
                                 }
 
                                 state.planets.remove(source_id);
-                                state.planets.insert(target_id.to_string(), resulting_planet.clone());
+                                state
+                                    .planets
+                                    .insert(target_id.to_string(), resulting_planet.clone());
                                 resulting_status = ActiveEventStatus::Executed;
                             }
                         }
                     }
-                },
-                AccreteEvent::PlanetesimalCaptureMoon(_, target_id, source_id, resulting_planet) => {
+                }
+                AccreteEvent::PlanetesimalCaptureMoon(
+                    _,
+                    target_id,
+                    source_id,
+                    resulting_planet,
+                ) => {
                     let mut iter = query.iter_combinations_mut();
-                    while let Some([(id, position, mut barycenter, _, mut moonsIds, _), (id2, position2, mut barycenter2, _, mut moonsIds2, _)]) = iter.fetch_next() {
+                    while let Some(
+                        [(id, position, mut barycenter, _, mut moonsIds, _), (id2, position2, mut barycenter2, _, mut moonsIds2, _)],
+                    ) = iter.fetch_next()
+                    {
                         let first_is_source = &id.0 == source_id && &id2.0 == target_id;
                         let second_is_source = &id2.0 == source_id && &id.0 == target_id;
                         if first_is_source || second_is_source {
@@ -171,7 +210,7 @@ impl ActiveEvent {
                             }
                         }
                     }
-                },
+                }
                 _ => (),
             }
         }
@@ -194,11 +233,28 @@ pub fn active_event_system(
     mut active_event: ResMut<ActiveEvent>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut query: Query<(&PlanetId, &PlanetPosition, &mut PlanetBarycenter, &mut Orbit, &mut MoonsIds, &Handle<Mesh>)>,
+    mut query: Query<(
+        &PlanetId,
+        &PlanetPosition,
+        &mut PlanetBarycenter,
+        &mut Orbit,
+        &mut MoonsIds,
+        &Handle<Mesh>,
+    )>,
 ) {
     match &active_event.status.clone() {
-        ActiveEventStatus::Created => ActiveEvent::created(commands, time, active_event, state, meshes, materials, query),
-        ActiveEventStatus::Approached => ActiveEvent::approached(active_event, state, meshes, query),
+        ActiveEventStatus::Created => ActiveEvent::created(
+            commands,
+            time,
+            active_event,
+            state,
+            meshes,
+            materials,
+            query,
+        ),
+        ActiveEventStatus::Approached => {
+            ActiveEvent::approached(active_event, state, meshes, query)
+        }
         ActiveEventStatus::Executed => (),
         ActiveEventStatus::Done => (),
     }

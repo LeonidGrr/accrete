@@ -1,7 +1,10 @@
-use std::collections::HashSet;
-use crate::consts::{COALESCE_DISTANCE, SCALE_FACTOR, UPDATE_RATE_A, UPDATE_RATE_BARYCENTER, PLANET_RADIUS_SCALE_FACTOR};
+use crate::consts::{
+    COALESCE_DISTANCE, PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR, UPDATE_RATE_A,
+    UPDATE_RATE_BARYCENTER,
+};
 use accrete::Planetesimal;
-use bevy::{prelude::*, math::vec3};
+use bevy::{math::vec3, prelude::*};
+use std::collections::HashSet;
 
 #[derive(Debug, Clone, Bundle)]
 pub struct PlanetModel {
@@ -68,22 +71,22 @@ pub struct PlanetBarycenter {
 }
 
 // impl PlanetBarycenter {
-    // pub fn update_barycenter(&mut self, other_id: &PlanetId, position: &PlanetPosition, other_position: &PlanetPosition) {
-    //     if let Some(barycenter_id) = &self.id {
-    //         if barycenter_id == &other_id.0 {
-    //             let distance = other_position.0.distance(position.0);                
-    //             let direction = (other_position.0 - position.0).normalize();
-    //             if distance > COALESCE_DISTANCE {
-    //                 self.position += direction * UPDATE_RATE_BARYCENTER;
-    //             }
-    //         }
-    //     }
-    //     // match &barycenter.id, &barycenter2.id) {
-    //     //     (Some(barycenter_id), None) => if &id2.0 == barycenter_id { barycenter.position = position2.0 },
-    //     //     (None, Some(barycenter_id)) => if &id.0 == barycenter_id { barycenter2.position = position.0 },
-    //     //     _ => ()
-    //     // }
-    // }
+// pub fn update_barycenter(&mut self, other_id: &PlanetId, position: &PlanetPosition, other_position: &PlanetPosition) {
+//     if let Some(barycenter_id) = &self.id {
+//         if barycenter_id == &other_id.0 {
+//             let distance = other_position.0.distance(position.0);
+//             let direction = (other_position.0 - position.0).normalize();
+//             if distance > COALESCE_DISTANCE {
+//                 self.position += direction * UPDATE_RATE_BARYCENTER;
+//             }
+//         }
+//     }
+//     // match &barycenter.id, &barycenter2.id) {
+//     //     (Some(barycenter_id), None) => if &id2.0 == barycenter_id { barycenter.position = position2.0 },
+//     //     (None, Some(barycenter_id)) => if &id.0 == barycenter_id { barycenter2.position = position.0 },
+//     //     _ => ()
+//     // }
+// }
 // }
 
 #[derive(Debug, Clone, Component)]
@@ -165,16 +168,16 @@ fn update_planets_position_system(
     }
 }
 
-fn update_barycenters_system(mut query: Query<(
-    &PlanetId,
-    &MoonsIds,
-    &PlanetPosition,
-    &PlanetBarycenter,
-)>) {
-
+fn update_barycenters_system(
+    mut query: Query<(&PlanetId, &MoonsIds, &PlanetPosition, &PlanetBarycenter)>,
+) {
 }
 
-pub fn udpate_planet_mesh_from_planetesimal(mesh_handle: &Handle<Mesh>, mut meshes: ResMut<Assets<Mesh>>, planetesimal: &Planetesimal) {
+pub fn udpate_planet_mesh_from_planetesimal(
+    mesh_handle: &Handle<Mesh>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    planetesimal: &Planetesimal,
+) {
     if let Some(mesh) = meshes.get_mut(mesh_handle) {
         let next_mesh = Mesh::from(shape::Icosphere {
             radius: planetesimal.radius as f32 * PLANET_RADIUS_SCALE_FACTOR,

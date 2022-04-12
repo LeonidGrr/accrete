@@ -1,4 +1,4 @@
-use crate::active_event::{active_event_system, ActiveEventStatus, ActiveEvent};
+use crate::active_event::{active_event_system, ActiveEvent, ActiveEventStatus};
 use crate::consts::EVENT_TIME_SCALE;
 use crate::planet_model::{PlanetId, PlanetModel};
 use accrete::{events::AccreteEvent, Planetesimal};
@@ -22,7 +22,12 @@ impl SimulationState {
         }
     }
 
-    pub fn is_open(&self, active_event: &Res<ActiveEvent>, passed_time: f64, total_events: usize) -> bool {
+    pub fn is_open(
+        &self,
+        active_event: &Res<ActiveEvent>,
+        passed_time: f64,
+        total_events: usize,
+    ) -> bool {
         let SimulationState { event_idx, .. } = *self;
         event_idx < total_events - 1
             && passed_time > (event_idx as f64 * EVENT_TIME_SCALE)
@@ -91,7 +96,6 @@ fn render_event_system(
             text.sections[0].value = format!("{} - {}", event_idx, last_event.name());
         }
     }
-    
 }
 
 pub struct EventPlugin;
