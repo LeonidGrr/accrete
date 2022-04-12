@@ -1,5 +1,5 @@
 use crate::active_event::{active_event_system, ActiveEventStatus, ActiveEvent};
-use crate::consts::{PLANET_RADIUS_SCALE_FACTOR, EVENT_TIME_SCALE};
+use crate::consts::EVENT_TIME_SCALE;
 use crate::planet_model::{PlanetId, PlanetModel};
 use accrete::{events::AccreteEvent, Planetesimal};
 use bevy::prelude::*;
@@ -12,7 +12,6 @@ struct EventText;
 pub struct SimulationState {
     pub event_idx: usize,
     pub planets: HashMap<String, Planetesimal>,
-    pub active_event: ActiveEvent,
 }
 
 impl SimulationState {
@@ -20,81 +19,29 @@ impl SimulationState {
         SimulationState {
             event_idx: 0,
             planets: HashMap::new(),
-            active_event: ActiveEvent::default(),
         }
     }
 
-    pub fn is_open(&self, passed_time: f64, total_events: usize) -> bool {
+    pub fn is_open(&self, active_event: &Res<ActiveEvent>, passed_time: f64, total_events: usize) -> bool {
         let SimulationState { event_idx, .. } = *self;
         event_idx < total_events - 1
             && passed_time > (event_idx as f64 * EVENT_TIME_SCALE)
-            && (self.active_event.status == ActiveEventStatus::None || self.active_event.status == ActiveEventStatus::Done)
+            && active_event.status == ActiveEventStatus::Done
     }
 }
 
 fn event_handler_system(
     mut commands: Commands,
     time: Res<Time>,
+    active_event: Res<ActiveEvent>,
     log: Res<Vec<AccreteEvent>>,
     mut state: ResMut<SimulationState>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    query: Query<(&PlanetId, &Handle<Mesh>)>,
 ) {
     let passed_time = time.seconds_since_startup();
     let current_event = &log[state.event_idx];
-    if state.is_open(passed_time, log.len()) {
-        match current_event {
-            AccreteEvent::PlanetesimalCreated(_, planet) => {
-                let mut planet_model = PlanetModel::from(planet);
-                planet_model.position.update_position(&planet_model.barycenter, &planet_model.orbit, passed_time);
-                state.planets.insert(planet.id.to_owned(), planet.clone());
-                
-                commands
-                    .spawn()
-                    .insert_bundle(PbrBundle {
-                        mesh: meshes.add(Mesh::from(shape::Icosphere {
-                            radius: planet.radius as f32 * PLANET_RADIUS_SCALE_FACTOR,
-                            subdivisions: 32,
-                        })),
-                        material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
-                        transform: Transform::from_translation(planet_model.position.0),
-                        ..Default::default()
-                    })
-                    .insert_bundle(planet_model);
-            }
-            AccreteEvent::PlanetesimalUpdated(_, planet) => {
-                for (planet_id, mesh_handle) in query.iter() {
-                    if planet_id.0 == planet.id {
-                        if let Some(mesh) = meshes.get_mut(mesh_handle) {
-                            let next_mesh = Mesh::from(shape::Icosphere {
-                                radius: planet.radius as f32 * PLANET_RADIUS_SCALE_FACTOR,
-                                subdivisions: 32,
-                            });
-                            mesh.clone_from(&next_mesh);
-
-                            state.planets.insert(planet.id.to_owned(), planet.clone());
-                        }
-                    }
-                }
-            }
-            AccreteEvent::PlanetesimalCaptureMoon(_, _, _, _) |
-            AccreteEvent::PlanetesimalsCoalesced(_, _, _, _) => state.active_event = ActiveEvent::from(current_event),
-            // // AccreteEvent::MoonsCoalesced(_, source_moon_id, target_moon_id, result) => {},
-            // AccreteEvent::PlanetesimalCaptureMoon(_, planet_id, moon_id, result) => {
-            //     self.moon_capture =
-            //         MoonCaptureOption::new(planet_id, moon_id, result.clone(), time);
-            // }
-            // // AccreteEvent::PlanetesimalMoonToRing(name, _) => name,
-            // AccreteEvent::PostAccretionStarted(_) => self.event_lock = true,
-            // // AccreteEvent::OuterBodyInjected(name, _) => name,
-            // // AccreteEvent::PlanetaryEnvironmentGenerated(name, _) => name,
-            // // AccreteEvent::PlanetarySystemComplete(_, _) => (),
-            _ => (),
-        }
-        if state.active_event.status == ActiveEventStatus::None || state.active_event.status == ActiveEventStatus::Done {
-            state.event_idx += 1;
-        }
+    if state.is_open(&active_event, passed_time, log.len()) {
+        commands.insert_resource(ActiveEvent::from(current_event));
+        state.event_idx += 1;
     }
 }
 
@@ -138,10 +85,13 @@ fn render_event_system(
     log: Res<Vec<AccreteEvent>>,
 ) {
     let event_idx = state.event_idx;
-    let last_event = &log[event_idx];
-    for mut text in query.iter_mut() {
-        text.sections[0].value = format!("{} - {}", event_idx, last_event.name());
+    if event_idx > 0 {
+        let last_event = &log[event_idx - 1];
+        for mut text in query.iter_mut() {
+            text.sections[0].value = format!("{} - {}", event_idx, last_event.name());
+        }
     }
+    
 }
 
 pub struct EventPlugin;

@@ -1,13 +1,12 @@
-use crate::consts::{COALESCE_DISTANCE, SCALE_FACTOR, UPDATE_RATE_A};
+use std::collections::HashSet;
+use crate::consts::{COALESCE_DISTANCE, SCALE_FACTOR, UPDATE_RATE_A, UPDATE_RATE_BARYCENTER, PLANET_RADIUS_SCALE_FACTOR};
 use accrete::Planetesimal;
 use bevy::{prelude::*, math::vec3};
-
-// pub type PlanetModels = HashMap<String, PlanetModel>;
 
 #[derive(Debug, Clone, Bundle)]
 pub struct PlanetModel {
     pub planet_id: PlanetId,
-    // pub moon_models: PlanetModels,
+    pub moons_ids: MoonsIds,
     pub position: PlanetPosition,
     pub barycenter: PlanetBarycenter,
     pub orbit: Orbit,
@@ -24,15 +23,20 @@ impl From<&Planetesimal> for PlanetModel {
             id: None,
         };
         let orbit = Orbit::new(a, *e as f32);
+        let moons_ids = MoonsIds(HashSet::new());
 
         PlanetModel {
             planet_id,
             position,
             barycenter,
             orbit,
+            moons_ids,
         }
     }
 }
+
+#[derive(Debug, Clone, Component)]
+pub struct MoonsIds(pub HashSet<String>);
 
 #[derive(Debug, Clone, Component)]
 pub struct PlanetId(pub String);
@@ -63,25 +67,24 @@ pub struct PlanetBarycenter {
     pub id: Option<String>,
 }
 
-impl PlanetBarycenter {
-    pub fn update_barycenter(&mut self, other_id: &PlanetId, position: &PlanetPosition, other_position: &PlanetPosition) {
-        if let Some(barycenter_id) = &self.id {
-            if barycenter_id == &other_id.0 {
-                self.position = other_position.0;
-                // let distance = other_position.0.distance(position.0);
-                // let direction = (position.0 - other_position.0).normalize();
-                // if distance > COALESCE_DISTANCE {
-                //     self.position += direction * UPDATE_RATE_A;
-                // }
-            }
-        }
-        // match &barycenter.id, &barycenter2.id) {
-        //     (Some(barycenter_id), None) => if &id2.0 == barycenter_id { barycenter.position = position2.0 },
-        //     (None, Some(barycenter_id)) => if &id.0 == barycenter_id { barycenter2.position = position.0 },
-        //     _ => ()
-        // }
-    }
-}
+// impl PlanetBarycenter {
+    // pub fn update_barycenter(&mut self, other_id: &PlanetId, position: &PlanetPosition, other_position: &PlanetPosition) {
+    //     if let Some(barycenter_id) = &self.id {
+    //         if barycenter_id == &other_id.0 {
+    //             let distance = other_position.0.distance(position.0);                
+    //             let direction = (other_position.0 - position.0).normalize();
+    //             if distance > COALESCE_DISTANCE {
+    //                 self.position += direction * UPDATE_RATE_BARYCENTER;
+    //             }
+    //         }
+    //     }
+    //     // match &barycenter.id, &barycenter2.id) {
+    //     //     (Some(barycenter_id), None) => if &id2.0 == barycenter_id { barycenter.position = position2.0 },
+    //     //     (None, Some(barycenter_id)) => if &id.0 == barycenter_id { barycenter2.position = position.0 },
+    //     //     _ => ()
+    //     // }
+    // }
+// }
 
 #[derive(Debug, Clone, Component)]
 pub struct Orbit {
@@ -91,7 +94,6 @@ pub struct Orbit {
     pub focus: f32,
     pub u: f32,
     pub t: f32,
-    pub target_a: Option<f32>,
 }
 
 impl Orbit {
@@ -105,27 +107,24 @@ impl Orbit {
             b,
             focus: Orbit::get_focus(a, b),
             t: Orbit::get_orbital_period(a, u),
-            target_a: None,
         }
     }
 
-    pub fn update_orbit(&mut self) {
-        if let Some(target_a) = self.target_a {
-            let coalesce_distance = (target_a - self.a).abs();
-            if coalesce_distance > COALESCE_DISTANCE {
-                match self.a < target_a {
-                    true => {
-                        self.a += UPDATE_RATE_A;
-                    }
-                    false => {
-                        self.a -= UPDATE_RATE_A;
-                    }
+    pub fn update_orbit(&mut self, target_a: f32) {
+        let coalesce_distance = (target_a - self.a).abs();
+        if coalesce_distance > COALESCE_DISTANCE {
+            match self.a < target_a {
+                true => {
+                    self.a += UPDATE_RATE_A;
+                }
+                false => {
+                    self.a -= UPDATE_RATE_A;
                 }
             }
-            self.b = Orbit::get_semiminor_axis(self.a, self.e);
-            self.focus = Orbit::get_focus(self.a, self.b);
-            self.t = Orbit::get_orbital_period(self.a, self.u);
         }
+        self.b = Orbit::get_semiminor_axis(self.a, self.e);
+        self.focus = Orbit::get_focus(self.a, self.b);
+        self.t = Orbit::get_orbital_period(self.a, self.u);
     }
 
     fn get_focus(a: f32, b: f32) -> f32 {
@@ -145,32 +144,13 @@ pub struct PlanetsPlugin;
 
 impl Plugin for PlanetsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(update_orbits_system)
-            .add_system(update_barycenters_system)
-            .add_system(update_planets_position_system);
-    }
-}
-
-fn update_orbits_system(mut query: Query<&mut Orbit>) {
-    for mut orbit in query.iter_mut() {
-        orbit.update_orbit();
-    }
-}
-
-fn update_barycenters_system(mut query: Query<(&mut PlanetBarycenter, &PlanetId, &PlanetPosition)>) {
-    let mut iter = query.iter_combinations_mut();
-    while let Some([(mut barycenter, id, position), (mut barycenter2, id2, position2)]) =
-        iter.fetch_next()
-    {
-        barycenter.update_barycenter(id2, position, position2);
-        barycenter2.update_barycenter(id, position2, position);
+        app.add_system(update_planets_position_system);
     }
 }
 
 fn update_planets_position_system(
     time: Res<Time>,
     mut query: Query<(
-        &PlanetId,
         &mut PlanetPosition,
         &PlanetBarycenter,
         &Orbit,
@@ -178,9 +158,28 @@ fn update_planets_position_system(
     )>,
 ) {
     let passed_time = time.seconds_since_startup();
-    for (id, mut planet_position, barycenter, orbit, mut transform) in query.iter_mut() {
+    for (mut planet_position, barycenter, orbit, mut transform) in query.iter_mut() {
         planet_position.update_position(barycenter, orbit, passed_time);
         transform.translation.x = planet_position.0.x;
         transform.translation.z = planet_position.0.z;
+    }
+}
+
+fn update_barycenters_system(mut query: Query<(
+    &PlanetId,
+    &MoonsIds,
+    &PlanetPosition,
+    &PlanetBarycenter,
+)>) {
+
+}
+
+pub fn udpate_planet_mesh_from_planetesimal(mesh_handle: &Handle<Mesh>, mut meshes: ResMut<Assets<Mesh>>, planetesimal: &Planetesimal) {
+    if let Some(mesh) = meshes.get_mut(mesh_handle) {
+        let next_mesh = Mesh::from(shape::Icosphere {
+            radius: planetesimal.radius as f32 * PLANET_RADIUS_SCALE_FACTOR,
+            subdivisions: 32,
+        });
+        mesh.clone_from(&next_mesh);
     }
 }

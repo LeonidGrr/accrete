@@ -1,6 +1,6 @@
 use crate::{
     planet_model::PlanetsPlugin,
-    simulation_state::{EventPlugin, SimulationState},
+    simulation_state::{EventPlugin, SimulationState}, active_event::ActiveEvent,
 };
 use accrete::events::AccreteEvent;
 use bevy::prelude::*;
@@ -15,6 +15,7 @@ pub fn run(log: Vec<AccreteEvent>) {
         .add_plugin(EventPlugin)
         .add_plugin(PlanetsPlugin)
         .insert_resource(SimulationState::new())
+        .insert_resource(ActiveEvent::default())
         .insert_resource(log)
         .add_startup_system(setup)
         // .add_system(update_planets_position_system)
