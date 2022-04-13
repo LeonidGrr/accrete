@@ -1,13 +1,13 @@
 // mod coalescence;
 mod active_event;
-mod bevy_render;
+mod rendering;
 mod consts;
 mod planet_model;
 mod simulation_state;
 
 use accrete::events::{AccreteEvent, EVENTS};
 use accrete::Accrete;
-use bevy_render::run;
+use rendering::run;
 
 fn main() {
     let mut accrete = Accrete::new(2);

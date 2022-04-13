@@ -19,8 +19,6 @@ pub fn run(log: Vec<AccreteEvent>) {
         .insert_resource(ActiveEvent::default())
         .insert_resource(log)
         .add_startup_system(setup)
-        // .add_system(update_planets_position_system)
-        // .add_system(render_planets_system)
         .run();
 }
 
@@ -35,13 +33,8 @@ fn setup(
         transform: Transform::from_xyz(0.0, 0.5, 0.0),
         ..Default::default()
     });
-    // camera
     commands.spawn_bundle(PerspectiveCameraBundle {
         transform: Transform::from_xyz(-50.0, 50.0, 50.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..Default::default()
     });
 }
-
-// fn update_coalescences_system() {}
-
-// fn update_moon_captures_system() {}

@@ -1,17 +1,13 @@
 use crate::consts::{
-    COALESCE_DISTANCE, PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR, UPDATE_RATE_A,
-    UPDATE_RATE_BARYCENTER,
+    PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR, UPDATE_RATE_A, COALESCE_DISTANCE_RATE,
 };
 use accrete::Planetesimal;
 use bevy::{math::vec3, prelude::*};
-use std::collections::HashSet;
 
 #[derive(Debug, Clone, Bundle)]
 pub struct PlanetModel {
     pub planet_id: PlanetId,
-    pub moons_ids: MoonsIds,
     pub position: PlanetPosition,
-    pub barycenter: PlanetBarycenter,
     pub orbit: Orbit,
 }
 
@@ -21,25 +17,15 @@ impl From<&Planetesimal> for PlanetModel {
         let a = *a as f32 * SCALE_FACTOR;
         let planet_id = PlanetId(id.to_owned());
         let position = PlanetPosition(vec3(-(a - 0.001), 0.0, 0.0));
-        let barycenter = PlanetBarycenter {
-            position: Vec3::ZERO,
-            id: None,
-        };
         let orbit = Orbit::new(a, *e as f32);
-        let moons_ids = MoonsIds(HashSet::new());
 
         PlanetModel {
             planet_id,
             position,
-            barycenter,
             orbit,
-            moons_ids,
         }
     }
 }
-
-#[derive(Debug, Clone, Component)]
-pub struct MoonsIds(pub HashSet<String>);
 
 #[derive(Debug, Clone, Component)]
 pub struct PlanetId(pub String);
@@ -48,46 +34,17 @@ pub struct PlanetId(pub String);
 pub struct PlanetPosition(pub Vec3);
 
 impl PlanetPosition {
-    pub fn update_position(&mut self, barycenter: &PlanetBarycenter, orbit: &Orbit, time: f64) {
+    pub fn update_position(&mut self, orbit: &Orbit, time: f64) {
         let Orbit { a, t, b, focus, .. } = orbit;
 
         let current_t = (time / (t * 360.0) as f64) * 100000.0;
 
-        self.0.x = barycenter.position.x + focus + (a * current_t.cos() as f32);
-        self.0.z = barycenter.position.z + b * current_t.sin() as f32;
+        self.0.x = focus + (a * current_t.cos() as f32);
+        self.0.z = b * current_t.sin() as f32;
 
-        // for m in moon_models.values_mut() {
-        //     m.barycenter = *position;
-        //     m.update_position(time);
-        // }
         // TODO speed up near star
     }
 }
-
-#[derive(Debug, Clone, Component)]
-pub struct PlanetBarycenter {
-    pub position: Vec3,
-    pub id: Option<String>,
-}
-
-// impl PlanetBarycenter {
-// pub fn update_barycenter(&mut self, other_id: &PlanetId, position: &PlanetPosition, other_position: &PlanetPosition) {
-//     if let Some(barycenter_id) = &self.id {
-//         if barycenter_id == &other_id.0 {
-//             let distance = other_position.0.distance(position.0);
-//             let direction = (other_position.0 - position.0).normalize();
-//             if distance > COALESCE_DISTANCE {
-//                 self.position += direction * UPDATE_RATE_BARYCENTER;
-//             }
-//         }
-//     }
-//     // match &barycenter.id, &barycenter2.id) {
-//     //     (Some(barycenter_id), None) => if &id2.0 == barycenter_id { barycenter.position = position2.0 },
-//     //     (None, Some(barycenter_id)) => if &id.0 == barycenter_id { barycenter2.position = position.0 },
-//     //     _ => ()
-//     // }
-// }
-// }
 
 #[derive(Debug, Clone, Component)]
 pub struct Orbit {
@@ -114,8 +71,7 @@ impl Orbit {
     }
 
     pub fn update_orbit(&mut self, target_a: f32) {
-        let coalesce_distance = (target_a - self.a).abs();
-        if coalesce_distance > COALESCE_DISTANCE {
+        if target_a < (self.a * COALESCE_DISTANCE_RATE) {
             match self.a < target_a {
                 true => {
                     self.a += UPDATE_RATE_A;
@@ -147,7 +103,8 @@ pub struct PlanetsPlugin;
 
 impl Plugin for PlanetsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(update_planets_position_system);
+        app
+        .add_system(update_planets_position_system);
     }
 }
 
@@ -155,22 +112,16 @@ fn update_planets_position_system(
     time: Res<Time>,
     mut query: Query<(
         &mut PlanetPosition,
-        &PlanetBarycenter,
         &Orbit,
         &mut Transform,
     )>,
 ) {
     let passed_time = time.seconds_since_startup();
-    for (mut planet_position, barycenter, orbit, mut transform) in query.iter_mut() {
-        planet_position.update_position(barycenter, orbit, passed_time);
+    for (mut planet_position, orbit, mut transform) in query.iter_mut() {
+        planet_position.update_position(orbit, passed_time);
         transform.translation.x = planet_position.0.x;
         transform.translation.z = planet_position.0.z;
     }
-}
-
-fn update_barycenters_system(
-    mut query: Query<(&PlanetId, &MoonsIds, &PlanetPosition, &PlanetBarycenter)>,
-) {
 }
 
 pub fn udpate_planet_mesh_from_planetesimal(
