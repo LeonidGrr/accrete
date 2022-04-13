@@ -1,8 +1,8 @@
 // mod coalescence;
 mod active_event;
-mod rendering;
 mod consts;
 mod planet_model;
+mod rendering;
 mod simulation_state;
 
 use accrete::events::{AccreteEvent, EVENTS};

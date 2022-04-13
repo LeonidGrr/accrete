@@ -1,5 +1,5 @@
 use crate::consts::{
-    PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR, UPDATE_RATE_A, COALESCE_DISTANCE_RATE,
+    COALESCE_DISTANCE_RATE, PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR, UPDATE_RATE_A,
 };
 use accrete::Planetesimal;
 use bevy::{math::vec3, prelude::*};
@@ -103,18 +103,13 @@ pub struct PlanetsPlugin;
 
 impl Plugin for PlanetsPlugin {
     fn build(&self, app: &mut App) {
-        app
-        .add_system(update_planets_position_system);
+        app.add_system(update_planets_position_system);
     }
 }
 
 fn update_planets_position_system(
     time: Res<Time>,
-    mut query: Query<(
-        &mut PlanetPosition,
-        &Orbit,
-        &mut Transform,
-    )>,
+    mut query: Query<(&mut PlanetPosition, &Orbit, &mut Transform)>,
 ) {
     let passed_time = time.seconds_since_startup();
     for (mut planet_position, orbit, mut transform) in query.iter_mut() {

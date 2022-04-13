@@ -1,7 +1,6 @@
-use crate::consts::{PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR, COALESCE_DISTANCE_RATE};
+use crate::consts::{COALESCE_DISTANCE_RATE, PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR};
 use crate::planet_model::{
-    udpate_planet_mesh_from_planetesimal, Orbit, PlanetId, PlanetModel,
-    PlanetPosition,
+    udpate_planet_mesh_from_planetesimal, Orbit, PlanetId, PlanetModel, PlanetPosition,
 };
 use crate::simulation_state::SimulationState;
 use accrete::events::*;
@@ -63,10 +62,9 @@ impl ActiveEvent {
                 AccreteEvent::PlanetesimalCreated(_, planet) => {
                     let passed_time = time.seconds_since_startup();
                     let mut planet_model = PlanetModel::from(planet);
-                    planet_model.position.update_position(
-                        &planet_model.orbit,
-                        passed_time,
-                    );
+                    planet_model
+                        .position
+                        .update_position(&planet_model.orbit, passed_time);
                     state.planets.insert(planet.id.to_owned(), planet.clone());
 
                     commands
@@ -93,8 +91,8 @@ impl ActiveEvent {
                         }
                     }
                 }
-                AccreteEvent::PlanetesimalsCoalesced(_, target_id, source_id, resulting_planet) |
-                AccreteEvent::PlanetesimalCaptureMoon(
+                AccreteEvent::PlanetesimalsCoalesced(_, target_id, source_id, resulting_planet)
+                | AccreteEvent::PlanetesimalCaptureMoon(
                     _,
                     target_id,
                     source_id,
@@ -149,7 +147,8 @@ impl ActiveEvent {
                         let second_is_source = &id2.0 == source_id && &id.0 == target_id;
                         if first_is_source || second_is_source {
                             let distance = position.0.distance(position2.0);
-                            let minimal_distance = (orbit.a - orbit2.a).abs() * COALESCE_DISTANCE_RATE;
+                            let minimal_distance =
+                                (orbit.a - orbit2.a).abs() * COALESCE_DISTANCE_RATE;
 
                             if distance <= minimal_distance {
                                 if first_is_source {
@@ -187,7 +186,8 @@ impl ActiveEvent {
                         if first_is_source || second_is_source {
                             let distance = position.0.distance(position2.0);
                             // let resulting_moon = resulting_planet.moons.iter().find(|m| &m.id == source_id).expect("Failed to dinf resulting moon");
-                            let minimal_distance = (orbit.a - orbit2.a).abs() * COALESCE_DISTANCE_RATE;
+                            let minimal_distance =
+                                (orbit.a - orbit2.a).abs() * COALESCE_DISTANCE_RATE;
 
                             if distance <= minimal_distance {
                                 if first_is_source {
@@ -242,7 +242,9 @@ pub fn active_event_system(
             materials,
             query,
         ),
-        ActiveEventStatus::Approached => ActiveEvent::approached(commands, active_event, state, meshes, query),
+        ActiveEventStatus::Approached => {
+            ActiveEvent::approached(commands, active_event, state, meshes, query)
+        }
         ActiveEventStatus::Executed => (),
         ActiveEventStatus::Done => (),
     }
