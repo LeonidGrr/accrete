@@ -100,7 +100,7 @@ impl ActiveEvent {
                 ) => {
                     for (_, planet_id, _, mut orbit, _) in query.iter_mut() {
                         if target_id == &planet_id.0 || source_id == &planet_id.0 {
-                            orbit.update_orbit(resulting_planet.a as f32 * SCALE_FACTOR);
+                            orbit.update_orbit(resulting_planet.a as f32 * SCALE_FACTOR, false);
                             if (resulting_planet.a as f32) < (orbit.a * COALESCE_DISTANCE_RATE) {
                                 resulting_status = ActiveEventStatus::Approached;
                             }
@@ -112,7 +112,7 @@ impl ActiveEvent {
         }
 
         if let Some((mesh_handle, planetesimal)) = mesh_to_update {
-            udpate_planet_mesh_from_planetesimal(mesh_handle, meshes, planetesimal);
+            udpate_planet_mesh_from_planetesimal(mesh_handle, &mut meshes, planetesimal);
         }
 
         active_event.status = resulting_status;
@@ -132,34 +132,35 @@ impl ActiveEvent {
         )>,
     ) {
         let mut mesh_to_remove = None;
-        let mut mesh_to_update = None;
+        let mut meshes_to_update = vec![];
         let mut resulting_status = active_event.status.clone();
 
         if let Some(event) = &active_event.event {
             match event {
                 AccreteEvent::PlanetesimalsCoalesced(_, target_id, source_id, resulting_planet) => {
                     let mut iter = query.iter_combinations_mut();
-                    while let Some(
-                        [(_, id, position, orbit, mesh_handle), (_, id2, position2, orbit2, mesh_handle2)],
-                    ) = iter.fetch_next()
-                    {
-                        let first_is_source = &id.0 == source_id && &id2.0 == target_id;
-                        let second_is_source = &id2.0 == source_id && &id.0 == target_id;
-                        if first_is_source || second_is_source {
-                            let distance = position.0.distance(position2.0);
+                    while let Some([first, second]) = iter.fetch_next() {
+                        let moon_and_planet = match (&first.1 .0, &second.1 .0) {
+                            (id1, id2) if id1 == source_id && id2 == target_id => {
+                                Some((first, second))
+                            }
+                            (id1, id2) if id1 == source_id && id2 == target_id => {
+                                Some((second, first))
+                            }
+                            _ => None,
+                        };
+                        if let Some((
+                            (_, _, moon_position, moon_orbit, moon_mesh_handle),
+                            (_, _, planet_position, planet_orbit, planet_mesh_handle),
+                        )) = moon_and_planet
+                        {
+                            let distance = moon_position.0.distance(planet_position.0);
                             let minimal_distance =
-                                (orbit.a - orbit2.a).abs() * COALESCE_DISTANCE_RATE;
+                                (moon_orbit.a - planet_orbit.a).abs() * COALESCE_DISTANCE_RATE;
 
                             if distance <= minimal_distance {
-                                if first_is_source {
-                                    mesh_to_remove = Some(mesh_handle);
-                                    mesh_to_update = Some((mesh_handle2, resulting_planet));
-                                }
-
-                                if second_is_source {
-                                    mesh_to_remove = Some(mesh_handle2);
-                                    mesh_to_update = Some((mesh_handle, resulting_planet));
-                                }
+                                mesh_to_remove = Some(moon_mesh_handle);
+                                meshes_to_update.push((planet_mesh_handle, resulting_planet));
 
                                 state.planets.remove(source_id);
                                 state
@@ -177,27 +178,41 @@ impl ActiveEvent {
                     resulting_planet,
                 ) => {
                     let mut iter = query.iter_combinations_mut();
-                    while let Some(
-                        [(entity, id, position, orbit, _), (entity2, id2, position2, orbit2, _)],
-                    ) = iter.fetch_next()
-                    {
-                        let first_is_source = &id.0 == source_id && &id2.0 == target_id;
-                        let second_is_source = &id2.0 == source_id && &id.0 == target_id;
-                        if first_is_source || second_is_source {
-                            let distance = position.0.distance(position2.0);
-                            // let resulting_moon = resulting_planet.moons.iter().find(|m| &m.id == source_id).expect("Failed to dinf resulting moon");
-                            let minimal_distance =
-                                (orbit.a - orbit2.a).abs() * COALESCE_DISTANCE_RATE;
+                    while let Some([first, second]) = iter.fetch_next() {
+                        let moon_and_planet = match (&first.1 .0, &second.1 .0) {
+                            (id1, id2) if id1 == source_id && id2 == target_id => {
+                                Some((first, second))
+                            }
+                            (id1, id2) if id2 == source_id && id1 == target_id => {
+                                Some((second, first))
+                            }
+                            _ => None,
+                        };
 
-                            if distance <= minimal_distance {
-                                if first_is_source {
-                                    commands.entity(entity2).add_child(entity);
-                                    // moons_ids2.0.insert(source_id.to_string());
-                                }
-                                if second_is_source {
-                                    commands.entity(entity).add_child(entity2);
-                                    // moons_ids.0.insert(source_id.to_string());
-                                }
+                        if let Some((
+                            (moon_entity, _, moon_position, mut moon_orbit, moon_mesh_handle),
+                            (planet_entity, _, planet_position, _, planet_mesh_handle),
+                        )) = moon_and_planet
+                        {
+                            let distance = moon_position.0.distance(planet_position.0);
+                            let resulting_moon = resulting_planet
+                                .moons
+                                .iter()
+                                .find(|m| &m.id == source_id)
+                                .expect("Failed to find resulting moon");
+                            let resulting_moon_a = resulting_moon.a as f32 * SCALE_FACTOR;
+
+                            if distance <= moon_orbit.a * COALESCE_DISTANCE_RATE {
+                                moon_orbit.update_orbit(distance, true);
+                                commands.entity(planet_entity).add_child(moon_entity);
+                            }
+
+                            if moon_orbit.a > resulting_moon_a {
+                                moon_orbit.update_orbit(resulting_moon_a, false);
+                            } else {
+                                meshes_to_update.push((moon_mesh_handle, resulting_moon));
+                                meshes_to_update.push((planet_mesh_handle, resulting_planet));
+                                resulting_status = ActiveEventStatus::Executed;
                             }
                         }
                     }
@@ -209,9 +224,11 @@ impl ActiveEvent {
             meshes.remove(mesh_handle);
         }
 
-        if let Some((mesh_handle, planetesimal)) = mesh_to_update {
-            udpate_planet_mesh_from_planetesimal(mesh_handle, meshes, planetesimal);
-        }
+        meshes_to_update
+            .iter()
+            .for_each(|(mesh_handle, planetesimal)| {
+                udpate_planet_mesh_from_planetesimal(mesh_handle, &mut meshes, planetesimal);
+            });
 
         active_event.status = resulting_status;
     }

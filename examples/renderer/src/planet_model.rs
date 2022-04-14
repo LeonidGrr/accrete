@@ -70,8 +70,10 @@ impl Orbit {
         }
     }
 
-    pub fn update_orbit(&mut self, target_a: f32) {
-        if target_a < (self.a * COALESCE_DISTANCE_RATE) {
+    pub fn update_orbit(&mut self, target_a: f32, immediate: bool) {
+        if immediate || (target_a - self.a).abs() < COALESCE_DISTANCE_RATE {
+            self.a = target_a;
+        } else {
             match self.a < target_a {
                 true => {
                     self.a += UPDATE_RATE_A;
@@ -121,7 +123,7 @@ fn update_planets_position_system(
 
 pub fn udpate_planet_mesh_from_planetesimal(
     mesh_handle: &Handle<Mesh>,
-    mut meshes: ResMut<Assets<Mesh>>,
+    mut meshes: &mut ResMut<Assets<Mesh>>,
     planetesimal: &Planetesimal,
 ) {
     if let Some(mesh) = meshes.get_mut(mesh_handle) {
