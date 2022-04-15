@@ -123,7 +123,7 @@ fn update_planets_position_system(
 
 pub fn udpate_planet_mesh_from_planetesimal(
     mesh_handle: &Handle<Mesh>,
-    mut meshes: &mut ResMut<Assets<Mesh>>,
+    meshes: &mut ResMut<Assets<Mesh>>,
     planetesimal: &Planetesimal,
 ) {
     if let Some(mesh) = meshes.get_mut(mesh_handle) {

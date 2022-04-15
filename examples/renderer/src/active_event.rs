@@ -40,9 +40,9 @@ impl From<&AccreteEvent> for ActiveEvent {
 
 impl ActiveEvent {
     fn created(
+        &mut self,
         mut commands: Commands,
         time: Res<Time>,
-        mut active_event: ResMut<ActiveEvent>,
         mut state: ResMut<SimulationState>,
         mut meshes: ResMut<Assets<Mesh>>,
         mut materials: ResMut<Assets<StandardMaterial>>,
@@ -54,10 +54,10 @@ impl ActiveEvent {
             &Handle<Mesh>,
         )>,
     ) {
-        let mut resulting_status = active_event.status.clone();
+        let mut resulting_status = self.status.clone();
         let mut mesh_to_update = None;
 
-        if let Some(event) = &active_event.event {
+        if let Some(event) = &self.event {
             match event {
                 AccreteEvent::PlanetesimalCreated(_, planet) => {
                     let passed_time = time.seconds_since_startup();
@@ -80,14 +80,14 @@ impl ActiveEvent {
                         })
                         .insert_bundle(planet_model);
 
-                    resulting_status = ActiveEventStatus::Done;
+                    resulting_status = ActiveEventStatus::Executed;
                 }
                 AccreteEvent::PlanetesimalUpdated(_, planet) => {
                     for (_, planet_id, _, _, mesh_handle) in query.iter() {
                         if planet_id.0 == planet.id {
                             mesh_to_update = Some((mesh_handle, planet));
                             state.planets.insert(planet.id.to_owned(), planet.clone());
-                            resulting_status = ActiveEventStatus::Done;
+                            resulting_status = ActiveEventStatus::Executed;
                         }
                     }
                 }
@@ -98,16 +98,41 @@ impl ActiveEvent {
                     source_id,
                     resulting_planet,
                 ) => {
-                    for (_, planet_id, _, mut orbit, _) in query.iter_mut() {
-                        if target_id == &planet_id.0 || source_id == &planet_id.0 {
-                            orbit.update_orbit(resulting_planet.a as f32 * SCALE_FACTOR, false);
-                            if (resulting_planet.a as f32) < (orbit.a * COALESCE_DISTANCE_RATE) {
+                    state.cache_planets(&mut query, source_id, target_id);
+
+                    if let Some((moon_entity, planet_entity)) = state.cached_planets {
+                        println!("got planets from cache");
+                        {
+                            let (_, _, _, mut moon_orbit, _) = query
+                                .get_mut(moon_entity)
+                                .expect("Failed to get moon components by entity");
+                            moon_orbit
+                                .update_orbit(resulting_planet.a as f32 * SCALE_FACTOR, false);
+                        }
+                        {
+                            let (_, _, _, mut planet_orbit, _) = query
+                                .get_mut(planet_entity)
+                                .expect("Failed to get moon components by entity");
+                            planet_orbit
+                                .update_orbit(resulting_planet.a as f32 * SCALE_FACTOR, false);
+                        }
+                        {
+                            let (_, _, _, moon_orbit, _) = query
+                                .get(moon_entity)
+                                .expect("Failed to get moon components by entity");
+                            let (_, _, _, planet_orbit, _) = query
+                                .get(planet_entity)
+                                .expect("Failed to get moon components by entity");
+                            if (resulting_planet.a as f32) < (moon_orbit.a * COALESCE_DISTANCE_RATE)
+                                && (resulting_planet.a as f32)
+                                    < (planet_orbit.a * COALESCE_DISTANCE_RATE)
+                            {
                                 resulting_status = ActiveEventStatus::Approached;
                             }
                         }
                     }
                 }
-                _ => resulting_status = ActiveEventStatus::Done,
+                _ => resulting_status = ActiveEventStatus::Executed,
             }
         }
 
@@ -115,12 +140,12 @@ impl ActiveEvent {
             udpate_planet_mesh_from_planetesimal(mesh_handle, &mut meshes, planetesimal);
         }
 
-        active_event.status = resulting_status;
+        self.status = resulting_status;
     }
 
     fn approached(
+        &mut self,
         mut commands: Commands,
-        mut active_event: ResMut<ActiveEvent>,
         mut state: ResMut<SimulationState>,
         mut meshes: ResMut<Assets<Mesh>>,
         mut query: Query<(
@@ -133,87 +158,64 @@ impl ActiveEvent {
     ) {
         let mut mesh_to_remove = None;
         let mut meshes_to_update = vec![];
-        let mut resulting_status = active_event.status.clone();
+        let mut resulting_status = self.status.clone();
 
-        if let Some(event) = &active_event.event {
+        if let Some(event) = &self.event {
             match event {
-                AccreteEvent::PlanetesimalsCoalesced(_, target_id, source_id, resulting_planet) => {
-                    let mut iter = query.iter_combinations_mut();
-                    while let Some([first, second]) = iter.fetch_next() {
-                        let moon_and_planet = match (&first.1 .0, &second.1 .0) {
-                            (id1, id2) if id1 == source_id && id2 == target_id => {
-                                Some((first, second))
-                            }
-                            (id1, id2) if id1 == source_id && id2 == target_id => {
-                                Some((second, first))
-                            }
-                            _ => None,
-                        };
-                        if let Some((
-                            (_, _, moon_position, moon_orbit, moon_mesh_handle),
-                            (_, _, planet_position, planet_orbit, planet_mesh_handle),
-                        )) = moon_and_planet
-                        {
-                            let distance = moon_position.0.distance(planet_position.0);
-                            let minimal_distance =
-                                (moon_orbit.a - planet_orbit.a).abs() * COALESCE_DISTANCE_RATE;
+                AccreteEvent::PlanetesimalsCoalesced(_, _, _, resulting_planet) => {
+                    if let Some((moon_entity, planet_entity)) = state.cached_planets {
+                        let (_, moon_id, moon_position, moon_orbit, moon_mesh_handle) = query
+                            .get(moon_entity)
+                            .expect("Failed to get moon components by entity");
+                        let (_, planet_id, planet_position, planet_orbit, planet_mesh_handle) =
+                            query
+                                .get(planet_entity)
+                                .expect("Failed to get moon components by entity");
+                        let distance = moon_position.0.distance(planet_position.0);
+                        let minimal_distance =
+                            (moon_orbit.a - planet_orbit.a).abs() * COALESCE_DISTANCE_RATE;
 
-                            if distance <= minimal_distance {
-                                mesh_to_remove = Some(moon_mesh_handle);
-                                meshes_to_update.push((planet_mesh_handle, resulting_planet));
+                        if distance <= minimal_distance {
+                            mesh_to_remove = Some(moon_mesh_handle);
+                            meshes_to_update.push((planet_mesh_handle, resulting_planet));
 
-                                state.planets.remove(source_id);
-                                state
-                                    .planets
-                                    .insert(target_id.to_string(), resulting_planet.clone());
-                                resulting_status = ActiveEventStatus::Executed;
-                            }
+                            state.planets.remove(&moon_id.0);
+                            state
+                                .planets
+                                .insert(planet_id.0.to_string(), resulting_planet.clone());
+                            resulting_status = ActiveEventStatus::Executed;
                         }
                     }
                 }
-                AccreteEvent::PlanetesimalCaptureMoon(
-                    _,
-                    target_id,
-                    source_id,
-                    resulting_planet,
-                ) => {
-                    let mut iter = query.iter_combinations_mut();
-                    while let Some([first, second]) = iter.fetch_next() {
-                        let moon_and_planet = match (&first.1 .0, &second.1 .0) {
-                            (id1, id2) if id1 == source_id && id2 == target_id => {
-                                Some((first, second))
-                            }
-                            (id1, id2) if id2 == source_id && id1 == target_id => {
-                                Some((second, first))
-                            }
-                            _ => None,
-                        };
+                AccreteEvent::PlanetesimalCaptureMoon(_, _, _, resulting_planet) => {
+                    if let Some((moon_entity, planet_entity)) = state.cached_planets {
+                        let (planet_entity, _, planet_position, _, planet_mesh_handle) = query
+                            .get(planet_entity)
+                            .expect("Failed to get moon components by entity");
+                        let (moon_entity, moon_id, moon_position, mut moon_orbit, moon_mesh_handle) =
+                            query
+                                .get_mut(moon_entity)
+                                .expect("Failed to get moon components by entity");
 
-                        if let Some((
-                            (moon_entity, _, moon_position, mut moon_orbit, moon_mesh_handle),
-                            (planet_entity, _, planet_position, _, planet_mesh_handle),
-                        )) = moon_and_planet
-                        {
-                            let distance = moon_position.0.distance(planet_position.0);
-                            let resulting_moon = resulting_planet
-                                .moons
-                                .iter()
-                                .find(|m| &m.id == source_id)
-                                .expect("Failed to find resulting moon");
-                            let resulting_moon_a = resulting_moon.a as f32 * SCALE_FACTOR;
+                        let distance = moon_position.0.distance(planet_position.0);
+                        let resulting_moon = resulting_planet
+                            .moons
+                            .iter()
+                            .find(|m| m.id == moon_id.0)
+                            .expect("Failed to find resulting moon");
+                        let resulting_moon_a = resulting_moon.a as f32 * SCALE_FACTOR;
 
-                            if distance <= moon_orbit.a * COALESCE_DISTANCE_RATE {
-                                moon_orbit.update_orbit(distance, true);
-                                commands.entity(planet_entity).add_child(moon_entity);
-                            }
+                        if distance <= moon_orbit.a * COALESCE_DISTANCE_RATE {
+                            moon_orbit.update_orbit(distance, true);
+                            commands.entity(planet_entity).add_child(moon_entity);
+                        }
 
-                            if moon_orbit.a > resulting_moon_a {
-                                moon_orbit.update_orbit(resulting_moon_a, false);
-                            } else {
-                                meshes_to_update.push((moon_mesh_handle, resulting_moon));
-                                meshes_to_update.push((planet_mesh_handle, resulting_planet));
-                                resulting_status = ActiveEventStatus::Executed;
-                            }
+                        if moon_orbit.a > resulting_moon_a {
+                            moon_orbit.update_orbit(resulting_moon_a, false);
+                        } else {
+                            meshes_to_update.push((moon_mesh_handle, resulting_moon));
+                            meshes_to_update.push((planet_mesh_handle, resulting_planet));
+                            resulting_status = ActiveEventStatus::Executed;
                         }
                     }
                 }
@@ -230,10 +232,25 @@ impl ActiveEvent {
                 udpate_planet_mesh_from_planetesimal(mesh_handle, &mut meshes, planetesimal);
             });
 
-        active_event.status = resulting_status;
+        self.status = resulting_status;
+    }
+
+    fn executed(&mut self, mut state: ResMut<SimulationState>) {
+        if let Some(event) = &self.event {
+            match event {
+                AccreteEvent::PlanetesimalsCoalesced(_, _, _, _)
+                | AccreteEvent::PlanetesimalCaptureMoon(_, _, _, _) => {
+                    println!("Clear cache");
+                    state.clear_cahed_planets();
+                },
+                _ => (),
+            }
+        }
+        self.status = ActiveEventStatus::Done;
     }
 }
 
+#[allow(unused_mut)]
 pub fn active_event_system(
     mut commands: Commands,
     time: Res<Time>,
@@ -249,20 +266,12 @@ pub fn active_event_system(
         &Handle<Mesh>,
     )>,
 ) {
-    match &active_event.status.clone() {
-        ActiveEventStatus::Created => ActiveEvent::created(
-            commands,
-            time,
-            active_event,
-            state,
-            meshes,
-            materials,
-            query,
-        ),
-        ActiveEventStatus::Approached => {
-            ActiveEvent::approached(commands, active_event, state, meshes, query)
+    match &active_event.status {
+        ActiveEventStatus::Created => {
+            active_event.created(commands, time, state, meshes, materials, query)
         }
-        ActiveEventStatus::Executed => (),
+        ActiveEventStatus::Approached => active_event.approached(commands, state, meshes, query),
+        ActiveEventStatus::Executed => active_event.executed(state),
         ActiveEventStatus::Done => (),
     }
 }

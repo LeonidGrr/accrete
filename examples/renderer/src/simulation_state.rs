@@ -1,6 +1,6 @@
 use crate::active_event::{active_event_system, ActiveEvent, ActiveEventStatus};
 use crate::consts::EVENT_TIME_SCALE;
-use crate::planet_model::{PlanetId, PlanetModel};
+use crate::planet_model::{Orbit, PlanetId, PlanetPosition};
 use accrete::{events::AccreteEvent, Planetesimal};
 use bevy::prelude::*;
 use std::collections::HashMap;
@@ -8,10 +8,11 @@ use std::collections::HashMap;
 #[derive(Component)]
 struct EventText;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct SimulationState {
     pub event_idx: usize,
     pub planets: HashMap<String, Planetesimal>,
+    pub cached_planets: Option<(Entity, Entity)>,
 }
 
 impl SimulationState {
@@ -19,6 +20,7 @@ impl SimulationState {
         SimulationState {
             event_idx: 0,
             planets: HashMap::new(),
+            cached_planets: None,
         }
     }
 
@@ -33,6 +35,37 @@ impl SimulationState {
             && passed_time > (event_idx as f64 * EVENT_TIME_SCALE)
             && active_event.status == ActiveEventStatus::Done
     }
+
+    pub fn cache_planets(
+        &mut self,
+        query: &mut Query<(
+            Entity,
+            &PlanetId,
+            &PlanetPosition,
+            &mut Orbit,
+            &Handle<Mesh>,
+        )>,
+        source_id: &str,
+        target_id: &str,
+    ) {
+        println!("got cache1, {:?} ", self.cached_planets);
+        if self.cached_planets.is_none() {
+            let mut iter = query.iter_combinations_mut();
+            while let Some([(entity1, id1, _, _, _), (entity2, id2, _, _, _)]) = iter.fetch_next() {
+                let moon_and_planet = match (&id1.0, &id2.0) {
+                    (id1, id2) if id1 == source_id && id2 == target_id => Some((entity1, entity2)),
+                    (id1, id2) if id2 == source_id && id1 == target_id => Some((entity2, entity1)),
+                    _ => None,
+                };
+                println!("got cache2, {:?} ", moon_and_planet);
+                self.cached_planets = moon_and_planet;
+            }
+        }
+    }
+
+    pub fn clear_cahed_planets(&mut self) {
+        self.cached_planets = None;
+    }
 }
 
 fn event_handler_system(
@@ -44,7 +77,9 @@ fn event_handler_system(
 ) {
     let passed_time = time.seconds_since_startup();
     let current_event = &log[state.event_idx];
-    if state.is_open(&active_event, passed_time, log.len()) {
+    let event_lock = matches!(current_event, AccreteEvent::PostAccretionStarted(_));
+
+    if !event_lock && state.is_open(&active_event, passed_time, log.len()) {
         commands.insert_resource(ActiveEvent::from(current_event));
         state.event_idx += 1;
     }

@@ -12,13 +12,13 @@ pub fn run(log: Vec<AccreteEvent>) {
             title: "Accrete simulation".to_string(),
             ..Default::default()
         })
-        .add_plugins(DefaultPlugins)
-        .add_plugin(PlanetsPlugin)
-        .add_plugin(EventPlugin)
         .insert_resource(SimulationState::new())
         .insert_resource(ActiveEvent::default())
         .insert_resource(log)
         .add_startup_system(setup)
+        .add_plugins(DefaultPlugins)
+        .add_plugin(EventPlugin)
+        .add_plugin(PlanetsPlugin)
         .run();
 }
 
