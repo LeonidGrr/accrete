@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 accrete = { path = "../.." }
-bevy = "0.6"
+bevy = "0.7"
 
 [profile.dev.package.'*']
 opt-level = 3

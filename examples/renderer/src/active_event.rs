@@ -91,7 +91,8 @@ impl ActiveEvent {
                         }
                     }
                 }
-                AccreteEvent::PlanetesimalsCoalesced(_, target_id, source_id, resulting_planet)
+                AccreteEvent::MoonsCoalesced(_, target_id, source_id, resulting_planet)
+                | AccreteEvent::PlanetesimalsCoalesced(_, target_id, source_id, resulting_planet)
                 | AccreteEvent::PlanetesimalCaptureMoon(
                     _,
                     target_id,
@@ -101,34 +102,21 @@ impl ActiveEvent {
                     state.cache_planets(&mut query, source_id, target_id);
 
                     if let Some((moon_entity, planet_entity)) = state.cached_planets {
-                        println!("got planets from cache");
+                        let [moon, planet] = query
+                            .get_many_mut([moon_entity, planet_entity])
+                            .expect("Failed to retrieve cahed planets by enitities");
+
+                        let (_, _, _, mut moon_orbit, _) = moon;
+                        moon_orbit.update_orbit(resulting_planet.a as f32 * SCALE_FACTOR, false);
+
+                        let (_, _, _, mut planet_orbit, _) = planet;
+                        planet_orbit.update_orbit(resulting_planet.a as f32 * SCALE_FACTOR, false);
+
+                        if (resulting_planet.a as f32) < (moon_orbit.a * COALESCE_DISTANCE_RATE)
+                            && (resulting_planet.a as f32)
+                                < (planet_orbit.a * COALESCE_DISTANCE_RATE)
                         {
-                            let (_, _, _, mut moon_orbit, _) = query
-                                .get_mut(moon_entity)
-                                .expect("Failed to get moon components by entity");
-                            moon_orbit
-                                .update_orbit(resulting_planet.a as f32 * SCALE_FACTOR, false);
-                        }
-                        {
-                            let (_, _, _, mut planet_orbit, _) = query
-                                .get_mut(planet_entity)
-                                .expect("Failed to get moon components by entity");
-                            planet_orbit
-                                .update_orbit(resulting_planet.a as f32 * SCALE_FACTOR, false);
-                        }
-                        {
-                            let (_, _, _, moon_orbit, _) = query
-                                .get(moon_entity)
-                                .expect("Failed to get moon components by entity");
-                            let (_, _, _, planet_orbit, _) = query
-                                .get(planet_entity)
-                                .expect("Failed to get moon components by entity");
-                            if (resulting_planet.a as f32) < (moon_orbit.a * COALESCE_DISTANCE_RATE)
-                                && (resulting_planet.a as f32)
-                                    < (planet_orbit.a * COALESCE_DISTANCE_RATE)
-                            {
-                                resulting_status = ActiveEventStatus::Approached;
-                            }
+                            resulting_status = ActiveEventStatus::Approached;
                         }
                     }
                 }
@@ -162,15 +150,16 @@ impl ActiveEvent {
 
         if let Some(event) = &self.event {
             match event {
-                AccreteEvent::PlanetesimalsCoalesced(_, _, _, resulting_planet) => {
+                AccreteEvent::MoonsCoalesced(_, _, _, resulting_planet)
+                | AccreteEvent::PlanetesimalsCoalesced(_, _, _, resulting_planet) => {
                     if let Some((moon_entity, planet_entity)) = state.cached_planets {
-                        let (_, moon_id, moon_position, moon_orbit, moon_mesh_handle) = query
-                            .get(moon_entity)
-                            .expect("Failed to get moon components by entity");
+                        let [moon, planet] = query
+                            .get_many([moon_entity, planet_entity])
+                            .expect("Failed to retrieve cahed planets by enitities");
+                        let (_, moon_id, moon_position, moon_orbit, moon_mesh_handle) = moon;
                         let (_, planet_id, planet_position, planet_orbit, planet_mesh_handle) =
-                            query
-                                .get(planet_entity)
-                                .expect("Failed to get moon components by entity");
+                            planet;
+
                         let distance = moon_position.0.distance(planet_position.0);
                         let minimal_distance =
                             (moon_orbit.a - planet_orbit.a).abs() * COALESCE_DISTANCE_RATE;
@@ -189,13 +178,13 @@ impl ActiveEvent {
                 }
                 AccreteEvent::PlanetesimalCaptureMoon(_, _, _, resulting_planet) => {
                     if let Some((moon_entity, planet_entity)) = state.cached_planets {
-                        let (planet_entity, _, planet_position, _, planet_mesh_handle) = query
-                            .get(planet_entity)
-                            .expect("Failed to get moon components by entity");
+                        let [moon, planet] = query
+                            .get_many_mut([moon_entity, planet_entity])
+                            .expect("Failed to retrieve cahed planets by enitities");
+
                         let (moon_entity, moon_id, moon_position, mut moon_orbit, moon_mesh_handle) =
-                            query
-                                .get_mut(moon_entity)
-                                .expect("Failed to get moon components by entity");
+                            moon;
+                        let (planet_entity, _, planet_position, _, planet_mesh_handle) = planet;
 
                         let distance = moon_position.0.distance(planet_position.0);
                         let resulting_moon = resulting_planet
@@ -238,11 +227,11 @@ impl ActiveEvent {
     fn executed(&mut self, mut state: ResMut<SimulationState>) {
         if let Some(event) = &self.event {
             match event {
-                AccreteEvent::PlanetesimalsCoalesced(_, _, _, _)
+                AccreteEvent::MoonsCoalesced(_, _, _, _)
+                | AccreteEvent::PlanetesimalsCoalesced(_, _, _, _)
                 | AccreteEvent::PlanetesimalCaptureMoon(_, _, _, _) => {
-                    println!("Clear cache");
                     state.clear_cahed_planets();
-                },
+                }
                 _ => (),
             }
         }

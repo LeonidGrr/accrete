@@ -1,8 +1,9 @@
 use crate::consts::{
-    COALESCE_DISTANCE_RATE, PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR, UPDATE_RATE_A,
+    COALESCE_DISTANCE_RATE, PLANET_PERIOD_FACTOR, PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR,
+    UPDATE_RATE_A,
 };
 use accrete::Planetesimal;
-use bevy::{math::vec3, prelude::*};
+use bevy::{math::vec3, prelude::*, tasks::TaskPool};
 
 #[derive(Debug, Clone, Bundle)]
 pub struct PlanetModel {
@@ -37,7 +38,7 @@ impl PlanetPosition {
     pub fn update_position(&mut self, orbit: &Orbit, time: f64) {
         let Orbit { a, t, b, focus, .. } = orbit;
 
-        let current_t = (time / (t * 360.0) as f64) * 100000.0;
+        let current_t = (time / (t * 360.0) as f64) * PLANET_PERIOD_FACTOR;
 
         self.0.x = focus + (a * current_t.cos() as f32);
         self.0.z = b * current_t.sin() as f32;
@@ -71,15 +72,17 @@ impl Orbit {
     }
 
     pub fn update_orbit(&mut self, target_a: f32, immediate: bool) {
-        if immediate || (target_a - self.a).abs() < COALESCE_DISTANCE_RATE {
+        let distance = (target_a - self.a).abs();
+        if immediate || distance < COALESCE_DISTANCE_RATE {
             self.a = target_a;
         } else {
+            let modifier = UPDATE_RATE_A * distance.powf(2.0);
             match self.a < target_a {
                 true => {
-                    self.a += UPDATE_RATE_A;
+                    self.a += modifier;
                 }
                 false => {
-                    self.a -= UPDATE_RATE_A;
+                    self.a -= modifier;
                 }
             }
         }
@@ -114,11 +117,16 @@ fn update_planets_position_system(
     mut query: Query<(&mut PlanetPosition, &Orbit, &mut Transform)>,
 ) {
     let passed_time = time.seconds_since_startup();
-    for (mut planet_position, orbit, mut transform) in query.iter_mut() {
-        planet_position.update_position(orbit, passed_time);
-        transform.translation.x = planet_position.0.x;
-        transform.translation.z = planet_position.0.z;
-    }
+    let taskpool = TaskPool::new();
+    query.par_for_each_mut(
+        &taskpool,
+        16,
+        |(mut planet_position, orbit, mut transform)| {
+            planet_position.update_position(orbit, passed_time);
+            transform.translation.x = planet_position.0.x;
+            transform.translation.z = planet_position.0.z;
+        },
+    );
 }
 
 pub fn udpate_planet_mesh_from_planetesimal(

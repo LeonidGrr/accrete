@@ -48,7 +48,6 @@ impl SimulationState {
         source_id: &str,
         target_id: &str,
     ) {
-        println!("got cache1, {:?} ", self.cached_planets);
         if self.cached_planets.is_none() {
             let mut iter = query.iter_combinations_mut();
             while let Some([(entity1, id1, _, _, _), (entity2, id2, _, _, _)]) = iter.fetch_next() {
@@ -57,8 +56,9 @@ impl SimulationState {
                     (id1, id2) if id2 == source_id && id1 == target_id => Some((entity2, entity1)),
                     _ => None,
                 };
-                println!("got cache2, {:?} ", moon_and_planet);
-                self.cached_planets = moon_and_planet;
+                if moon_and_planet.is_some() {
+                    self.cached_planets = moon_and_planet;
+                }
             }
         }
     }
