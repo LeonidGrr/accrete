@@ -1,6 +1,5 @@
 use crate::consts::{
-    COALESCE_DISTANCE_RATE, PLANET_PERIOD_FACTOR, PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR,
-    UPDATE_RATE_A,
+    PLANET_PERIOD_FACTOR, PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR, UPDATE_A_LIMIT, UPDATE_RATE_A,
 };
 use accrete::Planetesimal;
 use bevy::{math::vec3, prelude::*, tasks::TaskPool};
@@ -73,10 +72,10 @@ impl Orbit {
 
     pub fn update_orbit(&mut self, target_a: f32, immediate: bool) {
         let distance = (target_a - self.a).abs();
-        if immediate || distance < COALESCE_DISTANCE_RATE {
+        if immediate || distance < UPDATE_A_LIMIT {
             self.a = target_a;
         } else {
-            let modifier = UPDATE_RATE_A * distance.powf(2.0);
+            let modifier = UPDATE_RATE_A * distance;
             match self.a < target_a {
                 true => {
                     self.a += modifier;

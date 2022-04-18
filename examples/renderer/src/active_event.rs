@@ -1,4 +1,6 @@
-use crate::consts::{COALESCE_DISTANCE_RATE, PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR};
+use crate::consts::{
+    COALESCE_DISTANCE_MODIFIER, PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR, UPDATE_A_LIMIT,
+};
 use crate::planet_model::{
     udpate_planet_mesh_from_planetesimal, Orbit, PlanetId, PlanetModel, PlanetPosition,
 };
@@ -106,16 +108,24 @@ impl ActiveEvent {
                             .get_many_mut([moon_entity, planet_entity])
                             .expect("Failed to retrieve cahed planets by enitities");
 
-                        let (_, _, _, mut moon_orbit, _) = moon;
+                        let (moon_id, _, _, mut moon_orbit, _) = moon;
                         moon_orbit.update_orbit(resulting_planet.a as f32 * SCALE_FACTOR, false);
 
                         let (_, _, _, mut planet_orbit, _) = planet;
                         planet_orbit.update_orbit(resulting_planet.a as f32 * SCALE_FACTOR, false);
 
-                        if (resulting_planet.a as f32) < (moon_orbit.a * COALESCE_DISTANCE_RATE)
-                            && (resulting_planet.a as f32)
-                                < (planet_orbit.a * COALESCE_DISTANCE_RATE)
-                        {
+                        let resulting_moon = resulting_planet
+                            .moons
+                            .iter()
+                            .find(|m| m.id == moon_id.0)
+                            .expect("Failed to find resulting moon");
+                        let resulting_moon_a = resulting_moon.a as f32 * SCALE_FACTOR;
+                        let resulting_planet_a = resulting_planet.a as f32 * SCALE_FACTOR;
+                        let moon_distance = resulting_planet_a - moon_orbit.a + resulting_moon_a;
+                        let planet_distance = resulting_planet_a - planet_orbit.a;
+                        println!("{} {}", moon_distance, planet_distance);
+
+                        if moon_distance < UPDATE_A_LIMIT && planet_distance < UPDATE_A_LIMIT {
                             resulting_status = ActiveEventStatus::Approached;
                         }
                     }
@@ -162,7 +172,7 @@ impl ActiveEvent {
 
                         let distance = moon_position.0.distance(planet_position.0);
                         let minimal_distance =
-                            (moon_orbit.a - planet_orbit.a).abs() * COALESCE_DISTANCE_RATE;
+                            (moon_orbit.a - planet_orbit.a).abs() * COALESCE_DISTANCE_MODIFIER;
 
                         if distance <= minimal_distance {
                             mesh_to_remove = Some(moon_mesh_handle);
@@ -194,18 +204,18 @@ impl ActiveEvent {
                             .expect("Failed to find resulting moon");
                         let resulting_moon_a = resulting_moon.a as f32 * SCALE_FACTOR;
 
-                        if distance <= moon_orbit.a * COALESCE_DISTANCE_RATE {
-                            moon_orbit.update_orbit(distance, true);
-                            commands.entity(planet_entity).add_child(moon_entity);
-                        }
+                        // if (distance - moon_orbit.a).abs() < 0.05 {
+                        //     moon_orbit.update_orbit(distance, true);
+                        //     commands.entity(planet_entity).add_child(moon_entity);
+                        // }
 
-                        if moon_orbit.a > resulting_moon_a {
-                            moon_orbit.update_orbit(resulting_moon_a, false);
-                        } else {
-                            meshes_to_update.push((moon_mesh_handle, resulting_moon));
-                            meshes_to_update.push((planet_mesh_handle, resulting_planet));
-                            resulting_status = ActiveEventStatus::Executed;
-                        }
+                        // if moon_orbit.a > resulting_moon_a {
+                        //     moon_orbit.update_orbit(resulting_moon_a, false);
+                        // } else {
+                        //     meshes_to_update.push((moon_mesh_handle, resulting_moon));
+                        //     meshes_to_update.push((planet_mesh_handle, resulting_planet));
+                        //     resulting_status = ActiveEventStatus::Executed;
+                        // }
                     }
                 }
                 _ => (),
