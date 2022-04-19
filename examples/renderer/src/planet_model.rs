@@ -1,7 +1,9 @@
 use crate::consts::{
-    PLANET_PERIOD_FACTOR, PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR, UPDATE_A_LIMIT, UPDATE_RATE_A,
+    PLANET_PERIOD_FACTOR, PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR, UPDATE_A_LIMIT, UPDATE_A_RATE,
+    UPDATE_E_LIMIT, UPDATE_E_RATE,
 };
-use accrete::Planetesimal;
+use accrete::enviro::period;
+use accrete::{Planetesimal, PrimaryStar};
 use bevy::{math::vec3, prelude::*, tasks::TaskPool};
 
 #[derive(Debug, Clone, Bundle)]
@@ -11,13 +13,13 @@ pub struct PlanetModel {
     pub orbit: Orbit,
 }
 
-impl From<&Planetesimal> for PlanetModel {
-    fn from(planetesimal: &Planetesimal) -> Self {
+impl PlanetModel {
+    pub fn new(planetesimal: &Planetesimal, primary_star: &PrimaryStar) -> Self {
         let Planetesimal { id, a, e, .. } = planetesimal;
         let a = *a as f32 * SCALE_FACTOR;
         let planet_id = PlanetId(id.to_owned());
         let position = PlanetPosition(vec3(-(a - 0.001), 0.0, 0.0));
-        let orbit = Orbit::new(a, *e as f32);
+        let orbit = Orbit::new(a, *e as f32, planetesimal.mass, primary_star.stellar_mass);
 
         PlanetModel {
             planet_id,
@@ -37,11 +39,9 @@ impl PlanetPosition {
     pub fn update_position(&mut self, orbit: &Orbit, time: f64) {
         let Orbit { a, t, b, focus, .. } = orbit;
 
-        let current_t = (time / (t * 360.0) as f64) * PLANET_PERIOD_FACTOR;
-
-        self.0.x = focus + (a * current_t.cos() as f32);
-        self.0.z = b * current_t.sin() as f32;
-
+        let current_ellipse_position = (time as f32) / t * PLANET_PERIOD_FACTOR;
+        self.0.x = focus + (a * current_ellipse_position.cos() as f32);
+        self.0.z = b * current_ellipse_position.sin() as f32;
         // TODO speed up near star
     }
 }
@@ -57,7 +57,7 @@ pub struct Orbit {
 }
 
 impl Orbit {
-    pub fn new(a: f32, e: f32) -> Self {
+    pub fn new(a: f32, e: f32, mass: f64, parent_mass: f64) -> Self {
         let u = 1.0;
         let b = Orbit::get_semiminor_axis(a, e);
         Orbit {
@@ -66,16 +66,30 @@ impl Orbit {
             e,
             b,
             focus: Orbit::get_focus(a, b),
-            t: Orbit::get_orbital_period(a, u),
+            t: Orbit::get_orbital_period(a as f64, mass, parent_mass),
         }
     }
 
-    pub fn update_orbit(&mut self, target_a: f32, immediate: bool) {
+    pub fn update_orbit_immediate(
+        &mut self,
+        target_a: f32,
+        target_e: f32,
+        mass: f64,
+        parent_mass: f64,
+    ) {
+        self.a = target_a;
+        self.e = target_e;
+        self.b = Orbit::get_semiminor_axis(self.a, self.e);
+        self.focus = Orbit::get_focus(self.a, self.b);
+        self.t = Orbit::get_orbital_period(self.a as f64, mass, parent_mass);
+    }
+
+    pub fn update_orbit(&mut self, target_a: f32, target_e: f32, mass: f64, parent_mass: f64) {
         let distance = (target_a - self.a).abs();
-        if immediate || distance < UPDATE_A_LIMIT {
+        if distance < UPDATE_A_LIMIT {
             self.a = target_a;
         } else {
-            let modifier = UPDATE_RATE_A * distance;
+            let modifier = UPDATE_A_RATE * distance;
             match self.a < target_a {
                 true => {
                     self.a += modifier;
@@ -85,17 +99,34 @@ impl Orbit {
                 }
             }
         }
+
+        let diff = (target_e - self.e).abs();
+        if diff < UPDATE_E_LIMIT {
+            self.e = target_e;
+        } else {
+            let modifier = UPDATE_E_RATE;
+            match self.e < target_e {
+                true => {
+                    self.e += modifier;
+                }
+                false => {
+                    self.e -= modifier;
+                }
+            }
+        }
+
         self.b = Orbit::get_semiminor_axis(self.a, self.e);
         self.focus = Orbit::get_focus(self.a, self.b);
-        self.t = Orbit::get_orbital_period(self.a, self.u);
+        self.t = Orbit::get_orbital_period(self.a as f64, mass, parent_mass);
     }
 
     fn get_focus(a: f32, b: f32) -> f32 {
         (a.powf(2.0) - b.powf(2.0)).sqrt()
     }
 
-    fn get_orbital_period(a: f32, u: f32) -> f32 {
-        2.0 * std::f32::consts::PI * a.powf(1.5) / u.powf(0.5)
+    fn get_orbital_period(a: f64, small_mass: f64, large_mass: f64) -> f32 {
+        period(&a, &small_mass, &large_mass) as f32
+        // 2.0 * std::f32::consts::PI * a.powf(1.5) / u.powf(0.5)
     }
 
     fn get_semiminor_axis(a: f32, e: f32) -> f32 {

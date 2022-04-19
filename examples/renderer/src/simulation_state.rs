@@ -41,7 +41,7 @@ impl SimulationState {
         query: &mut Query<(
             Entity,
             &PlanetId,
-            &PlanetPosition,
+            &mut PlanetPosition,
             &mut Orbit,
             &Handle<Mesh>,
         )>,

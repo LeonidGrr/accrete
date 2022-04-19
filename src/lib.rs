@@ -2,10 +2,9 @@ pub mod accrete;
 pub mod consts;
 pub mod events;
 pub mod wasm;
-
-mod enviro;
-mod structs;
-mod utils;
+pub mod enviro;
+pub mod structs;
+pub mod utils;
 
 pub use crate::accrete::Accrete;
 pub use structs::DustBand;

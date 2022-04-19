@@ -39,5 +39,5 @@ fn main() {
     println!("Planets moon_capture: {:#?}", moon_capture);
     println!("Planets created: {:#?}", system.planets.len());
 
-    run(log.to_vec());
+    run(log.to_vec(), system.primary_star);
 }
