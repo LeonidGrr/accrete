@@ -89,13 +89,12 @@ impl Orbit {
         if distance < UPDATE_A_LIMIT {
             self.a = target_a;
         } else {
-            let modifier = UPDATE_A_RATE * distance;
             match self.a < target_a {
                 true => {
-                    self.a += modifier;
+                    self.a += UPDATE_A_RATE;
                 }
                 false => {
-                    self.a -= modifier;
+                    self.a -= UPDATE_A_RATE;
                 }
             }
         }
@@ -104,13 +103,12 @@ impl Orbit {
         if diff < UPDATE_E_LIMIT {
             self.e = target_e;
         } else {
-            let modifier = UPDATE_E_RATE;
             match self.e < target_e {
                 true => {
-                    self.e += modifier;
+                    self.e += UPDATE_E_RATE;
                 }
                 false => {
-                    self.e -= modifier;
+                    self.e -= UPDATE_E_RATE;
                 }
             }
         }
@@ -126,7 +124,6 @@ impl Orbit {
 
     fn get_orbital_period(a: f64, small_mass: f64, large_mass: f64) -> f32 {
         period(&a, &small_mass, &large_mass) as f32
-        // 2.0 * std::f32::consts::PI * a.powf(1.5) / u.powf(0.5)
     }
 
     fn get_semiminor_axis(a: f32, e: f32) -> f32 {
@@ -159,7 +156,11 @@ fn update_planets_position_system(
     );
 }
 
-pub fn udpate_planet_mesh_from_planetesimal(
+fn render_orbits_system() {
+    todo!()
+}
+
+pub fn update_planet_mesh_from_planetesimal(
     mesh_handle: &Handle<Mesh>,
     meshes: &mut ResMut<Assets<Mesh>>,
     planetesimal: &Planetesimal,

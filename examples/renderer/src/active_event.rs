@@ -1,6 +1,6 @@
 use crate::consts::{COLLISION_DISTANCE, PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR, UPDATE_A_LIMIT};
 use crate::planet_model::{
-    udpate_planet_mesh_from_planetesimal, Orbit, PlanetId, PlanetModel, PlanetPosition,
+    update_planet_mesh_from_planetesimal, Orbit, PlanetId, PlanetModel, PlanetPosition,
 };
 use crate::simulation_state::SimulationState;
 use accrete::{events::*, PrimaryStar};
@@ -147,10 +147,6 @@ impl ActiveEvent {
                             planet_data.mass,
                             primary_star.stellar_mass,
                         );
-                        println!(
-                            "{} {} - {} {}",
-                            moon_orbit.a, planet_orbit.a, moon_orbit.e, planet_orbit.e,
-                        );
 
                         let planet_to_moon_distance = planet_position.0.distance(moon_position.0);
                         let approach_limit =
@@ -169,7 +165,7 @@ impl ActiveEvent {
         }
 
         if let Some((mesh_handle, planetesimal)) = mesh_to_update {
-            udpate_planet_mesh_from_planetesimal(mesh_handle, &mut meshes, planetesimal);
+            update_planet_mesh_from_planetesimal(mesh_handle, &mut meshes, planetesimal);
         }
 
         self.status = resulting_status;
@@ -243,11 +239,8 @@ impl ActiveEvent {
                             .iter()
                             .find(|m| m.id == moon_id.0)
                             .expect("Failed to find resulting moon");
-                        let resulting_moon_a = resulting_moon.a as f32 * SCALE_FACTOR;
                         let resulting_planet_a = resulting_planet.a as f32 * SCALE_FACTOR;
                         let distance = moon_position.0.distance(planet_position.0);
-
-                        println!("----> {} {}", distance, resulting_moon_a);
 
                         moon_orbit.update_orbit_immediate(
                             distance,
@@ -277,7 +270,7 @@ impl ActiveEvent {
         meshes_to_update
             .iter()
             .for_each(|(mesh_handle, planetesimal)| {
-                udpate_planet_mesh_from_planetesimal(mesh_handle, &mut meshes, planetesimal);
+                update_planet_mesh_from_planetesimal(mesh_handle, &mut meshes, planetesimal);
             });
 
         self.status = resulting_status;
