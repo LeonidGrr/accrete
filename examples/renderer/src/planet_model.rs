@@ -36,12 +36,10 @@ pub struct PlanetId(pub String);
 pub struct PlanetPosition(pub Vec3);
 
 impl PlanetPosition {
-    pub fn update_position(&mut self, orbit: &Orbit, time: f64) {
-        let Orbit { a, t, b, focus, .. } = orbit;
-
-        let current_ellipse_position = (time as f32) / t * PLANET_PERIOD_FACTOR;
-        self.0.x = focus + (a * current_ellipse_position.cos() as f32);
-        self.0.z = b * current_ellipse_position.sin() as f32;
+    pub fn update_position(&mut self, orbit: &mut Orbit, time: f64) {
+        let next_position = orbit.get_orbital_position(time);
+        self.0.x = next_position.x;
+        self.0.z = next_position.z;
         // TODO speed up near star
     }
 }
@@ -60,6 +58,7 @@ impl Orbit {
     pub fn new(a: f32, e: f32, mass: f64, parent_mass: f64) -> Self {
         let u = 1.0;
         let b = Orbit::get_semiminor_axis(a, e);
+
         Orbit {
             a,
             u,
@@ -84,38 +83,32 @@ impl Orbit {
         self.t = Orbit::get_orbital_period(self.a as f64, mass, parent_mass);
     }
 
+    fn update_value_by_limit(current_value: &mut f32, target_value: f32, update_rate: f32, limit: f32) {
+        let diff = (target_value - *current_value).abs();
+        if diff < limit {
+            *current_value = target_value;
+        } else {
+            match *current_value < target_value {
+                true => {
+                    *current_value += update_rate;
+                }
+                false => {
+                    *current_value -= update_rate;
+                }
+            }
+        }
+    }
+
     pub fn update_orbit(&mut self, target_a: f32, target_e: f32, mass: f64, parent_mass: f64) {
-        let distance = (target_a - self.a).abs();
-        if distance < UPDATE_A_LIMIT {
-            self.a = target_a;
-        } else {
-            match self.a < target_a {
-                true => {
-                    self.a += UPDATE_A_RATE;
-                }
-                false => {
-                    self.a -= UPDATE_A_RATE;
-                }
-            }
-        }
-
-        let diff = (target_e - self.e).abs();
-        if diff < UPDATE_E_LIMIT {
-            self.e = target_e;
-        } else {
-            match self.e < target_e {
-                true => {
-                    self.e += UPDATE_E_RATE;
-                }
-                false => {
-                    self.e -= UPDATE_E_RATE;
-                }
-            }
-        }
-
+        Orbit::update_value_by_limit(&mut self.a, target_a, UPDATE_A_RATE, UPDATE_A_LIMIT);
+        Orbit::update_value_by_limit(&mut self.e, target_e, UPDATE_E_RATE, UPDATE_E_LIMIT);
         self.b = Orbit::get_semiminor_axis(self.a, self.e);
         self.focus = Orbit::get_focus(self.a, self.b);
         self.t = Orbit::get_orbital_period(self.a as f64, mass, parent_mass);
+    }
+
+    pub fn get_points() {
+
     }
 
     fn get_focus(a: f32, b: f32) -> f32 {
@@ -129,6 +122,23 @@ impl Orbit {
     fn get_semiminor_axis(a: f32, e: f32) -> f32 {
         a * (1.0 - e.powf(2.0)).sqrt()
     }
+
+    fn get_orbital_position(&mut self, time: f64) -> Vec3 {
+        let Orbit { a, t, b, e, focus, .. } = *self;
+
+        // Relative time converted to radians
+        let m = 2.0 * std::f32::consts::PI * (time as f32) / t * PLANET_PERIOD_FACTOR;
+        let cos_f = (m.cos() - e)/(1.0 - e * m.cos());
+        let sin_f = ((1.0 - e.powf(2.0)).sqrt() * m.sin())/(1.0 - e * m.cos());
+        let r = a * (1.0 - e.powf(2.0))/(1.0 + e * cos_f);
+        let x = focus + r * cos_f;
+        let z = r * sin_f;
+
+        // let x = focus + (a * current_t.cos() as f32);
+        // let z = b * current_t.sin() as f32;
+
+        vec3(x, 0.0, z)
+    }
 }
 
 pub struct PlanetsPlugin;
@@ -141,15 +151,15 @@ impl Plugin for PlanetsPlugin {
 
 fn update_planets_position_system(
     time: Res<Time>,
-    mut query: Query<(&mut PlanetPosition, &Orbit, &mut Transform)>,
+    mut query: Query<(&mut PlanetPosition, &mut Orbit, &mut Transform)>,
 ) {
     let passed_time = time.seconds_since_startup();
     let taskpool = TaskPool::new();
     query.par_for_each_mut(
         &taskpool,
         16,
-        |(mut planet_position, orbit, mut transform)| {
-            planet_position.update_position(orbit, passed_time);
+        |(mut planet_position, mut orbit, mut transform)| {
+            planet_position.update_position(&mut orbit, passed_time);
             transform.translation.x = planet_position.0.x;
             transform.translation.z = planet_position.0.z;
         },
@@ -167,7 +177,8 @@ pub fn update_planet_mesh_from_planetesimal(
 ) {
     if let Some(mesh) = meshes.get_mut(mesh_handle) {
         let next_mesh = Mesh::from(shape::Icosphere {
-            radius: planetesimal.radius as f32 * PLANET_RADIUS_SCALE_FACTOR,
+            radius: 0.25,
+            // radius: planetesimal.radius as f32 * PLANET_RADIUS_SCALE_FACTOR,
             subdivisions: 32,
         });
         mesh.clone_from(&next_mesh);

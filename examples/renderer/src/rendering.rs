@@ -5,6 +5,7 @@ use crate::{
 };
 use accrete::{events::AccreteEvent, PrimaryStar};
 use bevy::prelude::*;
+use bevy_prototype_debug_lines::DebugLinesPlugin;
 
 pub fn run(log: Vec<AccreteEvent>, primary_star: PrimaryStar) {
     App::new()
@@ -18,6 +19,7 @@ pub fn run(log: Vec<AccreteEvent>, primary_star: PrimaryStar) {
         .insert_resource(log)
         .add_startup_system(setup)
         .add_plugins(DefaultPlugins)
+        // .add_plugin(DebugLinesPlugin::with_depth_test(true))
         .add_plugin(PlanetsPlugin)
         .add_plugin(EventPlugin)
         .run();

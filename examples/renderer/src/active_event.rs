@@ -53,6 +53,7 @@ impl ActiveEvent {
             &mut PlanetPosition,
             &mut Orbit,
             &Handle<Mesh>,
+            &mut Visibility,
         )>,
     ) {
         let mut resulting_status = self.status.clone();
@@ -65,18 +66,20 @@ impl ActiveEvent {
                     let mut planet_model = PlanetModel::new(planet, &primary_star);
                     planet_model
                         .position
-                        .update_position(&planet_model.orbit, passed_time);
+                        .update_position(&mut planet_model.orbit, passed_time);
                     state.planets.insert(planet.id.to_owned(), planet.clone());
 
                     commands
                         .spawn()
                         .insert_bundle(PbrBundle {
                             mesh: meshes.add(Mesh::from(shape::Icosphere {
-                                radius: planet.radius as f32 * PLANET_RADIUS_SCALE_FACTOR,
+                                // radius: planet.radius as f32 * PLANET_RADIUS_SCALE_FACTOR,
+                                radius: 0.25,
                                 subdivisions: 32,
                             })),
                             material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
                             transform: Transform::from_translation(planet_model.position.0),
+                            visibility: Visibility { is_visible: false },
                             ..Default::default()
                         })
                         .insert_bundle(planet_model);
@@ -84,7 +87,7 @@ impl ActiveEvent {
                     resulting_status = ActiveEventStatus::Executed;
                 }
                 AccreteEvent::PlanetesimalUpdated(_, planet) => {
-                    for (_, planet_id, _, mut planet_orbit, mesh_handle) in query.iter_mut() {
+                    for (_, planet_id, _, mut planet_orbit, mesh_handle, mut visibility) in query.iter_mut() {
                         if planet_id.0 == planet.id {
                             let resulting_planet_a = planet.a as f32 * SCALE_FACTOR;
                             planet_orbit.update_orbit(
@@ -96,6 +99,7 @@ impl ActiveEvent {
 
                             if (resulting_planet_a - planet_orbit.a) < UPDATE_A_LIMIT {
                                 mesh_to_update = Some((mesh_handle, planet));
+                                visibility.is_visible = true;
                                 state.planets.insert(planet.id.to_owned(), planet.clone());
                                 planet_orbit.update_orbit_immediate(
                                     resulting_planet_a,
@@ -122,8 +126,8 @@ impl ActiveEvent {
                         let [moon, planet] = query
                             .get_many_mut([moon_entity, planet_entity])
                             .expect("Failed to retrieve cahed planets by enitities");
-                        let (_, moon_id, moon_position, mut moon_orbit, _) = moon;
-                        let (_, planet_id, planet_position, mut planet_orbit, _) = planet;
+                        let (_, moon_id, moon_position, mut moon_orbit, _, _) = moon;
+                        let (_, planet_id, planet_position, mut planet_orbit, _, _) = planet;
 
                         let moon_data = state.planets.get(&moon_id.0).expect("Failed to find moon");
                         let planet_data = state
@@ -183,6 +187,7 @@ impl ActiveEvent {
             &mut PlanetPosition,
             &mut Orbit,
             &Handle<Mesh>,
+            &mut Visibility,
         )>,
     ) {
         let mut mesh_to_remove = None;
@@ -197,8 +202,8 @@ impl ActiveEvent {
                         let [moon, planet] = query
                             .get_many_mut([moon_entity, planet_entity])
                             .expect("Failed to retrieve cahed planets by enitities");
-                        let (_, moon_id, _, _, moon_mesh_handle) = moon;
-                        let (_, planet_id, _, mut planet_orbit, planet_mesh_handle) = planet;
+                        let (_, moon_id, _, _, moon_mesh_handle, _) = moon;
+                        let (_, planet_id, _, mut planet_orbit, planet_mesh_handle, _) = planet;
 
                         mesh_to_remove = Some(moon_mesh_handle);
                         meshes_to_update.push((planet_mesh_handle, resulting_planet));
@@ -214,6 +219,7 @@ impl ActiveEvent {
                             resulting_planet.mass,
                             primary_star.stellar_mass,
                         );
+
                         resulting_status = ActiveEventStatus::Executed;
                     }
                 }
@@ -223,7 +229,7 @@ impl ActiveEvent {
                             .get_many_mut([moon_entity, planet_entity])
                             .expect("Failed to retrieve cahed planets by enitities");
 
-                        let (moon_entity, moon_id, moon_position, mut moon_orbit, moon_mesh_handle) =
+                        let (moon_entity, moon_id, moon_position, mut moon_orbit, moon_mesh_handle, _) =
                             moon;
                         let (
                             planet_entity,
@@ -231,6 +237,7 @@ impl ActiveEvent {
                             planet_position,
                             mut planet_orbit,
                             planet_mesh_handle,
+                            _,
                         ) = planet;
 
                         let moon_data = state.planets.get(&moon_id.0).expect("Failed to find moon");
@@ -306,6 +313,7 @@ pub fn active_event_system(
         &mut PlanetPosition,
         &mut Orbit,
         &Handle<Mesh>,
+        &mut Visibility,
     )>,
 ) {
     match &active_event.status {

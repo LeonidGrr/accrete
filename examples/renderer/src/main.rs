@@ -1,4 +1,3 @@
-// mod coalescence;
 mod active_event;
 mod consts;
 mod planet_model;
