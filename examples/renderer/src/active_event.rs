@@ -42,7 +42,6 @@ impl ActiveEvent {
     fn created(
         &mut self,
         mut commands: Commands,
-        time: Res<Time>,
         primary_star: Res<PrimaryStar>,
         mut state: ResMut<SimulationState>,
         mut meshes: ResMut<Assets<Mesh>>,
@@ -62,19 +61,17 @@ impl ActiveEvent {
         if let Some(event) = &self.event {
             match event {
                 AccreteEvent::PlanetesimalCreated(_, planet) => {
-                    let passed_time = time.seconds_since_startup();
                     let mut planet_model = PlanetModel::new(planet, &primary_star);
                     planet_model
                         .position
-                        .update_position(&mut planet_model.orbit, passed_time);
+                        .update_position(&mut planet_model.orbit, state.current_step);
                     state.planets.insert(planet.id.to_owned(), planet.clone());
 
                     commands
                         .spawn()
                         .insert_bundle(PbrBundle {
                             mesh: meshes.add(Mesh::from(shape::Icosphere {
-                                // radius: planet.radius as f32 * PLANET_RADIUS_SCALE_FACTOR,
-                                radius: 0.25,
+                                radius: planet.radius as f32 * PLANET_RADIUS_SCALE_FACTOR,
                                 subdivisions: 32,
                             })),
                             material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
@@ -301,7 +298,6 @@ impl ActiveEvent {
 #[allow(unused_mut)]
 pub fn active_event_system(
     mut commands: Commands,
-    time: Res<Time>,
     primary_star: Res<PrimaryStar>,
     mut state: ResMut<SimulationState>,
     mut active_event: ResMut<ActiveEvent>,
@@ -319,7 +315,6 @@ pub fn active_event_system(
     match &active_event.status {
         ActiveEventStatus::Created => active_event.created(
             commands,
-            time,
             primary_star,
             state,
             meshes,

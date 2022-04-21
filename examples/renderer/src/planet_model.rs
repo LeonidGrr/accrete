@@ -2,6 +2,7 @@ use crate::consts::{
     PLANET_PERIOD_FACTOR, PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR, UPDATE_A_LIMIT, UPDATE_A_RATE,
     UPDATE_E_LIMIT, UPDATE_E_RATE,
 };
+use crate::simulation_state::SimulationState;
 use accrete::enviro::period;
 use accrete::{Planetesimal, PrimaryStar};
 use bevy::{math::vec3, prelude::*, tasks::TaskPool};
@@ -36,8 +37,8 @@ pub struct PlanetId(pub String);
 pub struct PlanetPosition(pub Vec3);
 
 impl PlanetPosition {
-    pub fn update_position(&mut self, orbit: &mut Orbit, time: f64) {
-        let next_position = orbit.get_orbital_position(time);
+    pub fn update_position(&mut self, orbit: &mut Orbit, simulation_step: f32) {
+        let next_position = orbit.get_orbital_position(simulation_step);
         self.0.x = next_position.x;
         self.0.z = next_position.z;
         // TODO speed up near star
@@ -123,11 +124,11 @@ impl Orbit {
         a * (1.0 - e.powf(2.0)).sqrt()
     }
 
-    fn get_orbital_position(&mut self, time: f64) -> Vec3 {
+    fn get_orbital_position(&mut self, simulation_step: f32) -> Vec3 {
         let Orbit { a, t, b, e, focus, .. } = *self;
 
         // Relative time converted to radians
-        let m = 2.0 * std::f32::consts::PI * (time as f32) / t * PLANET_PERIOD_FACTOR;
+        let m = 2.0 * std::f32::consts::PI * simulation_step / t * PLANET_PERIOD_FACTOR;
         let cos_f = (m.cos() - e)/(1.0 - e * m.cos());
         let sin_f = ((1.0 - e.powf(2.0)).sqrt() * m.sin())/(1.0 - e * m.cos());
         let r = a * (1.0 - e.powf(2.0))/(1.0 + e * cos_f);
@@ -150,16 +151,15 @@ impl Plugin for PlanetsPlugin {
 }
 
 fn update_planets_position_system(
-    time: Res<Time>,
+    state: Res<SimulationState>,
     mut query: Query<(&mut PlanetPosition, &mut Orbit, &mut Transform)>,
 ) {
-    let passed_time = time.seconds_since_startup();
     let taskpool = TaskPool::new();
     query.par_for_each_mut(
         &taskpool,
         16,
         |(mut planet_position, mut orbit, mut transform)| {
-            planet_position.update_position(&mut orbit, passed_time);
+            planet_position.update_position(&mut orbit, state.current_step);
             transform.translation.x = planet_position.0.x;
             transform.translation.z = planet_position.0.z;
         },
@@ -177,8 +177,7 @@ pub fn update_planet_mesh_from_planetesimal(
 ) {
     if let Some(mesh) = meshes.get_mut(mesh_handle) {
         let next_mesh = Mesh::from(shape::Icosphere {
-            radius: 0.25,
-            // radius: planetesimal.radius as f32 * PLANET_RADIUS_SCALE_FACTOR,
+            radius: planetesimal.radius as f32 * PLANET_RADIUS_SCALE_FACTOR,
             subdivisions: 32,
         });
         mesh.clone_from(&next_mesh);

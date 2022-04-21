@@ -3,6 +3,7 @@ mod consts;
 mod planet_model;
 mod rendering;
 mod simulation_state;
+mod ui;
 
 use accrete::events::{AccreteEvent, EVENTS};
 use accrete::Accrete;
