@@ -1,6 +1,6 @@
-use crate::consts::{COLLISION_DISTANCE, PLANET_RADIUS_SCALE_FACTOR, SCALE_FACTOR, UPDATE_A_LIMIT};
+use crate::consts::{COLLISION_DISTANCE, UPDATE_A_LIMIT};
 use crate::planet_model::{
-    update_planet_mesh_from_planetesimal, Orbit, PlanetId, PlanetModel, PlanetPosition,
+    create_ring_mesh, update_planet_mesh, Orbit, PlanetId, PlanetModel, PlanetPosition,
 };
 use crate::simulation_state::SimulationState;
 use accrete::{events::*, PrimaryStar};
@@ -71,25 +71,27 @@ impl ActiveEvent {
                         .spawn()
                         .insert_bundle(PbrBundle {
                             mesh: meshes.add(Mesh::from(shape::Icosphere {
-                                radius: planet.radius as f32 * PLANET_RADIUS_SCALE_FACTOR,
+                                radius: Orbit::scaled_radius(planet.radius),
                                 subdivisions: 32,
                             })),
                             material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
                             transform: Transform::from_translation(planet_model.position.0),
                             visibility: Visibility { is_visible: false },
-                            ..Default::default()
+                            ..default()
                         })
                         .insert_bundle(planet_model);
 
                     resulting_status = ActiveEventStatus::Executed;
                 }
                 AccreteEvent::PlanetesimalUpdated(_, planet) => {
-                    for (_, planet_id, _, mut planet_orbit, mesh_handle, mut visibility) in query.iter_mut() {
+                    for (entity, planet_id, _, mut planet_orbit, mesh_handle, mut visibility) in
+                        query.iter_mut()
+                    {
                         if planet_id.0 == planet.id {
-                            let resulting_planet_a = planet.a as f32 * SCALE_FACTOR;
+                            let resulting_planet_a = Orbit::scaled_a(planet.a);
                             planet_orbit.update_orbit(
                                 resulting_planet_a,
-                                planet.e as f32,
+                                planet.e,
                                 planet.mass,
                                 primary_star.stellar_mass,
                             );
@@ -100,9 +102,16 @@ impl ActiveEvent {
                                 state.planets.insert(planet.id.to_owned(), planet.clone());
                                 planet_orbit.update_orbit_immediate(
                                     resulting_planet_a,
-                                    planet.e as f32,
+                                    planet.e,
                                     planet.mass,
                                     primary_star.stellar_mass,
+                                );
+                                create_ring_mesh(
+                                    &mut commands,
+                                    entity,
+                                    planet,
+                                    &mut meshes,
+                                    &mut materials,
                                 );
                                 resulting_status = ActiveEventStatus::Executed;
                             }
@@ -132,19 +141,18 @@ impl ActiveEvent {
                             .get(&planet_id.0)
                             .expect("Failed to find planet");
 
-                        let resulting_planet_a = resulting_planet.a as f32 * SCALE_FACTOR;
-                        let resulting_planet_e = resulting_planet.e as f32;
+                        let resulting_planet_a = Orbit::scaled_a(resulting_planet.a);
 
                         moon_orbit.update_orbit(
                             resulting_planet_a,
-                            resulting_planet_e,
+                            resulting_planet.e,
                             moon_data.mass,
                             primary_star.stellar_mass,
                         );
 
                         planet_orbit.update_orbit(
                             resulting_planet_a,
-                            resulting_planet_e,
+                            resulting_planet.e,
                             planet_data.mass,
                             primary_star.stellar_mass,
                         );
@@ -152,7 +160,7 @@ impl ActiveEvent {
                         let planet_to_moon_distance = planet_position.0.distance(moon_position.0);
                         let approach_limit =
                             match resulting_planet.moons.iter().find(|m| m.id == moon_id.0) {
-                                Some(moon) => moon.a as f32 * SCALE_FACTOR,
+                                Some(moon) => Orbit::scaled_a(moon.a),
                                 None => COLLISION_DISTANCE,
                             };
 
@@ -166,7 +174,7 @@ impl ActiveEvent {
         }
 
         if let Some((mesh_handle, planetesimal)) = mesh_to_update {
-            update_planet_mesh_from_planetesimal(mesh_handle, &mut meshes, planetesimal);
+            update_planet_mesh(mesh_handle, &mut meshes, planetesimal);
         }
 
         self.status = resulting_status;
@@ -211,8 +219,8 @@ impl ActiveEvent {
                             .insert(planet_id.0.to_string(), resulting_planet.clone());
 
                         planet_orbit.update_orbit(
-                            resulting_planet.a as f32 * SCALE_FACTOR,
-                            resulting_planet.e as f32 * SCALE_FACTOR,
+                            Orbit::scaled_a(resulting_planet.a),
+                            resulting_planet.e,
                             resulting_planet.mass,
                             primary_star.stellar_mass,
                         );
@@ -226,8 +234,14 @@ impl ActiveEvent {
                             .get_many_mut([moon_entity, planet_entity])
                             .expect("Failed to retrieve cahed planets by enitities");
 
-                        let (moon_entity, moon_id, moon_position, mut moon_orbit, moon_mesh_handle, _) =
-                            moon;
+                        let (
+                            moon_entity,
+                            moon_id,
+                            moon_position,
+                            mut moon_orbit,
+                            moon_mesh_handle,
+                            _,
+                        ) = moon;
                         let (
                             planet_entity,
                             _,
@@ -243,18 +257,18 @@ impl ActiveEvent {
                             .iter()
                             .find(|m| m.id == moon_id.0)
                             .expect("Failed to find resulting moon");
-                        let resulting_planet_a = resulting_planet.a as f32 * SCALE_FACTOR;
+                        let resulting_planet_a = Orbit::scaled_a(resulting_planet.a);
                         let distance = moon_position.0.distance(planet_position.0);
 
                         moon_orbit.update_orbit_immediate(
                             distance,
-                            moon_data.e as f32,
+                            moon_data.e,
                             moon_data.mass,
                             primary_star.stellar_mass,
                         );
                         planet_orbit.update_orbit_immediate(
                             resulting_planet_a,
-                            resulting_planet.e as f32,
+                            resulting_planet.e,
                             resulting_planet.mass,
                             primary_star.stellar_mass,
                         );
@@ -274,7 +288,7 @@ impl ActiveEvent {
         meshes_to_update
             .iter()
             .for_each(|(mesh_handle, planetesimal)| {
-                update_planet_mesh_from_planetesimal(mesh_handle, &mut meshes, planetesimal);
+                update_planet_mesh(mesh_handle, &mut meshes, planetesimal);
             });
 
         self.status = resulting_status;
@@ -313,14 +327,9 @@ pub fn active_event_system(
     )>,
 ) {
     match &active_event.status {
-        ActiveEventStatus::Created => active_event.created(
-            commands,
-            primary_star,
-            state,
-            meshes,
-            materials,
-            query,
-        ),
+        ActiveEventStatus::Created => {
+            active_event.created(commands, primary_star, state, meshes, materials, query)
+        }
         ActiveEventStatus::Approached => {
             active_event.approached(commands, primary_star, state, meshes, query)
         }

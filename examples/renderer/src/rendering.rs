@@ -1,9 +1,4 @@
-use crate::{
-    active_event::ActiveEvent,
-    planet_model::PlanetsPlugin,
-    simulation_state::SimulationStatePlugin,
-    ui::UIPlugin,
-};
+use crate::{planet_model::PlanetsPlugin, simulation_state::SimulationStatePlugin, ui::UIPlugin};
 use accrete::{events::AccreteEvent, PrimaryStar};
 use bevy::prelude::*;
 
@@ -11,7 +6,7 @@ pub fn run(log: Vec<AccreteEvent>, primary_star: PrimaryStar) {
     App::new()
         .insert_resource(WindowDescriptor {
             title: "Accrete simulation".to_string(),
-            ..Default::default()
+            ..default()
         })
         .insert_resource(primary_star)
         .insert_resource(log)
@@ -45,7 +40,7 @@ fn setup(
         ..default()
     });
     commands.spawn_bundle(PerspectiveCameraBundle {
-        transform: Transform::from_xyz(0.1, 150.0, 0.1).looking_at(Vec3::ZERO, Vec3::Y),
+        transform: Transform::from_xyz(50.1, 50.0, 50.1).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
 }
