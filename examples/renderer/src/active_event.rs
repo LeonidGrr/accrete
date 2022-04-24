@@ -84,7 +84,7 @@ impl ActiveEvent {
                     resulting_status = ActiveEventStatus::Executed;
                 }
                 AccreteEvent::PlanetesimalUpdated(_, planet) => {
-                    for (entity, planet_id, _, mut planet_orbit, mesh_handle, mut visibility) in
+                    for (_, planet_id, _, mut planet_orbit, mesh_handle, mut visibility) in
                         query.iter_mut()
                     {
                         if planet_id.0 == planet.id {
@@ -105,13 +105,6 @@ impl ActiveEvent {
                                     planet.e,
                                     planet.mass,
                                     primary_star.stellar_mass,
-                                );
-                                create_ring_mesh(
-                                    &mut commands,
-                                    entity,
-                                    planet,
-                                    &mut meshes,
-                                    &mut materials,
                                 );
                                 resulting_status = ActiveEventStatus::Executed;
                             }

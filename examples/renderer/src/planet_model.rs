@@ -2,10 +2,10 @@ use crate::consts::{
     A_SCALE_FACTOR, PLANET_PERIOD_FACTOR, PLANET_RADIUS_SCALE_FACTOR, UPDATE_A_LIMIT,
     UPDATE_A_RATE, UPDATE_E_LIMIT, UPDATE_E_RATE,
 };
-use crate::ring_model::{Radius, RingModel, Width};
+use crate::ring_model::RingModel;
 use crate::simulation_state::SimulationState;
 use accrete::enviro::period;
-use accrete::{Planetesimal, PrimaryStar};
+use accrete::{Planetesimal, PrimaryStar, Ring};
 use bevy::{math::vec3, prelude::*, tasks::TaskPool};
 
 #[derive(Debug, Clone, Bundle)]
@@ -182,36 +182,42 @@ pub fn update_planet_mesh(
     planetesimal: &Planetesimal,
 ) {
     if let Some(mesh) = meshes.get_mut(mesh_handle) {
-        // let next_mesh = Mesh::from(shape::Icosphere {
-        //     radius: Orbit::scaled_radius(planetesimal.radius),
-        //     subdivisions: 32,
-        // });
-        // mesh.clone_from(&next_mesh);
+        let next_mesh = Mesh::from(shape::Icosphere {
+            radius: Orbit::scaled_radius(planetesimal.radius),
+            subdivisions: 32,
+        });
+        mesh.clone_from(&next_mesh);
     }
 }
 
 pub fn create_ring_mesh(
     commands: &mut Commands,
     planet_entity: Entity,
-    planetesimal: &Planetesimal,
+    moon_entity: Entity,
+    moon_mesh_handle: &Handle<Mesh>,
+    moon_material_handle: &Handle<Mesh>,
+    ring: &Ring,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
 ) {
-    let ring_model = RingModel {
-        radius: Radius(Orbit::scaled_radius(planetesimal.radius)),
-        width: Width(Orbit::scaled_radius(planetesimal.radius * 2.0)),
-    };
+    // Remove moon
+    commands.entity(moon_entity).despawn();
+    meshes.remove(moon_mesh_handle);
+    materials.remove(moon_material_handle);
+
+    // Add ring
+    let ring_model = RingModel::from(ring);
 
     let ring_entity = commands
         .spawn()
         .insert_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Torus {
-                ring_radius: ring_model.radius.0 + ring_model.width.0 ,
+                ring_radius: ring_model.ring_radius.0,
                 radius: ring_model.radius.0,
                 ..default()
             })),
             material: materials.add(Color::rgba(0.0, 1.0, 0.0, 0.1).into()),
-            transform: Transform::from_scale(vec3(0.1, 0.0001, 0.1)),
+            transform: Transform::from_scale(vec3(1.0, 0.0001, 1.0)),
             ..default()
         })
         .insert_bundle(ring_model)

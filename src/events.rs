@@ -1,6 +1,6 @@
 use std::sync::Mutex;
 
-use crate::{structs::dust::DustBands, Planetesimal, System};
+use crate::{structs::dust::DustBands, Planetesimal, Ring, System};
 use once_cell::sync::Lazy;
 
 type Events = Vec<AccreteEvent>;
@@ -57,10 +57,6 @@ impl EventSource for Planetesimal {
                 event_type.to_string(),
                 self.clone(),
             )),
-            "moon_to_ring" => Some(AccreteEvent::PlanetesimalMoonToRing(
-                event_type.to_string(),
-                self.clone(),
-            )),
             _ => None,
         };
 
@@ -96,6 +92,18 @@ impl EventSource for Planetesimal {
 
         if let Some(e) = event {
             events.push(e)
+        }
+    }
+}
+
+impl EventSource for Ring {
+    fn event(&self, event_type: &str) {
+        let mut events = EVENTS.lock().expect("Failed to access EVENT_STORE");
+        if event_type == "moon_to_ring" {
+            events.push(AccreteEvent::PlanetesimalMoonToRing(
+                event_type.to_string(),
+                self.clone(),
+            ));
         }
     }
 }
@@ -137,7 +145,7 @@ pub enum AccreteEvent {
     /// one planetesimal catch another as moon
     PlanetesimalCaptureMoon(String, String, String, Planetesimal),
     /// moons turned into rings
-    PlanetesimalMoonToRing(String, Planetesimal),
+    PlanetesimalMoonToRing(String, Ring),
     /// once at the very end of accretion
     PostAccretionStarted(String),
     /// for every outer body injected into system
