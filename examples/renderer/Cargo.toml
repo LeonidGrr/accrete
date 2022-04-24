@@ -7,7 +7,12 @@ edition = "2021"
 
 [dependencies]
 accrete = { path = "../.." }
-macroquad = "0.3"
+bevy = { version = "0.7.0", features = ["dynamic"] }
+bevy_polyline = "0.1"
+bevy_prototype_debug_lines = { version = "0.6", features = ["3d"] }
 
 [profile.dev.package.'*']
 opt-level = 3
+
+[workspace]
+resolver = "2"

@@ -369,13 +369,12 @@ fn moons_to_rings(planet: &mut Planetesimal) {
         let moon_perhelion = perihelion_distance(&m.a, &m.e);
         if moon_perhelion <= roche_limit * 2.0 {
             let ring = Ring::from_planet(roche_limit, m);
+            ring.event("moon_to_ring");
             planet.rings.push(ring);
         } else {
             next_moons.push(m.clone());
         }
     }
-
-    planet.event("moon_to_ring");
 
     planet.moons = next_moons;
 }
