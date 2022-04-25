@@ -1,7 +1,6 @@
 use crate::consts::{COLLISION_DISTANCE, UPDATE_A_LIMIT};
-use crate::planet_model::{
-    create_ring_mesh, update_planet_mesh, Orbit, PlanetId, PlanetModel, PlanetPosition,
-};
+use crate::planet_model::{Orbit, PlanetId, PlanetModel, PlanetPosition};
+use crate::ring_model::RingModel;
 use crate::simulation_state::SimulationState;
 use accrete::{events::*, PrimaryStar};
 use bevy::prelude::*;
@@ -52,6 +51,7 @@ impl ActiveEvent {
             &mut PlanetPosition,
             &mut Orbit,
             &Handle<Mesh>,
+            &Handle<StandardMaterial>,
             &mut Visibility,
         )>,
     ) {
@@ -84,7 +84,7 @@ impl ActiveEvent {
                     resulting_status = ActiveEventStatus::Executed;
                 }
                 AccreteEvent::PlanetesimalUpdated(_, planet) => {
-                    for (_, planet_id, _, mut planet_orbit, mesh_handle, mut visibility) in
+                    for (_, planet_id, _, mut planet_orbit, mesh_handle, _, mut visibility) in
                         query.iter_mut()
                     {
                         if planet_id.0 == planet.id {
@@ -124,9 +124,9 @@ impl ActiveEvent {
                     if let Some((moon_entity, planet_entity)) = state.cached_planets {
                         let [moon, planet] = query
                             .get_many_mut([moon_entity, planet_entity])
-                            .expect("Failed to retrieve cahed planets by enitities");
-                        let (_, moon_id, moon_position, mut moon_orbit, _, _) = moon;
-                        let (_, planet_id, planet_position, mut planet_orbit, _, _) = planet;
+                            .expect("Failed to retrieve cached planets by enitities");
+                        let (_, moon_id, moon_position, mut moon_orbit, _, _, _) = moon;
+                        let (_, planet_id, planet_position, mut planet_orbit, _, _, _) = planet;
 
                         let moon_data = state.planets.get(&moon_id.0).expect("Failed to find moon");
                         let planet_data = state
@@ -162,12 +162,34 @@ impl ActiveEvent {
                         }
                     }
                 }
+                AccreteEvent::PlanetesimalMoonToRing(_, moon_id, planet_id, resulting_ring) => {
+                    state.cache_planets(&mut query, moon_id, planet_id);
+
+                    if let Some((moon_entity, planet_entity)) = state.cached_planets {
+                        let [moon, planet] = query
+                            .get_many_mut([moon_entity, planet_entity])
+                            .expect("Failed to retrieve cached planets by enitities");
+                        let (moon_entity, _, _, _, mesh_handle, material_handle, _) = moon;
+                        let (planet_entity, _, _, _, _, _, _) = planet;
+                        RingModel::create_ring_mesh(
+                            &mut commands,
+                            planet_entity,
+                            moon_entity,
+                            mesh_handle,
+                            material_handle,
+                            resulting_ring,
+                            &mut meshes,
+                            &mut materials,
+                        );
+                        resulting_status = ActiveEventStatus::Executed;
+                    }
+                }
                 _ => resulting_status = ActiveEventStatus::Executed,
             }
         }
 
         if let Some((mesh_handle, planetesimal)) = mesh_to_update {
-            update_planet_mesh(mesh_handle, &mut meshes, planetesimal);
+            PlanetModel::update_planet_mesh(mesh_handle, &mut meshes, planetesimal);
         }
 
         self.status = resulting_status;
@@ -185,6 +207,7 @@ impl ActiveEvent {
             &mut PlanetPosition,
             &mut Orbit,
             &Handle<Mesh>,
+            &Handle<StandardMaterial>,
             &mut Visibility,
         )>,
     ) {
@@ -199,9 +222,9 @@ impl ActiveEvent {
                     if let Some((moon_entity, planet_entity)) = state.cached_planets {
                         let [moon, planet] = query
                             .get_many_mut([moon_entity, planet_entity])
-                            .expect("Failed to retrieve cahed planets by enitities");
-                        let (_, moon_id, _, _, moon_mesh_handle, _) = moon;
-                        let (_, planet_id, _, mut planet_orbit, planet_mesh_handle, _) = planet;
+                            .expect("Failed to retrieve cached planets by enitities");
+                        let (_, moon_id, _, _, moon_mesh_handle, _, _) = moon;
+                        let (_, planet_id, _, mut planet_orbit, planet_mesh_handle, _, _) = planet;
 
                         mesh_to_remove = Some(moon_mesh_handle);
                         meshes_to_update.push((planet_mesh_handle, resulting_planet));
@@ -225,7 +248,7 @@ impl ActiveEvent {
                     if let Some((moon_entity, planet_entity)) = state.cached_planets {
                         let [moon, planet] = query
                             .get_many_mut([moon_entity, planet_entity])
-                            .expect("Failed to retrieve cahed planets by enitities");
+                            .expect("Failed to retrieve cached planets by enitities");
 
                         let (
                             moon_entity,
@@ -234,6 +257,7 @@ impl ActiveEvent {
                             mut moon_orbit,
                             moon_mesh_handle,
                             _,
+                            _,
                         ) = moon;
                         let (
                             planet_entity,
@@ -241,6 +265,7 @@ impl ActiveEvent {
                             planet_position,
                             mut planet_orbit,
                             planet_mesh_handle,
+                            _,
                             _,
                         ) = planet;
 
@@ -281,7 +306,7 @@ impl ActiveEvent {
         meshes_to_update
             .iter()
             .for_each(|(mesh_handle, planetesimal)| {
-                update_planet_mesh(mesh_handle, &mut meshes, planetesimal);
+                PlanetModel::update_planet_mesh(mesh_handle, &mut meshes, planetesimal);
             });
 
         self.status = resulting_status;
@@ -291,6 +316,7 @@ impl ActiveEvent {
         if let Some(event) = &self.event {
             match event {
                 AccreteEvent::MoonsCoalesced(_, _, _, _)
+                | AccreteEvent::PlanetesimalMoonToRing(_, _, _, _)
                 | AccreteEvent::PlanetesimalsCoalesced(_, _, _, _)
                 | AccreteEvent::PlanetesimalCaptureMoon(_, _, _, _) => {
                     state.clear_cahed_planets();
@@ -316,6 +342,7 @@ pub fn active_event_system(
         &mut PlanetPosition,
         &mut Orbit,
         &Handle<Mesh>,
+        &Handle<StandardMaterial>,
         &mut Visibility,
     )>,
 ) {

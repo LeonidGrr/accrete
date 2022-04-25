@@ -1,5 +1,5 @@
 use accrete::Ring;
-use bevy::prelude::*;
+use bevy::{math::vec3, prelude::*};
 
 #[derive(Debug, Clone, Bundle)]
 pub struct RingModel {
@@ -15,6 +15,44 @@ impl From<&Ring> for RingModel {
             radius: Radius(ring.a as f32),
             id: RingId(ring.id.clone()),
         }
+    }
+}
+
+impl RingModel {
+    pub fn create_ring_mesh(
+        commands: &mut Commands,
+        planet_entity: Entity,
+        moon_entity: Entity,
+        moon_mesh_handle: &Handle<Mesh>,
+        moon_material_handle: &Handle<StandardMaterial>,
+        ring: &Ring,
+        meshes: &mut ResMut<Assets<Mesh>>,
+        materials: &mut ResMut<Assets<StandardMaterial>>,
+    ) {
+        // Remove moon
+        commands.entity(moon_entity).despawn();
+        meshes.remove(moon_mesh_handle);
+        materials.remove(moon_material_handle);
+
+        // Add ring
+        let ring_model = RingModel::from(ring);
+
+        let ring_entity = commands
+            .spawn()
+            .insert_bundle(PbrBundle {
+                mesh: meshes.add(Mesh::from(shape::Torus {
+                    ring_radius: ring_model.ring_radius.0,
+                    radius: ring_model.radius.0,
+                    ..default()
+                })),
+                material: materials.add(Color::rgba(0.0, 1.0, 0.0, 0.1).into()),
+                transform: Transform::from_scale(vec3(1.0, 0.0001, 1.0)),
+                ..default()
+            })
+            .insert_bundle(ring_model)
+            .id();
+
+        commands.entity(planet_entity).add_child(ring_entity);
     }
 }
 

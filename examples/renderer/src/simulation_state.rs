@@ -37,6 +37,7 @@ impl SimulationState {
             &mut PlanetPosition,
             &mut Orbit,
             &Handle<Mesh>,
+            &Handle<StandardMaterial>,
             &mut Visibility,
         )>,
         source_id: &str,
@@ -44,7 +45,7 @@ impl SimulationState {
     ) {
         if self.cached_planets.is_none() {
             let mut iter = query.iter_combinations_mut();
-            while let Some([(entity1, id1, _, _, _, _), (entity2, id2, _, _, _, _)]) =
+            while let Some([(entity1, id1, _, _, _, _, _), (entity2, id2, _, _, _, _, _)]) =
                 iter.fetch_next()
             {
                 let moon_and_planet = match (&id1.0, &id2.0) {
