@@ -5,6 +5,7 @@ mod rendering;
 mod ring_model;
 mod simulation_state;
 mod ui;
+mod surface;
 
 use accrete::events::{AccreteEvent, EVENTS};
 use accrete::Accrete;

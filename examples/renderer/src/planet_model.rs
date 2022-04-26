@@ -180,7 +180,7 @@ fn update_planets_position_system(
     let taskpool = TaskPool::new();
     query.par_for_each_mut(
         &taskpool,
-        16,
+        4,
         |(mut planet_position, mut orbit, mut transform)| {
             planet_position.update_position(&mut orbit, state.current_step);
             transform.translation.x = planet_position.0.x;
