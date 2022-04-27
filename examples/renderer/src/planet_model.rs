@@ -3,6 +3,7 @@ use crate::consts::{
     UPDATE_A_RATE, UPDATE_E_LIMIT, UPDATE_E_RATE,
 };
 use crate::simulation_state::SimulationState;
+use crate::surface::get_planet_color;
 use accrete::enviro::period;
 use accrete::{Planetesimal, PrimaryStar};
 use bevy::{math::vec3, prelude::*, tasks::TaskPool};
@@ -29,9 +30,11 @@ impl PlanetModel {
         }
     }
 
-    pub fn update_planet_mesh(
+    pub fn update_planet_resources(
         mesh_handle: &Handle<Mesh>,
+        material_handle: &Handle<StandardMaterial>,
         meshes: &mut ResMut<Assets<Mesh>>,
+        materials: &mut ResMut<Assets<StandardMaterial>>,
         planetesimal: &Planetesimal,
     ) {
         if let Some(mesh) = meshes.get_mut(mesh_handle) {
@@ -40,6 +43,11 @@ impl PlanetModel {
                 subdivisions: 32,
             });
             mesh.clone_from(&next_mesh);
+        }
+
+        if let Some(material) = materials.get_mut(material_handle) {
+            let color = get_planet_color(planetesimal);
+            material.clone_from(&color.into());
         }
     }
 }

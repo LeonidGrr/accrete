@@ -4,8 +4,8 @@ mod planet_model;
 mod rendering;
 mod ring_model;
 mod simulation_state;
-mod ui;
 mod surface;
+mod ui;
 
 use accrete::events::{AccreteEvent, EVENTS};
 use accrete::Accrete;

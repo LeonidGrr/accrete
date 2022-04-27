@@ -13,7 +13,7 @@ pub fn run(log: Vec<AccreteEvent>, primary_star: PrimaryStar) {
         .insert_resource(log)
         .add_startup_system(setup)
         .add_plugins(DefaultPlugins)
-        .add_plugin(WorldInspectorPlugin::new())
+        // .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(UIPlugin)
         .add_plugin(PlanetsPlugin)
         .add_plugin(SimulationStatePlugin)
@@ -31,16 +31,16 @@ fn setup(
         transform: Transform::from_xyz(0.0, 0.0, 0.0),
         ..default()
     });
-    commands.spawn_bundle(PointLightBundle {
-        transform: Transform::from_xyz(0.0, 0.0, 0.0),
-        point_light: PointLight {
-            intensity: 1600.0,
-            color: Color::RED,
-            shadows_enabled: true,
-            ..default()
-        },
-        ..default()
-    });
+    // commands.spawn_bundle(PointLightBundle {
+    //     transform: Transform::from_xyz(0.0, 0.0, 0.0),
+    //     point_light: PointLight {
+    //         intensity: 1600.0,
+    //         color: Color::RED,
+    //         shadows_enabled: true,
+    //         ..default()
+    //     },
+    //     ..default()
+    // });
     commands.spawn_bundle(PerspectiveCameraBundle {
         transform: Transform::from_xyz(50.1, 50.0, 50.1).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
