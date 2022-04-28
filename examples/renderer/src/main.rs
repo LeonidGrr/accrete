@@ -37,6 +37,8 @@ fn main() {
         }
     }
 
+    println!("Planetesimals coalesce: {:#?}", planetesimals_coalesce);
+    println!("Moons coalesce: {:#?}", moons_coalesce);
     println!("Planetesimals created: {:#?}", planetesimals);
     println!("Planetesimals coalesce: {:#?}", planetesimals_coalesce);
     println!("Planets moons captured: {:#?}", moon_capture);

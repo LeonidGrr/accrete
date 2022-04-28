@@ -59,7 +59,14 @@ impl ActiveEvent {
             match event {
                 AccreteEvent::OuterBodyInjected(_, planet)
                 | AccreteEvent::PlanetesimalCreated(_, planet) => {
-                    PlanetModel::create_planet_resourses(&mut commands, &mut state, &mut meshes, &mut materials, planet, &primary_star);
+                    PlanetModel::create_planet_resourses(
+                        &mut commands,
+                        &mut state,
+                        &mut meshes,
+                        &mut materials,
+                        planet,
+                        &primary_star,
+                    );
                     self.status = ActiveEventStatus::Executed;
                 }
                 AccreteEvent::PlanetesimalUpdated(_, planet) => {
@@ -162,7 +169,8 @@ impl ActiveEvent {
                         let [moon, planet] = query
                             .get_many_mut([moon_entity, planet_entity])
                             .expect("Failed to retrieve cached planets by enitities");
-                        let (moon_entity, moon_id, _, _, moon_mesh_handle, moon_material_handle, _) = moon;
+                        let (moon_entity, moon_id, _, _, moon_mesh_handle, moon_material_handle, _) =
+                            moon;
                         let (planet_entity, _, _, _, _, _, _) = planet;
                         RingModel::create_ring_resources(
                             &mut commands,

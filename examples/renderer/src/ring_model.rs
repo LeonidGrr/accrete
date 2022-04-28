@@ -1,7 +1,7 @@
+use crate::planet_model::Orbit;
 use accrete::Ring;
 use bevy::{math::vec3, prelude::*};
 use rand::Rng;
-use crate::planet_model::Orbit;
 
 #[derive(Debug, Clone, Bundle)]
 pub struct RingModel {

@@ -44,7 +44,7 @@ impl PlanetModel {
             .update_position(&mut planet_model.orbit, state.current_step);
         state.planets.insert(planet.id.to_owned(), planet.clone());
         let color = get_planet_color(&planet);
-        
+
         commands
             .spawn()
             .insert_bundle(PbrBundle {
@@ -84,7 +84,9 @@ impl PlanetModel {
         }
 
         visibility.is_visible = true;
-        state.planets.insert(planetesimal.id.to_owned(), planetesimal.clone());
+        state
+            .planets
+            .insert(planetesimal.id.to_owned(), planetesimal.clone());
     }
 
     pub fn remove_planet_resources(
