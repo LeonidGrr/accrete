@@ -37,6 +37,7 @@ impl SimulationState {
             &mut PlanetPosition,
             &mut Orbit,
             &Handle<Mesh>,
+            &Handle<StandardMaterial>,
             &mut Visibility,
         )>,
         source_id: &str,
@@ -44,7 +45,7 @@ impl SimulationState {
     ) {
         if self.cached_planets.is_none() {
             let mut iter = query.iter_combinations_mut();
-            while let Some([(entity1, id1, _, _, _, _), (entity2, id2, _, _, _, _)]) =
+            while let Some([(entity1, id1, _, _, _, _, _), (entity2, id2, _, _, _, _, _)]) =
                 iter.fetch_next()
             {
                 let moon_and_planet = match (&id1.0, &id2.0) {
@@ -59,7 +60,7 @@ impl SimulationState {
         }
     }
 
-    pub fn clear_cahed_planets(&mut self) {
+    pub fn clear_cached_planets(&mut self) {
         self.cached_planets = None;
     }
 }
@@ -75,7 +76,7 @@ fn event_handler_system(
     mut state: ResMut<SimulationState>,
 ) {
     let current_event = &log[state.event_idx];
-    let event_lock = matches!(current_event, AccreteEvent::PostAccretionStarted(_));
+    let event_lock = matches!(current_event, AccreteEvent::PlanetarySystemComplete(..));
 
     if !event_lock && state.is_open(&active_event, log.len()) {
         commands.insert_resource(ActiveEvent::from(current_event));

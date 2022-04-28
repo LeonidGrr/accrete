@@ -2,10 +2,10 @@ use crate::consts::{
     A_SCALE_FACTOR, PLANET_PERIOD_FACTOR, PLANET_RADIUS_SCALE_FACTOR, UPDATE_A_LIMIT,
     UPDATE_A_RATE, UPDATE_E_LIMIT, UPDATE_E_RATE,
 };
-use crate::ring_model::RingModel;
 use crate::simulation_state::SimulationState;
+use crate::surface::get_planet_color;
 use accrete::enviro::period;
-use accrete::{Planetesimal, PrimaryStar, Ring};
+use accrete::{Planetesimal, PrimaryStar};
 use bevy::{math::vec3, prelude::*, tasks::TaskPool};
 
 #[derive(Debug, Clone, Bundle)]
@@ -28,6 +28,81 @@ impl PlanetModel {
             position,
             orbit,
         }
+    }
+
+    pub fn create_planet_resourses(
+        commands: &mut Commands,
+        state: &mut ResMut<SimulationState>,
+        meshes: &mut ResMut<Assets<Mesh>>,
+        materials: &mut ResMut<Assets<StandardMaterial>>,
+        planet: &Planetesimal,
+        primary_star: &PrimaryStar,
+    ) {
+        let mut planet_model = PlanetModel::new(planet, primary_star);
+        planet_model
+            .position
+            .update_position(&mut planet_model.orbit, state.current_step);
+        state.planets.insert(planet.id.to_owned(), planet.clone());
+        let color = get_planet_color(&planet);
+
+        commands
+            .spawn()
+            .insert_bundle(PbrBundle {
+                mesh: meshes.add(Mesh::from(shape::Icosphere {
+                    radius: Orbit::scaled_radius(planet.radius),
+                    subdivisions: 32,
+                })),
+                material: materials.add(color.into()),
+                transform: Transform::from_translation(planet_model.position.0),
+                visibility: Visibility { is_visible: false },
+                ..default()
+            })
+            .insert_bundle(planet_model);
+    }
+
+    pub fn update_planet_resources(
+        mesh_handle: &Handle<Mesh>,
+        material_handle: &Handle<StandardMaterial>,
+        visibility: &mut Visibility,
+        state: &mut ResMut<SimulationState>,
+        meshes: &mut ResMut<Assets<Mesh>>,
+        materials: &mut ResMut<Assets<StandardMaterial>>,
+        planetesimal: &Planetesimal,
+    ) {
+        if let Some(mesh) = meshes.get_mut(mesh_handle) {
+            let next_mesh = Mesh::from(shape::Icosphere {
+                radius: 0.2,
+                // radius: Orbit::scaled_radius(planetesimal.radius),
+                subdivisions: 32,
+            });
+            mesh.clone_from(&next_mesh);
+        }
+
+        if let Some(material) = materials.get_mut(material_handle) {
+            let color = get_planet_color(planetesimal);
+            material.clone_from(&color.into());
+        }
+
+        visibility.is_visible = true;
+        state
+            .planets
+            .insert(planetesimal.id.to_owned(), planetesimal.clone());
+    }
+
+    pub fn remove_planet_resources(
+        entity: Entity,
+        id: &PlanetId,
+        mesh_handle: &Handle<Mesh>,
+        material_handle: &Handle<StandardMaterial>,
+        commands: &mut Commands,
+        state: &mut ResMut<SimulationState>,
+        meshes: &mut ResMut<Assets<Mesh>>,
+        materials: &mut ResMut<Assets<StandardMaterial>>,
+    ) {
+        commands.entity(entity).despawn();
+        materials.remove(material_handle);
+        meshes.remove(mesh_handle);
+        state.planets.remove(&id.0);
     }
 }
 
@@ -167,61 +242,11 @@ fn update_planets_position_system(
     let taskpool = TaskPool::new();
     query.par_for_each_mut(
         &taskpool,
-        16,
+        4,
         |(mut planet_position, mut orbit, mut transform)| {
             planet_position.update_position(&mut orbit, state.current_step);
             transform.translation.x = planet_position.0.x;
             transform.translation.z = planet_position.0.z;
         },
     );
-}
-
-pub fn update_planet_mesh(
-    mesh_handle: &Handle<Mesh>,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    planetesimal: &Planetesimal,
-) {
-    if let Some(mesh) = meshes.get_mut(mesh_handle) {
-        let next_mesh = Mesh::from(shape::Icosphere {
-            radius: Orbit::scaled_radius(planetesimal.radius),
-            subdivisions: 32,
-        });
-        mesh.clone_from(&next_mesh);
-    }
-}
-
-pub fn create_ring_mesh(
-    commands: &mut Commands,
-    planet_entity: Entity,
-    moon_entity: Entity,
-    moon_mesh_handle: &Handle<Mesh>,
-    moon_material_handle: &Handle<Mesh>,
-    ring: &Ring,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
-) {
-    // Remove moon
-    commands.entity(moon_entity).despawn();
-    meshes.remove(moon_mesh_handle);
-    materials.remove(moon_material_handle);
-
-    // Add ring
-    let ring_model = RingModel::from(ring);
-
-    let ring_entity = commands
-        .spawn()
-        .insert_bundle(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Torus {
-                ring_radius: ring_model.ring_radius.0,
-                radius: ring_model.radius.0,
-                ..default()
-            })),
-            material: materials.add(Color::rgba(0.0, 1.0, 0.0, 0.1).into()),
-            transform: Transform::from_scale(vec3(1.0, 0.0001, 1.0)),
-            ..default()
-        })
-        .insert_bundle(ring_model)
-        .id();
-
-    commands.entity(planet_entity).add_child(ring_entity);
 }

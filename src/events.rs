@@ -99,9 +99,12 @@ impl EventSource for Planetesimal {
 impl EventSource for Ring {
     fn event(&self, event_type: &str) {
         let mut events = EVENTS.lock().expect("Failed to access EVENT_STORE");
-        if event_type == "moon_to_ring" {
+        if event_type.contains("moon_to_ring") {
+            let data: Vec<&str> = event_type.split(':').collect();
             events.push(AccreteEvent::PlanetesimalMoonToRing(
-                event_type.to_string(),
+                data[0].to_string(),
+                data[1].to_string(),
+                data[2].to_string(),
                 self.clone(),
             ));
         }
@@ -145,7 +148,7 @@ pub enum AccreteEvent {
     /// one planetesimal catch another as moon
     PlanetesimalCaptureMoon(String, String, String, Planetesimal),
     /// moons turned into rings
-    PlanetesimalMoonToRing(String, Ring),
+    PlanetesimalMoonToRing(String, String, String, Ring),
     /// once at the very end of accretion
     PostAccretionStarted(String),
     /// for every outer body injected into system
@@ -167,7 +170,7 @@ impl AccreteEvent {
             AccreteEvent::PlanetesimalsCoalesced(name, _, _, _) => name,
             AccreteEvent::MoonsCoalesced(name, _, _, _) => name,
             AccreteEvent::PlanetesimalCaptureMoon(name, _, _, _) => name,
-            AccreteEvent::PlanetesimalMoonToRing(name, _) => name,
+            AccreteEvent::PlanetesimalMoonToRing(name, _, _, _) => name,
             AccreteEvent::PostAccretionStarted(name) => name,
             AccreteEvent::OuterBodyInjected(name, _) => name,
             AccreteEvent::PlanetaryEnvironmentGenerated(name, _) => name,
