@@ -1,7 +1,6 @@
 use accrete::Ring;
 use bevy::{math::vec3, prelude::*};
 use rand::Rng;
-
 use crate::planet_model::Orbit;
 
 #[derive(Debug, Clone, Bundle)]
@@ -13,34 +12,26 @@ pub struct RingModel {
 
 impl From<&Ring> for RingModel {
     fn from(ring: &Ring) -> RingModel {
+        println!("Ring!");
         RingModel {
             ring_radius: RingRadius(Orbit::scaled_radius(1.0)),
+            radius: Radius(Orbit::scaled_radius(3.0)),
             // ring_radius: RingRadius(Orbit::scaled_radius(ring.width / 2.0)),
-            radius: Radius(Orbit::scaled_radius(ring.a)),
+            // radius: Radius(Orbit::scaled_radius(ring.a)),
             id: RingId(ring.id.clone()),
         }
     }
 }
 
 impl RingModel {
-    pub fn create_ring_mesh(
+    pub fn create_ring_resources(
         commands: &mut Commands,
         planet_entity: Entity,
-        moon_entity: Entity,
-        moon_mesh_handle: &Handle<Mesh>,
-        moon_material_handle: &Handle<StandardMaterial>,
         ring: &Ring,
         meshes: &mut ResMut<Assets<Mesh>>,
         materials: &mut ResMut<Assets<StandardMaterial>>,
     ) {
-        // Remove moon
-        commands.entity(moon_entity).despawn();
-        meshes.remove(moon_mesh_handle);
-        materials.remove(moon_material_handle);
-
-        // Add ring
         let ring_model = RingModel::from(ring);
-
         let ring_entity = commands
             .spawn()
             .insert_bundle(PbrBundle {

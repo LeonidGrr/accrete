@@ -30,9 +30,41 @@ impl PlanetModel {
         }
     }
 
+    pub fn create_planet_resourses(
+        commands: &mut Commands,
+        state: &mut ResMut<SimulationState>,
+        meshes: &mut ResMut<Assets<Mesh>>,
+        materials: &mut ResMut<Assets<StandardMaterial>>,
+        planet: &Planetesimal,
+        primary_star: &PrimaryStar,
+    ) {
+        let mut planet_model = PlanetModel::new(planet, primary_star);
+        planet_model
+            .position
+            .update_position(&mut planet_model.orbit, state.current_step);
+        state.planets.insert(planet.id.to_owned(), planet.clone());
+        let color = get_planet_color(&planet);
+        
+        commands
+            .spawn()
+            .insert_bundle(PbrBundle {
+                mesh: meshes.add(Mesh::from(shape::Icosphere {
+                    radius: Orbit::scaled_radius(planet.radius),
+                    subdivisions: 32,
+                })),
+                material: materials.add(color.into()),
+                transform: Transform::from_translation(planet_model.position.0),
+                visibility: Visibility { is_visible: false },
+                ..default()
+            })
+            .insert_bundle(planet_model);
+    }
+
     pub fn update_planet_resources(
         mesh_handle: &Handle<Mesh>,
         material_handle: &Handle<StandardMaterial>,
+        visibility: &mut Visibility,
+        state: &mut ResMut<SimulationState>,
         meshes: &mut ResMut<Assets<Mesh>>,
         materials: &mut ResMut<Assets<StandardMaterial>>,
         planetesimal: &Planetesimal,
@@ -50,6 +82,25 @@ impl PlanetModel {
             let color = get_planet_color(planetesimal);
             material.clone_from(&color.into());
         }
+
+        visibility.is_visible = true;
+        state.planets.insert(planetesimal.id.to_owned(), planetesimal.clone());
+    }
+
+    pub fn remove_planet_resources(
+        entity: Entity,
+        id: &PlanetId,
+        mesh_handle: &Handle<Mesh>,
+        material_handle: &Handle<StandardMaterial>,
+        commands: &mut Commands,
+        state: &mut ResMut<SimulationState>,
+        meshes: &mut ResMut<Assets<Mesh>>,
+        materials: &mut ResMut<Assets<StandardMaterial>>,
+    ) {
+        commands.entity(entity).despawn();
+        materials.remove(material_handle);
+        meshes.remove(mesh_handle);
+        state.planets.remove(&id.0);
     }
 }
 

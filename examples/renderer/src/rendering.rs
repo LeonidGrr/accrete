@@ -1,6 +1,6 @@
 use crate::{planet_model::PlanetsPlugin, simulation_state::SimulationStatePlugin, ui::UIPlugin};
 use accrete::{events::AccreteEvent, PrimaryStar};
-use bevy::{diagnostic::DiagnosticsPlugin, prelude::*};
+use bevy::prelude::*;
 // use bevy_inspector_egui::WorldInspectorPlugin;
 
 pub fn run(log: Vec<AccreteEvent>, primary_star: PrimaryStar) {
@@ -13,7 +13,6 @@ pub fn run(log: Vec<AccreteEvent>, primary_star: PrimaryStar) {
         .insert_resource(log)
         .add_startup_system(setup)
         .add_plugins(DefaultPlugins)
-        .add_plugin(DiagnosticsPlugin)
         // .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(UIPlugin)
         .add_plugin(PlanetsPlugin)

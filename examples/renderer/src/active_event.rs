@@ -2,7 +2,6 @@ use crate::consts::{COLLISION_DISTANCE, UPDATE_A_LIMIT};
 use crate::planet_model::{Orbit, PlanetId, PlanetModel, PlanetPosition};
 use crate::ring_model::RingModel;
 use crate::simulation_state::SimulationState;
-use crate::surface::get_planet_color;
 use accrete::{events::*, PrimaryStar};
 use bevy::prelude::*;
 
@@ -60,27 +59,7 @@ impl ActiveEvent {
             match event {
                 AccreteEvent::OuterBodyInjected(_, planet)
                 | AccreteEvent::PlanetesimalCreated(_, planet) => {
-                    let mut planet_model = PlanetModel::new(planet, &primary_star);
-                    planet_model
-                        .position
-                        .update_position(&mut planet_model.orbit, state.current_step);
-                    state.planets.insert(planet.id.to_owned(), planet.clone());
-                    let color = get_planet_color(&planet);
-
-                    commands
-                        .spawn()
-                        .insert_bundle(PbrBundle {
-                            mesh: meshes.add(Mesh::from(shape::Icosphere {
-                                radius: Orbit::scaled_radius(planet.radius),
-                                subdivisions: 32,
-                            })),
-                            material: materials.add(color.into()),
-                            transform: Transform::from_translation(planet_model.position.0),
-                            visibility: Visibility { is_visible: false },
-                            ..default()
-                        })
-                        .insert_bundle(planet_model);
-
+                    PlanetModel::create_planet_resourses(&mut commands, &mut state, &mut meshes, &mut materials, planet, &primary_star);
                     self.status = ActiveEventStatus::Executed;
                 }
                 AccreteEvent::PlanetesimalUpdated(_, planet) => {
@@ -108,12 +87,12 @@ impl ActiveEvent {
                                 PlanetModel::update_planet_resources(
                                     mesh_handle,
                                     material_handle,
+                                    &mut visibility,
+                                    &mut state,
                                     &mut meshes,
                                     &mut materials,
                                     planet,
                                 );
-                                visibility.is_visible = true;
-                                state.planets.insert(planet.id.to_owned(), planet.clone());
                                 planet_orbit.update_orbit_immediate(
                                     resulting_planet_a,
                                     planet.e,
@@ -147,7 +126,6 @@ impl ActiveEvent {
                             .planets
                             .get(&planet_id.0)
                             .expect("Failed to find planet");
-
                         let resulting_planet_a = Orbit::scaled_a(resulting_planet.a);
 
                         moon_orbit.update_orbit(
@@ -184,15 +162,22 @@ impl ActiveEvent {
                         let [moon, planet] = query
                             .get_many_mut([moon_entity, planet_entity])
                             .expect("Failed to retrieve cached planets by enitities");
-                        let (moon_entity, _, _, _, mesh_handle, material_handle, _) = moon;
+                        let (moon_entity, moon_id, _, _, moon_mesh_handle, moon_material_handle, _) = moon;
                         let (planet_entity, _, _, _, _, _, _) = planet;
-                        RingModel::create_ring_mesh(
+                        RingModel::create_ring_resources(
                             &mut commands,
                             planet_entity,
-                            moon_entity,
-                            mesh_handle,
-                            material_handle,
                             resulting_ring,
+                            &mut meshes,
+                            &mut materials,
+                        );
+                        PlanetModel::remove_planet_resources(
+                            moon_entity,
+                            moon_id,
+                            moon_mesh_handle,
+                            moon_material_handle,
+                            &mut commands,
+                            &mut state,
                             &mut meshes,
                             &mut materials,
                         );
@@ -233,29 +218,34 @@ impl ActiveEvent {
                             moon;
                         let (
                             _,
-                            planet_id,
+                            _,
                             _,
                             mut planet_orbit,
                             planet_mesh_handle,
                             planet_material_handle,
-                            _,
+                            mut visibility,
                         ) = planet;
 
-                        commands.entity(moon_entity).despawn();
-                        materials.remove(moon_material_handle);
-                        meshes.remove(moon_mesh_handle);
+                        PlanetModel::remove_planet_resources(
+                            moon_entity,
+                            moon_id,
+                            moon_mesh_handle,
+                            moon_material_handle,
+                            &mut commands,
+                            &mut state,
+                            &mut meshes,
+                            &mut materials,
+                        );
+
                         PlanetModel::update_planet_resources(
                             planet_mesh_handle,
                             planet_material_handle,
+                            &mut visibility,
+                            &mut state,
                             &mut meshes,
                             &mut materials,
                             resulting_planet,
                         );
-
-                        state.planets.remove(&moon_id.0);
-                        state
-                            .planets
-                            .insert(planet_id.0.to_string(), resulting_planet.clone());
 
                         planet_orbit.update_orbit_immediate(
                             Orbit::scaled_a(resulting_planet.a),
@@ -280,7 +270,7 @@ impl ActiveEvent {
                             mut moon_orbit,
                             moon_mesh_handle,
                             moon_material_handle,
-                            _,
+                            mut moon_visibility,
                         ) = moon;
                         let (
                             planet_entity,
@@ -289,7 +279,7 @@ impl ActiveEvent {
                             mut planet_orbit,
                             planet_mesh_handle,
                             planet_material_handle,
-                            _,
+                            mut planet_visibility,
                         ) = planet;
 
                         let moon_data = state.planets.get(&moon_id.0).expect("Failed to find moon");
@@ -317,6 +307,8 @@ impl ActiveEvent {
                         PlanetModel::update_planet_resources(
                             moon_mesh_handle,
                             moon_material_handle,
+                            &mut moon_visibility,
+                            &mut state,
                             &mut meshes,
                             &mut materials,
                             resulting_moon,
@@ -324,6 +316,8 @@ impl ActiveEvent {
                         PlanetModel::update_planet_resources(
                             planet_mesh_handle,
                             planet_material_handle,
+                            &mut planet_visibility,
+                            &mut state,
                             &mut meshes,
                             &mut materials,
                             resulting_planet,
