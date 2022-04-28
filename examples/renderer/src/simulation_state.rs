@@ -60,7 +60,7 @@ impl SimulationState {
         }
     }
 
-    pub fn clear_cahed_planets(&mut self) {
+    pub fn clear_cached_planets(&mut self) {
         self.cached_planets = None;
     }
 }
@@ -76,7 +76,7 @@ fn event_handler_system(
     mut state: ResMut<SimulationState>,
 ) {
     let current_event = &log[state.event_idx];
-    let event_lock = matches!(current_event, AccreteEvent::PostAccretionStarted(_));
+    let event_lock = matches!(current_event, AccreteEvent::PlanetarySystemComplete(..));
 
     if !event_lock && state.is_open(&active_event, log.len()) {
         commands.insert_resource(ActiveEvent::from(current_event));

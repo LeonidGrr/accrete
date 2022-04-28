@@ -58,7 +58,8 @@ impl ActiveEvent {
     ) {
         if let Some(event) = &self.event {
             match event {
-                AccreteEvent::PlanetesimalCreated(_, planet) => {
+                AccreteEvent::OuterBodyInjected(_, planet)
+                | AccreteEvent::PlanetesimalCreated(_, planet) => {
                     let mut planet_model = PlanetModel::new(planet, &primary_star);
                     planet_model
                         .position
@@ -102,7 +103,8 @@ impl ActiveEvent {
                                 primary_star.stellar_mass,
                             );
 
-                            if (resulting_planet_a - planet_orbit.a) < UPDATE_A_LIMIT {
+                            let immediate = state.simulation_speed > 10.0;
+                            if (resulting_planet_a - planet_orbit.a) < UPDATE_A_LIMIT || immediate {
                                 PlanetModel::update_planet_resources(
                                     mesh_handle,
                                     material_handle,
@@ -162,6 +164,7 @@ impl ActiveEvent {
                             primary_star.stellar_mass,
                         );
 
+                        let immediate = state.simulation_speed > 10.0;
                         let planet_to_moon_distance = planet_position.0.distance(moon_position.0);
                         let approach_limit =
                             match resulting_planet.moons.iter().find(|m| m.id == moon_id.0) {
@@ -169,7 +172,7 @@ impl ActiveEvent {
                                 None => COLLISION_DISTANCE,
                             };
 
-                        if planet_to_moon_distance <= approach_limit {
+                        if planet_to_moon_distance <= approach_limit || immediate {
                             self.status = ActiveEventStatus::Approached;
                         }
                     }
@@ -254,7 +257,7 @@ impl ActiveEvent {
                             .planets
                             .insert(planet_id.0.to_string(), resulting_planet.clone());
 
-                        planet_orbit.update_orbit(
+                        planet_orbit.update_orbit_immediate(
                             Orbit::scaled_a(resulting_planet.a),
                             resulting_planet.e,
                             resulting_planet.mass,
@@ -299,7 +302,7 @@ impl ActiveEvent {
                         let distance = moon_position.0.distance(planet_position.0);
 
                         moon_orbit.update_orbit_immediate(
-                            distance,
+                            resulting_moon.a as f32,
                             moon_data.e,
                             moon_data.mass,
                             primary_star.stellar_mass,
@@ -340,7 +343,7 @@ impl ActiveEvent {
                 | AccreteEvent::PlanetesimalMoonToRing(_, _, _, _)
                 | AccreteEvent::PlanetesimalsCoalesced(_, _, _, _)
                 | AccreteEvent::PlanetesimalCaptureMoon(_, _, _, _) => {
-                    state.clear_cahed_planets();
+                    state.clear_cached_planets();
                 }
                 _ => (),
             }

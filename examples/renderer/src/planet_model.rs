@@ -39,7 +39,8 @@ impl PlanetModel {
     ) {
         if let Some(mesh) = meshes.get_mut(mesh_handle) {
             let next_mesh = Mesh::from(shape::Icosphere {
-                radius: Orbit::scaled_radius(planetesimal.radius),
+                radius: 0.2,
+                // radius: Orbit::scaled_radius(planetesimal.radius),
                 subdivisions: 32,
             });
             mesh.clone_from(&next_mesh);

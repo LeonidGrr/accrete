@@ -1,7 +1,7 @@
 use crate::{planet_model::PlanetsPlugin, simulation_state::SimulationStatePlugin, ui::UIPlugin};
 use accrete::{events::AccreteEvent, PrimaryStar};
-use bevy::prelude::*;
-use bevy_inspector_egui::WorldInspectorPlugin;
+use bevy::{diagnostic::DiagnosticsPlugin, prelude::*};
+// use bevy_inspector_egui::WorldInspectorPlugin;
 
 pub fn run(log: Vec<AccreteEvent>, primary_star: PrimaryStar) {
     App::new()
@@ -13,6 +13,7 @@ pub fn run(log: Vec<AccreteEvent>, primary_star: PrimaryStar) {
         .insert_resource(log)
         .add_startup_system(setup)
         .add_plugins(DefaultPlugins)
+        .add_plugin(DiagnosticsPlugin)
         // .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(UIPlugin)
         .add_plugin(PlanetsPlugin)
@@ -31,16 +32,16 @@ fn setup(
         transform: Transform::from_xyz(0.0, 0.0, 0.0),
         ..default()
     });
-    // commands.spawn_bundle(PointLightBundle {
-    //     transform: Transform::from_xyz(0.0, 0.0, 0.0),
-    //     point_light: PointLight {
-    //         intensity: 1600.0,
-    //         color: Color::RED,
-    //         shadows_enabled: true,
-    //         ..default()
-    //     },
-    //     ..default()
-    // });
+    commands.spawn_bundle(PointLightBundle {
+        transform: Transform::from_xyz(0.0, 0.0, 0.0),
+        point_light: PointLight {
+            intensity: 100.0,
+            color: Color::WHITE,
+            shadows_enabled: true,
+            ..default()
+        },
+        ..default()
+    });
     commands.spawn_bundle(PerspectiveCameraBundle {
         transform: Transform::from_xyz(50.1, 50.0, 50.1).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
