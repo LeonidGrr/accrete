@@ -1,4 +1,7 @@
-use crate::{planet_model::PlanetsPlugin, simulation_state::SimulationStatePlugin, ui::UIPlugin};
+use crate::{
+    dust_model::DustPlugin, planet_model::PlanetsPlugin, simulation_state::SimulationStatePlugin,
+    ui::UIPlugin,
+};
 use accrete::{events::AccreteEvent, PrimaryStar};
 use bevy::prelude::*;
 // use bevy_inspector_egui::WorldInspectorPlugin;
@@ -11,8 +14,9 @@ pub fn run(log: Vec<AccreteEvent>, primary_star: PrimaryStar) {
         })
         .insert_resource(primary_star)
         .insert_resource(log)
-        .add_startup_system(setup)
+        .add_startup_system(setup_scene)
         .add_plugins(DefaultPlugins)
+        .add_plugin(DustPlugin)
         // .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(UIPlugin)
         .add_plugin(PlanetsPlugin)
@@ -20,17 +24,7 @@ pub fn run(log: Vec<AccreteEvent>, primary_star: PrimaryStar) {
         .run();
 }
 
-fn setup(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    commands.spawn_bundle(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-        material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-        transform: Transform::from_xyz(0.0, 0.0, 0.0),
-        ..default()
-    });
+fn setup_scene(mut commands: Commands) {
     commands.spawn_bundle(PointLightBundle {
         transform: Transform::from_xyz(0.0, 0.0, 0.0),
         point_light: PointLight {

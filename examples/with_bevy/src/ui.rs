@@ -88,7 +88,8 @@ impl Plugin for UIPlugin {
             .add_startup_system(setup_event_system)
             .add_startup_system(setup_custom_fonts_system)
             .add_system(render_info_system)
-            .add_system(render_settings_system);
+            .add_system(render_settings_system)
+            .add_system(bevy::input::system::exit_on_esc_system);
     }
 }
 
