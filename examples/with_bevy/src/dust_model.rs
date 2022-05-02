@@ -1,6 +1,9 @@
+use bevy::math::vec3;
 use bevy::prelude::*;
 use bevy::render::{render_resource::WgpuFeatures, settings::WgpuSettings};
 use bevy_hanabi::*;
+
+use crate::planet_model::PlanetPosition;
 
 // fn setup(
 //     mut commands: Commands,
@@ -8,27 +11,6 @@ use bevy_hanabi::*;
 //     mut meshes: ResMut<Assets<Mesh>>,
 //     mut materials: ResMut<Assets<StandardMaterial>>,
 // ) {
-
-
-//     let attractor1_position = Vec3::new(0.01, 0.0, 0.0);
-
-
-//     commands.spawn_bundle(PbrBundle {
-//         mesh: meshes.add(Mesh::from(shape::UVSphere {
-//             sectors: 128,
-//             stacks: 4,
-//             radius: BALL_RADIUS * 2.0,
-//         })),
-//         material: materials.add(StandardMaterial {
-//             base_color: Color::YELLOW,
-//             unlit: false,
-//             ..default()
-//         }),
-//         transform: Transform::from_translation(attractor1_position),
-//         ..default()
-//     });
-
-
 
 //     let mut gradient = Gradient::new();
 //     gradient.add_key(0.0, Vec4::new(0.0, 1.0, 1.0, 1.0));
@@ -81,6 +63,7 @@ fn setup_dust_model(
 ) {
     let mut gradient = Gradient::new();
     gradient.add_key(0.0, Vec4::splat(1.0));
+    gradient.add_key(1.0, Vec4::splat(1.0));
 
     let effect = effects.add(
         EffectAsset {
@@ -92,20 +75,20 @@ fn setup_dust_model(
             center: Vec3::ZERO,
             axis: Vec3::Y,
             radius: 1.0,
-            speed: Value::Uniform((1.0, 25.0)),
+            speed: Value::Single(1.0),
             dimension: ShapeDimension::Surface,
         })
-        // .update(bevy_hanabi::ForceFieldModifier::new(vec![
-        //     ForceFieldParam {
-        //         position: Vec3::ZERO,
-        //         max_radius: 1024.0,
-        //         min_radius: 1.0,
-        //         mass: 3.0,
-        //         // quadratic force: proportional to 1 / distance^2
-        //         force_exponent: 2.0,
-        //         conform_to_sphere: true,
-        //     },
-        // ]))
+        .update(bevy_hanabi::ForceFieldModifier::new(vec![
+            ForceFieldParam {
+                position: vec3(10.0, 0.0, 10.0),
+                max_radius: 1024.0,
+                min_radius: 1.0,
+                mass: 300.0,
+                // quadratic force: proportional to 1 / distance^2
+                force_exponent: 2.0,
+                conform_to_sphere: true,
+            },
+        ]))
         .render(ColorOverLifetimeModifier { gradient })
         .render(SizeOverLifetimeModifier {
             gradient: Gradient::constant([0.1; 2].into()),
@@ -127,11 +110,54 @@ fn setup_dust_model(
         });
 }
 
-fn update_dust_model(mut query: Query<&mut Transform, With<PrimaryStar>>) {
-    let mut transform = query
+fn update_primary_star(mut primary_star_query: Query<&mut Transform, With<PrimaryStar>>) {
+    let mut primary_star_transform = primary_star_query
         .get_single_mut()
         .expect("Failed to get PrimaryStar Transform");
-    transform.rotation *= Quat::from_rotation_y(-0.1);
+    primary_star_transform.rotation *= Quat::from_rotation_y(-0.1);
+}
+
+fn update_dust_model(
+    mut effect_query: Query<&mut GlobalTransform, With<ParticleEffect>>,
+    planets_query: Query<(&PlanetPosition, &Visibility)>,
+    mut effects: ResMut<Assets<EffectAsset>>,
+) {
+    let mut dust_transform = effect_query
+        .get_single_mut()
+        .expect("Failed to get ParticleEffect Transform");
+    dust_transform.rotation *= Quat::from_rotation_y(-0.1);
+
+    // let effect_handle = effect_query.single();
+    let effect = effects.iter_mut().fold(None, |mut acc, (_, asset)| {
+        acc = Some(asset);
+        acc
+    });
+    // if let Ok(effect_handle) = effect_handle {
+    //     let mut effect = effects
+    //         .get_mut(effect_handle)
+    //         .expect("Failed to find DustModel effects");
+
+    // if let Some(effect) = effect {
+    //     let mut next_force_fields = vec![];
+    //     for (planet_position, visibility) in planets_query.iter() {
+    //         if visibility.is_visible {
+    //             next_force_fields.push(ForceFieldParam {
+    //                 position: planet_position.0,
+    //                 max_radius: 100.0,
+    //                 min_radius: 1.0,
+    //                 mass: 30.0,
+    //                 // quadratic force: proportional to 1 / distance^2
+    //                 force_exponent: 2.0,
+    //                 conform_to_sphere: false,
+    //             });
+    //         }
+    //     }
+
+    //     let modifier = bevy_hanabi::ForceFieldModifier::new(next_force_fields);
+    //     effect.update_layout.force_field = modifier.force_field;
+    // }
+        
+    // }
 }
 // fn setup2(
 //     mut commands: Commands,
@@ -234,6 +260,7 @@ impl Plugin for DustPlugin {
         app.insert_resource(options)
             .add_plugin(HanabiPlugin)
             .add_startup_system(setup_dust_model)
+            .add_system(update_primary_star)
             .add_system(update_dust_model);
     }
 }
