@@ -1,5 +1,6 @@
 use crate::active_event::{active_event_system, ActiveEvent, ActiveEventStatus};
-use crate::planet_model::{Orbit, PlanetId, PlanetPosition};
+use crate::orbit::OrbitalParameters;
+use crate::planet_model::{PlanetId, PlanetPosition};
 use accrete::{events::AccreteEvent, Planetesimal};
 use bevy::prelude::*;
 use std::collections::HashMap;
@@ -35,7 +36,7 @@ impl SimulationState {
             Entity,
             &PlanetId,
             &mut PlanetPosition,
-            &mut Orbit,
+            &mut OrbitalParameters,
             &Handle<Mesh>,
             &Handle<StandardMaterial>,
             &mut Visibility,

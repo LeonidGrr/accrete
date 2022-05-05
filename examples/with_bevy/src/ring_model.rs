@@ -1,4 +1,4 @@
-use crate::planet_model::Orbit;
+use crate::orbit::OrbitalParameters;
 use accrete::{consts::KM_PER_AU, Ring};
 use bevy::{math::vec3, prelude::*};
 use rand::Rng;
@@ -13,8 +13,8 @@ pub struct RingModel {
 impl From<&Ring> for RingModel {
     fn from(ring: &Ring) -> RingModel {
         RingModel {
-            ring_radius: RingRadius(Orbit::scaled_radius(ring.width / 2.0)),
-            radius: Radius(Orbit::scaled_radius(ring.a * KM_PER_AU)),
+            ring_radius: RingRadius(OrbitalParameters::scaled_radius(ring.width / 2.0)),
+            radius: Radius(OrbitalParameters::scaled_radius(ring.a * KM_PER_AU)),
             id: RingId(ring.id.clone()),
         }
     }

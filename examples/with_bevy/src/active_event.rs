@@ -1,5 +1,6 @@
 use crate::consts::{COLLISION_DISTANCE, UPDATE_A_LIMIT};
-use crate::planet_model::{Orbit, PlanetId, PlanetModel, PlanetPosition};
+use crate::orbit::OrbitalParameters;
+use crate::planet_model::{PlanetId, PlanetModel, PlanetPosition};
 use crate::ring_model::RingModel;
 use crate::simulation_state::SimulationState;
 use accrete::{events::*, PrimaryStar};
@@ -49,7 +50,7 @@ impl ActiveEvent {
             Entity,
             &PlanetId,
             &mut PlanetPosition,
-            &mut Orbit,
+            &mut OrbitalParameters,
             &Handle<Mesh>,
             &Handle<StandardMaterial>,
             &mut Visibility,
@@ -81,7 +82,7 @@ impl ActiveEvent {
                     ) in query.iter_mut()
                     {
                         if planet_id.0 == planet.id {
-                            let resulting_planet_a = Orbit::scaled_a(planet.a);
+                            let resulting_planet_a = OrbitalParameters::scaled_a(planet.a);
                             planet_orbit.update_orbit(
                                 resulting_planet_a,
                                 planet.e,
@@ -133,7 +134,7 @@ impl ActiveEvent {
                             .planets
                             .get(&planet_id.0)
                             .expect("Failed to find planet");
-                        let resulting_planet_a = Orbit::scaled_a(resulting_planet.a);
+                        let resulting_planet_a = OrbitalParameters::scaled_a(resulting_planet.a);
 
                         moon_orbit.update_orbit(
                             resulting_planet_a,
@@ -153,7 +154,7 @@ impl ActiveEvent {
                         let planet_to_moon_distance = planet_position.0.distance(moon_position.0);
                         let approach_limit =
                             match resulting_planet.moons.iter().find(|m| m.id == moon_id.0) {
-                                Some(moon) => Orbit::scaled_a(moon.a),
+                                Some(moon) => OrbitalParameters::scaled_a(moon.a),
                                 None => COLLISION_DISTANCE,
                             };
 
@@ -208,7 +209,7 @@ impl ActiveEvent {
             Entity,
             &PlanetId,
             &mut PlanetPosition,
-            &mut Orbit,
+            &mut OrbitalParameters,
             &Handle<Mesh>,
             &Handle<StandardMaterial>,
             &mut Visibility,
@@ -256,7 +257,7 @@ impl ActiveEvent {
                         );
 
                         planet_orbit.update_orbit_immediate(
-                            Orbit::scaled_a(resulting_planet.a),
+                            OrbitalParameters::scaled_a(resulting_planet.a),
                             resulting_planet.e,
                             resulting_planet.mass,
                             primary_star.stellar_mass,
@@ -296,7 +297,7 @@ impl ActiveEvent {
                             .iter()
                             .find(|m| m.id == moon_id.0)
                             .expect("Failed to find resulting moon");
-                        let resulting_planet_a = Orbit::scaled_a(resulting_planet.a);
+                        let resulting_planet_a = OrbitalParameters::scaled_a(resulting_planet.a);
                         let distance = moon_position.0.distance(planet_position.0);
 
                         moon_orbit.update_orbit_immediate(
@@ -366,7 +367,7 @@ pub fn active_event_system(
         Entity,
         &PlanetId,
         &mut PlanetPosition,
-        &mut Orbit,
+        &mut OrbitalParameters,
         &Handle<Mesh>,
         &Handle<StandardMaterial>,
         &mut Visibility,
