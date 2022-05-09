@@ -8,7 +8,11 @@ use bevy::{math::vec3, prelude::*};
 #[derive(Debug, Clone, Bundle)]
 pub struct Orbit {
     pub parameters: OrbitalParameters,
+    pub orbital_lines_id: OrbitalLinesId,
 }
+
+#[derive(Debug, Clone, Component)]
+pub struct OrbitalLinesId(pub Entity);
 
 #[derive(Debug, Clone, Component)]
 pub struct OrbitalParameters {
@@ -127,28 +131,14 @@ impl OrbitalParameters {
         vec3(x, 0.0, z)
     }
 
-    pub fn calculate_orbital_lines() {
+    pub fn calculate_orbital_lines(&mut self) -> Vec<Vec3> {
+        let mut vertices = vec![];
+    
+        for step in 0..360 {
+            let position = self.get_orbital_position(step as f32);
+            vertices.push(position);
+        }
         
+        vertices
     }
 }
-
-// pub struct OrbitsPlugin;
-
-// impl Plugin for OrbitsPlugin {
-//     fn build(&self, app: &mut App) {
-//         app.add_system(update_orbits_system);
-//     }
-// }
-
-// fn update_orbits_system(
-//     mut query: Query<(&mut OrbitalParameters,)>,
-// ) {
-//     let taskpool = TaskPool::new();
-//     query.par_for_each_mut(
-//         &taskpool,
-//         4,
-//         |(mut orbital_parameters)| {
-//             todo!()
-//         },
-//     );
-// }

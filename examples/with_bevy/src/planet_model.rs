@@ -1,8 +1,9 @@
-use crate::orbit::{Orbit, OrbitalParameters};
+use crate::orbit::{Orbit, OrbitalParameters, OrbitalLinesId};
 use crate::simulation_state::SimulationState;
 use crate::surface::get_planet_color;
 use accrete::{Planetesimal, PrimaryStar};
 use bevy::{math::vec3, prelude::*, tasks::TaskPool};
+use bevy_polyline::prelude::*;
 
 #[derive(Debug, Clone, Bundle)]
 pub struct PlanetModel {
@@ -30,6 +31,8 @@ impl PlanetModel {
         state: &mut ResMut<SimulationState>,
         meshes: &mut ResMut<Assets<Mesh>>,
         materials: &mut ResMut<Assets<StandardMaterial>>,
+        polyline_materials: &mut ResMut<Assets<PolylineMaterial>>,
+        polylines: &mut ResMut<Assets<Polyline>>,
         planet: &Planetesimal,
         primary_star: &PrimaryStar,
     ) {
@@ -40,6 +43,24 @@ impl PlanetModel {
             .update_position(&mut orbital_parameters, state.current_step);
         state.planets.insert(planet.id.to_owned(), planet.clone());
         let color = get_planet_color(&planet);
+        let orbital_lines = orbital_parameters.calculate_orbital_lines();
+
+        let orbital_lines_id = commands
+            .spawn()
+            .insert_bundle(PolylineBundle {
+                polyline: polylines.add(Polyline {
+                    vertices: orbital_lines,
+                    ..default()
+                }),
+                material: polyline_materials.add(PolylineMaterial {
+                    width: 1.0,
+                    color: Color::WHITE,
+                    perspective: false,
+                    ..default()
+                }),
+                ..default()
+            })
+            .id();
 
         commands
             .spawn()
@@ -55,6 +76,7 @@ impl PlanetModel {
             })
             .insert_bundle(Orbit {
                 parameters: orbital_parameters,
+                orbital_lines_id: OrbitalLinesId(orbital_lines_id),
             })
             .insert_bundle(planet_model);
     }

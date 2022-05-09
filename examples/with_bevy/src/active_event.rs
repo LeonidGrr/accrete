@@ -5,6 +5,7 @@ use crate::ring_model::RingModel;
 use crate::simulation_state::SimulationState;
 use accrete::{events::*, PrimaryStar};
 use bevy::prelude::*;
+use bevy_polyline::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ActiveEventStatus {
@@ -46,6 +47,8 @@ impl ActiveEvent {
         mut state: ResMut<SimulationState>,
         mut meshes: ResMut<Assets<Mesh>>,
         mut materials: ResMut<Assets<StandardMaterial>>,
+        mut polyline_materials: ResMut<Assets<PolylineMaterial>>,
+        mut polylines: ResMut<Assets<Polyline>>,
         mut query: Query<(
             Entity,
             &PlanetId,
@@ -65,6 +68,8 @@ impl ActiveEvent {
                         &mut state,
                         &mut meshes,
                         &mut materials,
+                        &mut polyline_materials,
+                        &mut polylines,
                         planet,
                         &primary_star,
                     );
@@ -363,6 +368,8 @@ pub fn active_event_system(
     mut active_event: ResMut<ActiveEvent>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut polyline_materials: ResMut<Assets<PolylineMaterial>>,
+    mut polylines: ResMut<Assets<Polyline>>,
     mut query: Query<(
         Entity,
         &PlanetId,
@@ -375,7 +382,7 @@ pub fn active_event_system(
 ) {
     match &active_event.status {
         ActiveEventStatus::Created => {
-            active_event.created(commands, primary_star, state, meshes, materials, query)
+            active_event.created(commands, primary_star, state, meshes, materials, polyline_materials, polylines, query)
         }
         ActiveEventStatus::Approached => {
             active_event.approached(commands, primary_star, state, meshes, materials, query)

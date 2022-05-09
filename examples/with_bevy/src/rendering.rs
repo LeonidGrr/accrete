@@ -4,6 +4,7 @@ use crate::{
 };
 use accrete::{events::AccreteEvent, PrimaryStar};
 use bevy::prelude::*;
+use bevy_polyline::prelude::*;
 // use bevy_inspector_egui::WorldInspectorPlugin;
 
 pub fn run(log: Vec<AccreteEvent>, primary_star: PrimaryStar) {
@@ -16,6 +17,7 @@ pub fn run(log: Vec<AccreteEvent>, primary_star: PrimaryStar) {
         .insert_resource(log)
         .add_startup_system(setup_scene)
         .add_plugins(DefaultPlugins)
+        .add_plugin(PolylinePlugin)
         .add_plugin(DustPlugin)
         // .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(UIPlugin)
