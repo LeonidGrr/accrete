@@ -1,4 +1,4 @@
-use crate::orbit::{Orbit, OrbitalParameters, OrbitalLinesId};
+use crate::orbit::{Orbit, OrbitalParameters};
 use crate::simulation_state::SimulationState;
 use crate::surface::get_planet_color;
 use accrete::{Planetesimal, PrimaryStar};
@@ -43,24 +43,22 @@ impl PlanetModel {
             .update_position(&mut orbital_parameters, state.current_step);
         state.planets.insert(planet.id.to_owned(), planet.clone());
         let color = get_planet_color(&planet);
-        let orbital_lines = orbital_parameters.calculate_orbital_lines();
 
-        let orbital_lines_id = commands
-            .spawn()
-            .insert_bundle(PolylineBundle {
-                polyline: polylines.add(Polyline {
-                    vertices: orbital_lines,
-                    ..default()
-                }),
-                material: polyline_materials.add(PolylineMaterial {
-                    width: 1.0,
-                    color: Color::WHITE,
-                    perspective: false,
-                    ..default()
-                }),
+        let orbital_lines = orbital_parameters.calculate_orbital_lines();
+        let orbital_polyline_handle = polylines.add(Polyline {
+            vertices: orbital_lines,
+            ..default()
+        });
+        commands.spawn().insert_bundle(PolylineBundle {
+            polyline: orbital_polyline_handle.clone_weak(),
+            material: polyline_materials.add(PolylineMaterial {
+                width: 0.25,
+                color: Color::WHITE,
+                perspective: false,
                 ..default()
-            })
-            .id();
+            }),
+            ..default()
+        });
 
         commands
             .spawn()
@@ -76,7 +74,7 @@ impl PlanetModel {
             })
             .insert_bundle(Orbit {
                 parameters: orbital_parameters,
-                orbital_lines_id: OrbitalLinesId(orbital_lines_id),
+                polyline_handle: orbital_polyline_handle,
             })
             .insert_bundle(planet_model);
     }

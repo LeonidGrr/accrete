@@ -1,5 +1,5 @@
 use crate::consts::{COLLISION_DISTANCE, UPDATE_A_LIMIT};
-use crate::orbit::OrbitalParameters;
+use crate::orbit::{Orbit, OrbitalParameters};
 use crate::planet_model::{PlanetId, PlanetModel, PlanetPosition};
 use crate::ring_model::RingModel;
 use crate::simulation_state::SimulationState;
@@ -9,8 +9,8 @@ use bevy_polyline::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ActiveEventStatus {
-    Created,
-    Approached,
+    Initialized,
+    InProgress,
     Executed,
     Done,
 }
@@ -34,13 +34,13 @@ impl From<&AccreteEvent> for ActiveEvent {
     fn from(accrete_event: &AccreteEvent) -> Self {
         ActiveEvent {
             event: Some(accrete_event.clone()),
-            status: ActiveEventStatus::Created,
+            status: ActiveEventStatus::Initialized,
         }
     }
 }
 
 impl ActiveEvent {
-    fn created(
+    fn initialized(
         &mut self,
         mut commands: Commands,
         primary_star: Res<PrimaryStar>,
@@ -54,6 +54,7 @@ impl ActiveEvent {
             &PlanetId,
             &mut PlanetPosition,
             &mut OrbitalParameters,
+            &Handle<Polyline>,
             &Handle<Mesh>,
             &Handle<StandardMaterial>,
             &mut Visibility,
@@ -81,6 +82,7 @@ impl ActiveEvent {
                         planet_id,
                         _,
                         mut planet_orbit,
+                        polyline_handle,
                         mesh_handle,
                         material_handle,
                         mut visibility,
@@ -93,6 +95,11 @@ impl ActiveEvent {
                                 planet.e,
                                 planet.mass,
                                 primary_star.stellar_mass,
+                            );
+                            Orbit::update_orbital_lines_resources(
+                                &mut planet_orbit,
+                                polyline_handle,
+                                &mut polylines,
                             );
 
                             let immediate = state.simulation_speed > 10.0;
@@ -111,6 +118,11 @@ impl ActiveEvent {
                                     planet.e,
                                     planet.mass,
                                     primary_star.stellar_mass,
+                                );
+                                Orbit::update_orbital_lines_resources(
+                                    &mut planet_orbit,
+                                    polyline_handle,
+                                    &mut polylines,
                                 );
                                 self.status = ActiveEventStatus::Executed;
                             }
@@ -131,8 +143,26 @@ impl ActiveEvent {
                         let [moon, planet] = query
                             .get_many_mut([moon_entity, planet_entity])
                             .expect("Failed to retrieve cached planets by enitities");
-                        let (_, moon_id, moon_position, mut moon_orbit, _, _, _) = moon;
-                        let (_, planet_id, planet_position, mut planet_orbit, _, _, _) = planet;
+                        let (
+                            _,
+                            moon_id,
+                            moon_position,
+                            mut moon_orbit,
+                            moon_polyline_handle,
+                            _,
+                            _,
+                            _,
+                        ) = moon;
+                        let (
+                            _,
+                            planet_id,
+                            planet_position,
+                            mut planet_orbit,
+                            planet_polyline_handle,
+                            _,
+                            _,
+                            _,
+                        ) = planet;
 
                         let moon_data = state.planets.get(&moon_id.0).expect("Failed to find moon");
                         let planet_data = state
@@ -147,12 +177,22 @@ impl ActiveEvent {
                             moon_data.mass,
                             primary_star.stellar_mass,
                         );
+                        Orbit::update_orbital_lines_resources(
+                            &mut moon_orbit,
+                            moon_polyline_handle,
+                            &mut polylines,
+                        );
 
                         planet_orbit.update_orbit(
                             resulting_planet_a,
                             resulting_planet.e,
                             planet_data.mass,
                             primary_star.stellar_mass,
+                        );
+                        Orbit::update_orbital_lines_resources(
+                            &mut planet_orbit,
+                            planet_polyline_handle,
+                            &mut polylines,
                         );
 
                         let immediate = state.simulation_speed > 10.0;
@@ -164,7 +204,7 @@ impl ActiveEvent {
                             };
 
                         if planet_to_moon_distance <= approach_limit || immediate {
-                            self.status = ActiveEventStatus::Approached;
+                            self.status = ActiveEventStatus::InProgress;
                         }
                     }
                 }
@@ -175,9 +215,17 @@ impl ActiveEvent {
                         let [moon, planet] = query
                             .get_many_mut([moon_entity, planet_entity])
                             .expect("Failed to retrieve cached planets by enitities");
-                        let (moon_entity, moon_id, _, _, moon_mesh_handle, moon_material_handle, _) =
-                            moon;
-                        let (planet_entity, _, _, _, _, _, _) = planet;
+                        let (
+                            moon_entity,
+                            moon_id,
+                            _,
+                            _,
+                            moon_polyline_handle,
+                            moon_mesh_handle,
+                            moon_material_handle,
+                            _,
+                        ) = moon;
+                        let (planet_entity, _, _, _, _, _, _, _) = planet;
                         RingModel::create_ring_resources(
                             &mut commands,
                             planet_entity,
@@ -195,6 +243,7 @@ impl ActiveEvent {
                             &mut meshes,
                             &mut materials,
                         );
+                        Orbit::remove_orbital_lines_resources(moon_polyline_handle, &mut polylines);
                         self.status = ActiveEventStatus::Executed;
                     }
                 }
@@ -203,18 +252,20 @@ impl ActiveEvent {
         }
     }
 
-    fn approached(
+    fn in_progress(
         &mut self,
         mut commands: Commands,
         primary_star: Res<PrimaryStar>,
         mut state: ResMut<SimulationState>,
         mut meshes: ResMut<Assets<Mesh>>,
         mut materials: ResMut<Assets<StandardMaterial>>,
+        mut polylines: ResMut<Assets<Polyline>>,
         mut query: Query<(
             Entity,
             &PlanetId,
             &mut PlanetPosition,
             &mut OrbitalParameters,
+            &Handle<Polyline>,
             &Handle<Mesh>,
             &Handle<StandardMaterial>,
             &mut Visibility,
@@ -228,13 +279,22 @@ impl ActiveEvent {
                         let [moon, planet] = query
                             .get_many_mut([moon_entity, planet_entity])
                             .expect("Failed to retrieve cached planets by enitities");
-                        let (moon_entity, moon_id, _, _, moon_mesh_handle, moon_material_handle, _) =
-                            moon;
+                        let (
+                            moon_entity,
+                            moon_id,
+                            _,
+                            _,
+                            moon_polyline_handle,
+                            moon_mesh_handle,
+                            moon_material_handle,
+                            _,
+                        ) = moon;
                         let (
                             _,
                             _,
                             _,
                             mut planet_orbit,
+                            planet_polyline_handle,
                             planet_mesh_handle,
                             planet_material_handle,
                             mut visibility,
@@ -250,6 +310,7 @@ impl ActiveEvent {
                             &mut meshes,
                             &mut materials,
                         );
+                        Orbit::remove_orbital_lines_resources(moon_polyline_handle, &mut polylines);
 
                         PlanetModel::update_planet_resources(
                             planet_mesh_handle,
@@ -267,6 +328,11 @@ impl ActiveEvent {
                             resulting_planet.mass,
                             primary_star.stellar_mass,
                         );
+                        Orbit::update_orbital_lines_resources(
+                            &mut planet_orbit,
+                            planet_polyline_handle,
+                            &mut polylines,
+                        );
 
                         self.status = ActiveEventStatus::Executed;
                     }
@@ -282,6 +348,7 @@ impl ActiveEvent {
                             moon_id,
                             moon_position,
                             mut moon_orbit,
+                            moon_polyline_handle,
                             moon_mesh_handle,
                             moon_material_handle,
                             mut moon_visibility,
@@ -291,6 +358,7 @@ impl ActiveEvent {
                             _,
                             planet_position,
                             mut planet_orbit,
+                            planet_polyline_handle,
                             planet_mesh_handle,
                             planet_material_handle,
                             mut planet_visibility,
@@ -311,12 +379,24 @@ impl ActiveEvent {
                             moon_data.mass,
                             primary_star.stellar_mass,
                         );
+                        Orbit::update_orbital_lines_resources(
+                            &mut moon_orbit,
+                            moon_polyline_handle,
+                            &mut polylines,
+                        );
+
                         planet_orbit.update_orbit_immediate(
                             resulting_planet_a,
                             resulting_planet.e,
                             resulting_planet.mass,
                             primary_star.stellar_mass,
                         );
+                        Orbit::update_orbital_lines_resources(
+                            &mut planet_orbit,
+                            planet_polyline_handle,
+                            &mut polylines,
+                        );
+
                         commands.entity(planet_entity).add_child(moon_entity);
                         PlanetModel::update_planet_resources(
                             moon_mesh_handle,
@@ -375,18 +455,32 @@ pub fn active_event_system(
         &PlanetId,
         &mut PlanetPosition,
         &mut OrbitalParameters,
+        &Handle<Polyline>,
         &Handle<Mesh>,
         &Handle<StandardMaterial>,
         &mut Visibility,
     )>,
 ) {
     match &active_event.status {
-        ActiveEventStatus::Created => {
-            active_event.created(commands, primary_star, state, meshes, materials, polyline_materials, polylines, query)
-        }
-        ActiveEventStatus::Approached => {
-            active_event.approached(commands, primary_star, state, meshes, materials, query)
-        }
+        ActiveEventStatus::Initialized => active_event.initialized(
+            commands,
+            primary_star,
+            state,
+            meshes,
+            materials,
+            polyline_materials,
+            polylines,
+            query,
+        ),
+        ActiveEventStatus::InProgress => active_event.in_progress(
+            commands,
+            primary_star,
+            state,
+            meshes,
+            materials,
+            polylines,
+            query,
+        ),
         ActiveEventStatus::Executed => active_event.executed(state),
         ActiveEventStatus::Done => (),
     }

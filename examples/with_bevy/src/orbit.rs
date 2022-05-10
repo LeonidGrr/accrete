@@ -4,15 +4,33 @@ use crate::consts::{
 };
 use accrete::{enviro::period, Planetesimal};
 use bevy::{math::vec3, prelude::*};
+use bevy_polyline::prelude::*;
 
 #[derive(Debug, Clone, Bundle)]
 pub struct Orbit {
     pub parameters: OrbitalParameters,
-    pub orbital_lines_id: OrbitalLinesId,
+    pub polyline_handle: Handle<Polyline>,
 }
 
-#[derive(Debug, Clone, Component)]
-pub struct OrbitalLinesId(pub Entity);
+impl Orbit {
+    pub fn update_orbital_lines_resources(
+        parameters: &mut OrbitalParameters,
+        polyline_handle: &Handle<Polyline>,
+        polylines: &mut ResMut<Assets<Polyline>>,
+    ) {
+        let mut polyline = polylines
+            .get_mut(polyline_handle)
+            .expect("Failed to get ornotal polyline resource");
+        polyline.vertices = parameters.calculate_orbital_lines();
+    }
+
+    pub fn remove_orbital_lines_resources(
+        polyline_handle: &Handle<Polyline>,
+        polylines: &mut ResMut<Assets<Polyline>>,
+    ) {
+        polylines.remove(polyline_handle);
+    }
+}
 
 #[derive(Debug, Clone, Component)]
 pub struct OrbitalParameters {
@@ -22,6 +40,7 @@ pub struct OrbitalParameters {
     pub focus: f32,
     pub u: f32,
     pub t: f32,
+    pub last_pos: Option<Vec3>,
 }
 
 impl OrbitalParameters {
@@ -38,6 +57,7 @@ impl OrbitalParameters {
             b,
             focus: OrbitalParameters::get_focus(a, b),
             t: OrbitalParameters::get_orbital_period(a as f64, planet.mass, parent_mass),
+            last_pos: None,
         }
     }
 
@@ -133,12 +153,12 @@ impl OrbitalParameters {
 
     pub fn calculate_orbital_lines(&mut self) -> Vec<Vec3> {
         let mut vertices = vec![];
-    
-        for step in 0..360 {
+
+        for step in 0..(self.t / 50.0) as usize {
             let position = self.get_orbital_position(step as f32);
             vertices.push(position);
         }
-        
+
         vertices
     }
 }
