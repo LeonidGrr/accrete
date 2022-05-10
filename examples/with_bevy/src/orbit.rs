@@ -1,9 +1,14 @@
-use crate::consts::{
-    A_SCALE_FACTOR, PLANET_PERIOD_FACTOR, PLANET_RADIUS_SCALE_FACTOR, UPDATE_A_LIMIT,
-    UPDATE_A_RATE, UPDATE_E_LIMIT, UPDATE_E_RATE,
+use std::collections::VecDeque;
+
+use crate::{
+    consts::{
+        A_SCALE_FACTOR, PLANET_PERIOD_FACTOR, PLANET_RADIUS_SCALE_FACTOR, UPDATE_A_LIMIT,
+        UPDATE_A_RATE, UPDATE_E_LIMIT, UPDATE_E_RATE,
+    },
+    simulation_state::SimulationState,
 };
 use accrete::{enviro::period, Planetesimal};
-use bevy::{math::vec3, prelude::*};
+use bevy::{math::vec3, prelude::*, tasks::TaskPool};
 use bevy_polyline::prelude::*;
 
 #[derive(Debug, Clone, Bundle)]
@@ -13,17 +18,6 @@ pub struct Orbit {
 }
 
 impl Orbit {
-    pub fn update_orbital_lines_resources(
-        parameters: &mut OrbitalParameters,
-        polyline_handle: &Handle<Polyline>,
-        polylines: &mut ResMut<Assets<Polyline>>,
-    ) {
-        let mut polyline = polylines
-            .get_mut(polyline_handle)
-            .expect("Failed to get ornotal polyline resource");
-        polyline.vertices = parameters.calculate_orbital_lines();
-    }
-
     pub fn remove_orbital_lines_resources(
         polyline_handle: &Handle<Polyline>,
         polylines: &mut ResMut<Assets<Polyline>>,
@@ -40,7 +34,6 @@ pub struct OrbitalParameters {
     pub focus: f32,
     pub u: f32,
     pub t: f32,
-    pub last_pos: Option<Vec3>,
 }
 
 impl OrbitalParameters {
@@ -49,15 +42,16 @@ impl OrbitalParameters {
         let e = planet.e as f32;
         let u = 1.0;
         let b = OrbitalParameters::get_semiminor_axis(a, e);
+        let t = OrbitalParameters::get_orbital_period(a as f64, planet.mass, parent_mass);
+        let focus = OrbitalParameters::get_focus(a, b);
 
         OrbitalParameters {
             a,
             u,
             e,
             b,
-            focus: OrbitalParameters::get_focus(a, b),
-            t: OrbitalParameters::get_orbital_period(a as f64, planet.mass, parent_mass),
-            last_pos: None,
+            focus,
+            t,
         }
     }
 
@@ -150,15 +144,29 @@ impl OrbitalParameters {
 
         vec3(x, 0.0, z)
     }
+}
 
-    pub fn calculate_orbital_lines(&mut self) -> Vec<Vec3> {
-        let mut vertices = vec![];
+pub struct OrbitsPlugin;
 
-        for step in 0..(self.t / 50.0) as usize {
-            let position = self.get_orbital_position(step as f32);
-            vertices.push(position);
-        }
+impl Plugin for OrbitsPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_system(update_orbits_system);
+    }
+}
 
-        vertices
+fn update_orbits_system(
+    state: Res<SimulationState>,
+    mut polylines: ResMut<Assets<Polyline>>,
+    mut query: Query<(&mut OrbitalParameters, &Handle<Polyline>)>,
+) {
+    for (mut parameters, polyline_handle) in query.iter_mut() {
+        let polyline = polylines
+            .get_mut(polyline_handle)
+            .expect("Failed to get orbital polyline resource");
+
+        let position = parameters.get_orbital_position(state.current_step);
+
+        polyline.vertices.push(position);
+        // polyline.vertices.dedup_by(|a, b| a.distance(*b) < 1.0);
     }
 }

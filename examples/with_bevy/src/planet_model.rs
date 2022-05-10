@@ -44,13 +44,12 @@ impl PlanetModel {
         state.planets.insert(planet.id.to_owned(), planet.clone());
         let color = get_planet_color(&planet);
 
-        let orbital_lines = orbital_parameters.calculate_orbital_lines();
-        let orbital_polyline_handle = polylines.add(Polyline {
-            vertices: orbital_lines,
+        let polyline_handle = polylines.add(Polyline {
+            vertices: Vec::with_capacity(orbital_parameters.t as usize / 50),
             ..default()
         });
         commands.spawn().insert_bundle(PolylineBundle {
-            polyline: orbital_polyline_handle.clone_weak(),
+            polyline: polyline_handle.clone_weak(),
             material: polyline_materials.add(PolylineMaterial {
                 width: 0.25,
                 color: Color::WHITE,
@@ -74,7 +73,7 @@ impl PlanetModel {
             })
             .insert_bundle(Orbit {
                 parameters: orbital_parameters,
-                polyline_handle: orbital_polyline_handle,
+                polyline_handle: polyline_handle,
             })
             .insert_bundle(planet_model);
     }

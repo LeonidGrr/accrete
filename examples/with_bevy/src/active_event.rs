@@ -96,11 +96,6 @@ impl ActiveEvent {
                                 planet.mass,
                                 primary_star.stellar_mass,
                             );
-                            Orbit::update_orbital_lines_resources(
-                                &mut planet_orbit,
-                                polyline_handle,
-                                &mut polylines,
-                            );
 
                             let immediate = state.simulation_speed > 10.0;
                             if (resulting_planet_a - planet_orbit.a) < UPDATE_A_LIMIT || immediate {
@@ -118,11 +113,6 @@ impl ActiveEvent {
                                     planet.e,
                                     planet.mass,
                                     primary_star.stellar_mass,
-                                );
-                                Orbit::update_orbital_lines_resources(
-                                    &mut planet_orbit,
-                                    polyline_handle,
-                                    &mut polylines,
                                 );
                                 self.status = ActiveEventStatus::Executed;
                             }
@@ -177,22 +167,12 @@ impl ActiveEvent {
                             moon_data.mass,
                             primary_star.stellar_mass,
                         );
-                        Orbit::update_orbital_lines_resources(
-                            &mut moon_orbit,
-                            moon_polyline_handle,
-                            &mut polylines,
-                        );
 
                         planet_orbit.update_orbit(
                             resulting_planet_a,
                             resulting_planet.e,
                             planet_data.mass,
                             primary_star.stellar_mass,
-                        );
-                        Orbit::update_orbital_lines_resources(
-                            &mut planet_orbit,
-                            planet_polyline_handle,
-                            &mut polylines,
                         );
 
                         let immediate = state.simulation_speed > 10.0;
@@ -328,11 +308,6 @@ impl ActiveEvent {
                             resulting_planet.mass,
                             primary_star.stellar_mass,
                         );
-                        Orbit::update_orbital_lines_resources(
-                            &mut planet_orbit,
-                            planet_polyline_handle,
-                            &mut polylines,
-                        );
 
                         self.status = ActiveEventStatus::Executed;
                     }
@@ -379,11 +354,6 @@ impl ActiveEvent {
                             moon_data.mass,
                             primary_star.stellar_mass,
                         );
-                        Orbit::update_orbital_lines_resources(
-                            &mut moon_orbit,
-                            moon_polyline_handle,
-                            &mut polylines,
-                        );
 
                         planet_orbit.update_orbit_immediate(
                             resulting_planet_a,
@@ -391,13 +361,12 @@ impl ActiveEvent {
                             resulting_planet.mass,
                             primary_star.stellar_mass,
                         );
-                        Orbit::update_orbital_lines_resources(
-                            &mut planet_orbit,
-                            planet_polyline_handle,
-                            &mut polylines,
-                        );
 
                         commands.entity(planet_entity).add_child(moon_entity);
+
+                        // let polyline = polylines.get(moon_polyline_handle).expect("Failed to get moon polyline resource");
+                        // commands.entity(planet_entity).add_child(polyline);
+
                         PlanetModel::update_planet_resources(
                             moon_mesh_handle,
                             moon_material_handle,

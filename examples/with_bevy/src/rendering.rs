@@ -1,6 +1,6 @@
 use crate::{
-    dust_model::DustPlugin, planet_model::PlanetsPlugin, simulation_state::SimulationStatePlugin,
-    ui::UIPlugin,
+    dust_model::DustPlugin, orbit::OrbitsPlugin, planet_model::PlanetsPlugin,
+    simulation_state::SimulationStatePlugin, ui::UIPlugin,
 };
 use accrete::{events::AccreteEvent, PrimaryStar};
 use bevy::prelude::*;
@@ -18,10 +18,11 @@ pub fn run(log: Vec<AccreteEvent>, primary_star: PrimaryStar) {
         .add_startup_system(setup_scene)
         .add_plugins(DefaultPlugins)
         .add_plugin(PolylinePlugin)
-        .add_plugin(DustPlugin)
         // .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(UIPlugin)
         .add_plugin(PlanetsPlugin)
+        .add_plugin(OrbitsPlugin)
+        .add_plugin(DustPlugin)
         .add_plugin(SimulationStatePlugin)
         .run();
 }
