@@ -82,7 +82,7 @@ impl ActiveEvent {
                         planet_id,
                         _,
                         mut planet_orbit,
-                        polyline_handle,
+                        _,
                         mesh_handle,
                         material_handle,
                         mut visibility,
@@ -133,26 +133,8 @@ impl ActiveEvent {
                         let [moon, planet] = query
                             .get_many_mut([moon_entity, planet_entity])
                             .expect("Failed to retrieve cached planets by enitities");
-                        let (
-                            _,
-                            moon_id,
-                            moon_position,
-                            mut moon_orbit,
-                            moon_polyline_handle,
-                            _,
-                            _,
-                            _,
-                        ) = moon;
-                        let (
-                            _,
-                            planet_id,
-                            planet_position,
-                            mut planet_orbit,
-                            planet_polyline_handle,
-                            _,
-                            _,
-                            _,
-                        ) = planet;
+                        let (_, moon_id, moon_position, mut moon_orbit, _, _, _, _) = moon;
+                        let (_, planet_id, planet_position, mut planet_orbit, _, _, _, _) = planet;
 
                         let moon_data = state.planets.get(&moon_id.0).expect("Failed to find moon");
                         let planet_data = state
@@ -274,7 +256,7 @@ impl ActiveEvent {
                             _,
                             _,
                             mut planet_orbit,
-                            planet_polyline_handle,
+                            _,
                             planet_mesh_handle,
                             planet_material_handle,
                             mut visibility,
@@ -321,9 +303,9 @@ impl ActiveEvent {
                         let (
                             moon_entity,
                             moon_id,
-                            moon_position,
+                            _,
                             mut moon_orbit,
-                            moon_polyline_handle,
+                            _,
                             moon_mesh_handle,
                             moon_material_handle,
                             mut moon_visibility,
@@ -331,9 +313,9 @@ impl ActiveEvent {
                         let (
                             planet_entity,
                             _,
-                            planet_position,
+                            _,
                             mut planet_orbit,
-                            planet_polyline_handle,
+                            _,
                             planet_mesh_handle,
                             planet_material_handle,
                             mut planet_visibility,
@@ -346,7 +328,6 @@ impl ActiveEvent {
                             .find(|m| m.id == moon_id.0)
                             .expect("Failed to find resulting moon");
                         let resulting_planet_a = OrbitalParameters::scaled_a(resulting_planet.a);
-                        let distance = moon_position.0.distance(planet_position.0);
 
                         moon_orbit.update_orbit_immediate(
                             resulting_moon.a as f32,
@@ -363,9 +344,6 @@ impl ActiveEvent {
                         );
 
                         commands.entity(planet_entity).add_child(moon_entity);
-
-                        // let polyline = polylines.get(moon_polyline_handle).expect("Failed to get moon polyline resource");
-                        // commands.entity(planet_entity).add_child(polyline);
 
                         PlanetModel::update_planet_resources(
                             moon_mesh_handle,

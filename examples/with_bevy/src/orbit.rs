@@ -1,14 +1,12 @@
-use std::collections::VecDeque;
-
 use crate::{
     consts::{
         A_SCALE_FACTOR, PLANET_PERIOD_FACTOR, PLANET_RADIUS_SCALE_FACTOR, UPDATE_A_LIMIT,
         UPDATE_A_RATE, UPDATE_E_LIMIT, UPDATE_E_RATE,
     },
-    simulation_state::SimulationState,
+    planet_model::PlanetId,
 };
 use accrete::{enviro::period, Planetesimal};
-use bevy::{math::vec3, prelude::*, tasks::TaskPool};
+use bevy::{math::vec3, prelude::*};
 use bevy_polyline::prelude::*;
 
 #[derive(Debug, Clone, Bundle)]
@@ -139,9 +137,6 @@ impl OrbitalParameters {
         let x = focus + r * cos_f;
         let z = r * sin_f;
 
-        // let x = focus + (a * current_t.cos() as f32);
-        // let z = b * current_t.sin() as f32;
-
         vec3(x, 0.0, z)
     }
 }
@@ -155,18 +150,13 @@ impl Plugin for OrbitsPlugin {
 }
 
 fn update_orbits_system(
-    state: Res<SimulationState>,
     mut polylines: ResMut<Assets<Polyline>>,
-    mut query: Query<(&mut OrbitalParameters, &Handle<Polyline>)>,
+    query: Query<(&Handle<Polyline>, &GlobalTransform), With<PlanetId>>,
 ) {
-    for (mut parameters, polyline_handle) in query.iter_mut() {
+    for (polyline_handle, global_transform) in query.iter() {
         let polyline = polylines
             .get_mut(polyline_handle)
             .expect("Failed to get orbital polyline resource");
-
-        let position = parameters.get_orbital_position(state.current_step);
-
-        polyline.vertices.push(position);
-        // polyline.vertices.dedup_by(|a, b| a.distance(*b) < 1.0);
+        polyline.vertices.push(global_transform.translation);
     }
 }

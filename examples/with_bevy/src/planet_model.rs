@@ -1,3 +1,4 @@
+use crate::consts::ORBITAL_POLYLINE_VERTICES_CAPACITY_MODIFIER;
 use crate::orbit::{Orbit, OrbitalParameters};
 use crate::simulation_state::SimulationState;
 use crate::surface::get_planet_color;
@@ -45,7 +46,9 @@ impl PlanetModel {
         let color = get_planet_color(&planet);
 
         let polyline_handle = polylines.add(Polyline {
-            vertices: Vec::with_capacity(orbital_parameters.t as usize / 50),
+            vertices: Vec::with_capacity(
+                orbital_parameters.t as usize / ORBITAL_POLYLINE_VERTICES_CAPACITY_MODIFIER,
+            ),
             ..default()
         });
         commands.spawn().insert_bundle(PolylineBundle {
@@ -89,7 +92,8 @@ impl PlanetModel {
     ) {
         if let Some(mesh) = meshes.get_mut(mesh_handle) {
             let next_mesh = Mesh::from(shape::Icosphere {
-                radius: OrbitalParameters::scaled_radius(planetesimal.radius),
+                radius: 0.2,
+                // radius: OrbitalParameters::scaled_radius(planetesimal.radius),
                 subdivisions: 32,
             });
             mesh.clone_from(&next_mesh);
