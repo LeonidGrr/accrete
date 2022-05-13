@@ -51,6 +51,7 @@ impl PlanetModel {
             ),
             ..default()
         });
+
         commands.spawn().insert_bundle(PolylineBundle {
             polyline: polyline_handle.clone_weak(),
             material: polyline_materials.add(PolylineMaterial {
@@ -59,6 +60,7 @@ impl PlanetModel {
                 perspective: false,
                 ..default()
             }),
+            visibility: Visibility { is_visible: false },
             ..default()
         });
 
@@ -74,10 +76,7 @@ impl PlanetModel {
                 visibility: Visibility { is_visible: false },
                 ..default()
             })
-            .insert_bundle(Orbit {
-                parameters: orbital_parameters,
-                polyline_handle: polyline_handle,
-            })
+            .insert_bundle(Orbit::new(orbital_parameters, polyline_handle))
             .insert_bundle(planet_model);
     }
 

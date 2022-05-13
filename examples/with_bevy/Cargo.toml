@@ -15,6 +15,7 @@ egui = "0.17.0"
 bevy-inspector-egui = "0.10.0"
 rand = "0.8.3"
 getrandom = { version = "0.2.3", features = ["js"] }
+ringbuffer = "0.8.4"
 
 [profile.dev]
 opt-level = 2

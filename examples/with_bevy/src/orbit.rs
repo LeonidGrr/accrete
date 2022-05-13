@@ -1,17 +1,22 @@
 use crate::{
     consts::{
-        A_SCALE_FACTOR, PLANET_PERIOD_FACTOR, PLANET_RADIUS_SCALE_FACTOR, UPDATE_A_LIMIT,
-        UPDATE_A_RATE, UPDATE_E_LIMIT, UPDATE_E_RATE,
+        A_SCALE_FACTOR, PLANET_PERIOD_FACTOR, PLANET_RADIUS_SCALE_FACTOR, TRAIL_LENGTH,
+        TRAIL_MINIMUM_ANGLE, UPDATE_A_LIMIT, UPDATE_A_RATE, UPDATE_E_LIMIT, UPDATE_E_RATE,
     },
     planet_model::PlanetId,
 };
 use accrete::{enviro::period, Planetesimal};
 use bevy::{math::vec3, prelude::*};
 use bevy_polyline::prelude::*;
+use ringbuffer::{ConstGenericRingBuffer, RingBufferExt, RingBufferWrite};
+
+#[derive(Component, Clone, Default, Debug)]
+pub struct Trail(ConstGenericRingBuffer<Vec3, TRAIL_LENGTH>);
 
 #[derive(Debug, Clone, Bundle)]
 pub struct Orbit {
     pub parameters: OrbitalParameters,
+    pub trail: Trail,
     pub polyline_handle: Handle<Polyline>,
 }
 
@@ -21,6 +26,14 @@ impl Orbit {
         polylines: &mut ResMut<Assets<Polyline>>,
     ) {
         polylines.remove(polyline_handle);
+    }
+
+    pub fn new(parameters: OrbitalParameters, polyline_handle: Handle<Polyline>) -> Self {
+        Orbit {
+            parameters,
+            trail: Trail(ConstGenericRingBuffer::<Vec3, TRAIL_LENGTH>::new()),
+            polyline_handle,
+        }
     }
 }
 
@@ -151,12 +164,47 @@ impl Plugin for OrbitsPlugin {
 
 fn update_orbits_system(
     mut polylines: ResMut<Assets<Polyline>>,
-    query: Query<(&Handle<Polyline>, &GlobalTransform), With<PlanetId>>,
+    mut query: Query<(&GlobalTransform, &mut Trail, &Handle<Polyline>), With<PlanetId>>,
 ) {
-    for (polyline_handle, global_transform) in query.iter() {
-        let polyline = polylines
-            .get_mut(polyline_handle)
-            .expect("Failed to get orbital polyline resource");
-        polyline.vertices.push(global_transform.translation);
-    }
+    // for (entity, global_transform, trail, polyline_handle) in query.iter() {
+    // let polyline = polylines
+    //     .get_mut(polyline_handle)
+    //     .expect("Failed to get orbital polyline resource");
+    // polyline.vertices.push(global_transform.translation);
+    // }
+
+    query.for_each_mut(|(global_transform, mut trail, polyline_handle)| {
+        if let Some(position) = trail.0.back() {
+            let last_vec = *position - global_transform.translation;
+            let last_last_vec = if let Some(position) = trail.0.get(-2) {
+                *position - global_transform.translation
+            } else {
+                last_vec
+            };
+
+            let gt_min_angle = last_vec.dot(last_last_vec) > TRAIL_MINIMUM_ANGLE;
+            if gt_min_angle {
+                trail.0.push(global_transform.translation);
+                polylines.get_mut(polyline_handle).unwrap().vertices =
+                    trail.0.iter().map(|v| Vec3::from(*v)).collect()
+            } else {
+                if polylines.get_mut(polyline_handle).unwrap().vertices.len() > 1 {
+                    *trail.0.get_mut(-1).unwrap() = global_transform.translation;
+                    *polylines
+                        .get_mut(polyline_handle)
+                        .expect("Failed to get orbital polyline resource")
+                        .vertices
+                        .last_mut()
+                        .expect("Failed to get orbital polyline last vertex") =
+                        global_transform.translation.into();
+                }
+            }
+        } else {
+            trail.0.push(global_transform.translation);
+            polylines
+                .get_mut(polyline_handle)
+                .expect("Failed to get orbital polyline resource")
+                .vertices = trail.0.iter().map(|v| Vec3::from(*v)).collect()
+        }
+    });
 }
