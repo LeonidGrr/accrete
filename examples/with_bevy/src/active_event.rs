@@ -55,10 +55,10 @@ impl ActiveEvent {
             &mut PlanetPosition,
             &mut OrbitalParameters,
             &Handle<Polyline>,
-            &Handle<Mesh>,
-            &Handle<StandardMaterial>,
             &mut Visibility,
+            &Children,
         )>,
+        mut child_query: Query<(&Handle<Mesh>, &Handle<StandardMaterial>)>,
     ) {
         if let Some(event) = &self.event {
             match event {
@@ -77,16 +77,8 @@ impl ActiveEvent {
                     self.status = ActiveEventStatus::Executed;
                 }
                 AccreteEvent::PlanetesimalUpdated(_, planet) => {
-                    for (
-                        _,
-                        planet_id,
-                        _,
-                        mut planet_orbit,
-                        _,
-                        mesh_handle,
-                        material_handle,
-                        mut visibility,
-                    ) in query.iter_mut()
+                    for (_, planet_id, _, mut planet_orbit, _, mut visibility, children) in
+                        query.iter_mut()
                     {
                         if planet_id.0 == planet.id {
                             let resulting_planet_a = OrbitalParameters::scaled_a(planet.a);
@@ -99,15 +91,22 @@ impl ActiveEvent {
 
                             let immediate = state.simulation_speed > 10.0;
                             if (resulting_planet_a - planet_orbit.a) < UPDATE_A_LIMIT || immediate {
-                                PlanetModel::update_planet_resources(
-                                    mesh_handle,
-                                    material_handle,
-                                    &mut visibility,
-                                    &mut state,
-                                    &mut meshes,
-                                    &mut materials,
-                                    planet,
-                                );
+                                for &child in children.iter() {
+                                    let (mesh_handle, material_handle) = child_query
+                                        .get_mut(child)
+                                        .expect("Failed to get transform");
+
+                                    PlanetModel::update_planet_resources(
+                                        mesh_handle,
+                                        material_handle,
+                                        &mut visibility,
+                                        &mut state,
+                                        &mut meshes,
+                                        &mut materials,
+                                        planet,
+                                    );
+                                }
+
                                 planet_orbit.update_orbit_immediate(
                                     resulting_planet_a,
                                     planet.e,
@@ -133,8 +132,8 @@ impl ActiveEvent {
                         let [moon, planet] = query
                             .get_many_mut([moon_entity, planet_entity])
                             .expect("Failed to retrieve cached planets by enitities");
-                        let (_, moon_id, moon_position, mut moon_orbit, _, _, _, _) = moon;
-                        let (_, planet_id, planet_position, mut planet_orbit, _, _, _, _) = planet;
+                        let (_, moon_id, moon_position, mut moon_orbit, _, _, _) = moon;
+                        let (_, planet_id, planet_position, mut planet_orbit, _, _, _) = planet;
 
                         let moon_data = state.planets.get(&moon_id.0).expect("Failed to find moon");
                         let planet_data = state
@@ -177,17 +176,8 @@ impl ActiveEvent {
                         let [moon, planet] = query
                             .get_many_mut([moon_entity, planet_entity])
                             .expect("Failed to retrieve cached planets by enitities");
-                        let (
-                            moon_entity,
-                            moon_id,
-                            _,
-                            _,
-                            moon_polyline_handle,
-                            moon_mesh_handle,
-                            moon_material_handle,
-                            _,
-                        ) = moon;
-                        let (planet_entity, _, _, _, _, _, _, _) = planet;
+                        let (moon_entity, moon_id, _, _, moon_polyline_handle, _, children) = moon;
+                        let (planet_entity, _, _, _, _, _, _) = planet;
                         RingModel::create_ring_resources(
                             &mut commands,
                             planet_entity,
@@ -195,16 +185,23 @@ impl ActiveEvent {
                             &mut meshes,
                             &mut materials,
                         );
-                        PlanetModel::remove_planet_resources(
-                            moon_entity,
-                            moon_id,
-                            moon_mesh_handle,
-                            moon_material_handle,
-                            &mut commands,
-                            &mut state,
-                            &mut meshes,
-                            &mut materials,
-                        );
+
+                        for &child in children.iter() {
+                            let (mesh_handle, material_handle) =
+                                child_query.get_mut(child).expect("Failed to get transform");
+
+                            PlanetModel::remove_planet_resources(
+                                moon_entity,
+                                moon_id,
+                                mesh_handle,
+                                material_handle,
+                                &mut commands,
+                                &mut state,
+                                &mut meshes,
+                                &mut materials,
+                            );
+                        }
+
                         Orbit::remove_orbital_lines_resources(moon_polyline_handle, &mut polylines);
                         self.status = ActiveEventStatus::Executed;
                     }
@@ -228,10 +225,10 @@ impl ActiveEvent {
             &mut PlanetPosition,
             &mut OrbitalParameters,
             &Handle<Polyline>,
-            &Handle<Mesh>,
-            &Handle<StandardMaterial>,
             &mut Visibility,
+            &Children,
         )>,
+        mut child_query: Query<(&Handle<Mesh>, &Handle<StandardMaterial>)>,
     ) {
         if let Some(event) = &self.event {
             match event {
@@ -241,48 +238,43 @@ impl ActiveEvent {
                         let [moon, planet] = query
                             .get_many_mut([moon_entity, planet_entity])
                             .expect("Failed to retrieve cached planets by enitities");
-                        let (
-                            moon_entity,
-                            moon_id,
-                            _,
-                            _,
-                            moon_polyline_handle,
-                            moon_mesh_handle,
-                            moon_material_handle,
-                            _,
-                        ) = moon;
-                        let (
-                            _,
-                            _,
-                            _,
-                            mut planet_orbit,
-                            _,
-                            planet_mesh_handle,
-                            planet_material_handle,
-                            mut visibility,
-                        ) = planet;
+                        let (moon_entity, moon_id, _, _, moon_polyline_handle, _, moon_children) =
+                            moon;
+                        let (_, _, _, mut planet_orbit, _, mut visibility, planet_children) =
+                            planet;
 
-                        PlanetModel::remove_planet_resources(
-                            moon_entity,
-                            moon_id,
-                            moon_mesh_handle,
-                            moon_material_handle,
-                            &mut commands,
-                            &mut state,
-                            &mut meshes,
-                            &mut materials,
-                        );
+                        for &child in moon_children.iter() {
+                            let (mesh_handle, material_handle) =
+                                child_query.get_mut(child).expect("Failed to get transform");
+
+                            PlanetModel::remove_planet_resources(
+                                moon_entity,
+                                moon_id,
+                                mesh_handle,
+                                material_handle,
+                                &mut commands,
+                                &mut state,
+                                &mut meshes,
+                                &mut materials,
+                            );
+                        }
+
                         Orbit::remove_orbital_lines_resources(moon_polyline_handle, &mut polylines);
 
-                        PlanetModel::update_planet_resources(
-                            planet_mesh_handle,
-                            planet_material_handle,
-                            &mut visibility,
-                            &mut state,
-                            &mut meshes,
-                            &mut materials,
-                            resulting_planet,
-                        );
+                        for &child in planet_children.iter() {
+                            let (mesh_handle, material_handle) =
+                                child_query.get_mut(child).expect("Failed to get transform");
+
+                            PlanetModel::update_planet_resources(
+                                mesh_handle,
+                                material_handle,
+                                &mut visibility,
+                                &mut state,
+                                &mut meshes,
+                                &mut materials,
+                                resulting_planet,
+                            );
+                        }
 
                         planet_orbit.update_orbit_immediate(
                             OrbitalParameters::scaled_a(resulting_planet.a),
@@ -306,9 +298,8 @@ impl ActiveEvent {
                             _,
                             mut moon_orbit,
                             _,
-                            moon_mesh_handle,
-                            moon_material_handle,
                             mut moon_visibility,
+                            moon_children,
                         ) = moon;
                         let (
                             planet_entity,
@@ -316,9 +307,8 @@ impl ActiveEvent {
                             _,
                             mut planet_orbit,
                             _,
-                            planet_mesh_handle,
-                            planet_material_handle,
                             mut planet_visibility,
+                            planet_children,
                         ) = planet;
 
                         let moon_data = state.planets.get(&moon_id.0).expect("Failed to find moon");
@@ -345,24 +335,36 @@ impl ActiveEvent {
 
                         commands.entity(planet_entity).add_child(moon_entity);
 
-                        PlanetModel::update_planet_resources(
-                            moon_mesh_handle,
-                            moon_material_handle,
-                            &mut moon_visibility,
-                            &mut state,
-                            &mut meshes,
-                            &mut materials,
-                            resulting_moon,
-                        );
-                        PlanetModel::update_planet_resources(
-                            planet_mesh_handle,
-                            planet_material_handle,
-                            &mut planet_visibility,
-                            &mut state,
-                            &mut meshes,
-                            &mut materials,
-                            resulting_planet,
-                        );
+                        for &child in moon_children.iter() {
+                            let (mesh_handle, material_handle) =
+                                child_query.get_mut(child).expect("Failed to get transform");
+
+                            PlanetModel::update_planet_resources(
+                                mesh_handle,
+                                material_handle,
+                                &mut moon_visibility,
+                                &mut state,
+                                &mut meshes,
+                                &mut materials,
+                                resulting_moon,
+                            );
+                        }
+
+                        for &child in planet_children.iter() {
+                            let (mesh_handle, material_handle) =
+                                child_query.get_mut(child).expect("Failed to get transform");
+
+                            PlanetModel::update_planet_resources(
+                                mesh_handle,
+                                material_handle,
+                                &mut planet_visibility,
+                                &mut state,
+                                &mut meshes,
+                                &mut materials,
+                                resulting_planet,
+                            );
+                        }
+
                         self.status = ActiveEventStatus::Executed;
                     }
                 }
@@ -403,10 +405,10 @@ pub fn active_event_system(
         &mut PlanetPosition,
         &mut OrbitalParameters,
         &Handle<Polyline>,
-        &Handle<Mesh>,
-        &Handle<StandardMaterial>,
         &mut Visibility,
+        &Children,
     )>,
+    mut child_query: Query<(&Handle<Mesh>, &Handle<StandardMaterial>)>,
 ) {
     match &active_event.status {
         ActiveEventStatus::Initialized => active_event.initialized(
@@ -418,6 +420,7 @@ pub fn active_event_system(
             polyline_materials,
             polylines,
             query,
+            child_query,
         ),
         ActiveEventStatus::InProgress => active_event.in_progress(
             commands,
@@ -427,6 +430,7 @@ pub fn active_event_system(
             materials,
             polylines,
             query,
+            child_query,
         ),
         ActiveEventStatus::Executed => active_event.executed(state),
         ActiveEventStatus::Done => (),

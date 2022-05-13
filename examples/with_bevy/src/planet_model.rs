@@ -1,9 +1,9 @@
-use crate::consts::ORBITAL_POLYLINE_VERTICES_CAPACITY_MODIFIER;
+use crate::consts::TRAIL_LENGTH;
 use crate::orbit::{Orbit, OrbitalParameters};
 use crate::simulation_state::SimulationState;
 use crate::surface::get_planet_color;
 use accrete::{Planetesimal, PrimaryStar};
-use bevy::{math::vec3, prelude::*, tasks::TaskPool};
+use bevy::{math::vec3, prelude::*};
 use bevy_polyline::prelude::*;
 
 #[derive(Debug, Clone, Bundle)]
@@ -39,45 +39,42 @@ impl PlanetModel {
     ) {
         let mut planet_model = PlanetModel::from(planet);
         let mut orbital_parameters = OrbitalParameters::new(planet, primary_star.stellar_mass);
-        planet_model
+        let position = planet_model
             .position
             .update_position(&mut orbital_parameters, state.current_step);
         state.planets.insert(planet.id.to_owned(), planet.clone());
         let color = get_planet_color(&planet);
 
-        let polyline_handle = polylines.add(Polyline {
-            vertices: Vec::with_capacity(
-                orbital_parameters.t as usize / ORBITAL_POLYLINE_VERTICES_CAPACITY_MODIFIER,
-            ),
-            ..default()
-        });
-
-        commands.spawn().insert_bundle(PolylineBundle {
-            polyline: polyline_handle.clone_weak(),
-            material: polyline_materials.add(PolylineMaterial {
-                width: 0.25,
-                color: Color::WHITE,
-                perspective: false,
-                ..default()
-            }),
-            visibility: Visibility { is_visible: false },
-            ..default()
-        });
-
         commands
             .spawn()
-            .insert_bundle(PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Icosphere {
-                    radius: OrbitalParameters::scaled_radius(planet.radius),
-                    subdivisions: 32,
-                })),
-                material: materials.add(color.into()),
-                transform: Transform::from_translation(planet_model.position.0),
-                visibility: Visibility { is_visible: false },
+            .insert_bundle(PolylineBundle {
+                polyline: polylines.add(Polyline {
+                    vertices: Vec::with_capacity(TRAIL_LENGTH),
+                    ..default()
+                }),
+                material: polyline_materials.add(PolylineMaterial {
+                    width: 0.15,
+                    color: Color::WHITE,
+                    perspective: true,
+                    ..default()
+                }),
+                // visibility: Visibility { is_visible: false },
                 ..default()
             })
-            .insert_bundle(Orbit::new(orbital_parameters, polyline_handle))
-            .insert_bundle(planet_model);
+            .insert_bundle(Orbit::new(orbital_parameters))
+            .insert_bundle(planet_model)
+            .with_children(|parent| {
+                parent.spawn_bundle(PbrBundle {
+                    mesh: meshes.add(Mesh::from(shape::Icosphere {
+                        radius: OrbitalParameters::scaled_radius(planet.radius),
+                        subdivisions: 32,
+                    })),
+                    material: materials.add(color.into()),
+                    transform: Transform::from_translation(position),
+                    visibility: Visibility { is_visible: true },
+                    ..default()
+                });
+            });
     }
 
     pub fn update_planet_resources(
@@ -137,10 +134,11 @@ impl PlanetPosition {
         &mut self,
         orbital_parameters: &mut OrbitalParameters,
         simulation_step: f32,
-    ) {
+    ) -> Vec3 {
         let next_position = orbital_parameters.get_orbital_position(simulation_step);
         self.0.x = next_position.x;
         self.0.z = next_position.z;
+        next_position
         // TODO speed up near star
     }
 }
@@ -155,16 +153,15 @@ impl Plugin for PlanetsPlugin {
 
 fn update_planets_position_system(
     state: Res<SimulationState>,
-    mut query: Query<(&mut PlanetPosition, &mut OrbitalParameters, &mut Transform)>,
+    mut query: Query<(&mut PlanetPosition, &mut OrbitalParameters, &Children)>,
+    mut child_query: Query<&mut Transform>,
 ) {
-    let taskpool = TaskPool::new();
-    query.par_for_each_mut(
-        &taskpool,
-        4,
-        |(mut planet_position, mut orbital_parameters, mut transform)| {
-            planet_position.update_position(&mut orbital_parameters, state.current_step);
+    query.for_each_mut(|(mut planet_position, mut orbital_parameters, children)| {
+        planet_position.update_position(&mut orbital_parameters, state.current_step);
+        for &child in children.iter() {
+            let mut transform = child_query.get_mut(child).expect("Failed to get transform");
             transform.translation.x = planet_position.0.x;
             transform.translation.z = planet_position.0.z;
-        },
-    );
+        }
+    });
 }
