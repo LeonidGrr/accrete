@@ -1,7 +1,8 @@
 use crate::{
     consts::{
         A_SCALE_FACTOR, PLANET_PERIOD_FACTOR, PLANET_RADIUS_SCALE_FACTOR, TRAIL_LENGTH,
-        TRAIL_MINIMUM_ANGLE, UPDATE_A_LIMIT, UPDATE_A_RATE, UPDATE_E_LIMIT, UPDATE_E_RATE,
+        TRAIL_MINIMUM_ANGLE, TRAIL_MINIMUM_DISTANCE, UPDATE_A_LIMIT, UPDATE_A_RATE, UPDATE_E_LIMIT,
+        UPDATE_E_RATE,
     },
     planet_model::{PlanetId, PlanetPosition},
 };
@@ -164,45 +165,46 @@ fn update_orbits_system(
     mut polylines: ResMut<Assets<Polyline>>,
     mut query: Query<(&PlanetPosition, &mut Trail, &Handle<Polyline>), With<PlanetId>>,
 ) {
-    // for (global_transform, trail, polyline_handle) in query.iter() {
-    //     let polyline = polylines
-    //         .get_mut(polyline_handle)
-    //         .expect("Failed to get orbital polyline resource");
-    //     polyline.vertices.push(global_transform.0);
-    // }
-
     query.for_each_mut(|(planet_position, mut trail, polyline_handle)| {
-        if let Some(position) = trail.0.back() {
-            let last_vec = *position - planet_position.0;
-            let last_last_vec = if let Some(position) = trail.0.get(-2) {
-                *position - planet_position.0
-            } else {
-                last_vec
-            };
+        let polyline = polylines
+            .get_mut(polyline_handle)
+            .expect("Failed to get orbital polyline resource");
 
-            let gt_min_angle = last_vec.dot(last_last_vec) > TRAIL_MINIMUM_ANGLE;
-            if gt_min_angle {
-                trail.0.push(planet_position.0);
-                polylines.get_mut(polyline_handle).unwrap().vertices =
-                    trail.0.iter().map(|v| *v).collect()
+        if let Some(last_trail) = trail.0.back() {
+            if last_trail.distance(planet_position.0) > TRAIL_MINIMUM_DISTANCE {
+                polyline.vertices = vec![];
+                trail.0.clear();
             } else {
-                if polylines.get_mut(polyline_handle).unwrap().vertices.len() > 1 {
-                    *trail.0.get_mut(-1).unwrap() = planet_position.0;
-                    *polylines
-                        .get_mut(polyline_handle)
-                        .expect("Failed to get orbital polyline resource")
-                        .vertices
-                        .last_mut()
-                        .expect("Failed to get orbital polyline last vertex") =
-                        planet_position.0.into();
+                let last_vec = *last_trail - planet_position.0;
+
+                let last_last_vec = if let Some(last_trail) = trail.0.get(-2) {
+                    *last_trail - planet_position.0
+                } else {
+                    last_vec
+                };
+
+                let gt_min_angle = last_vec.dot(last_last_vec) > TRAIL_MINIMUM_ANGLE;
+                if gt_min_angle {
+                    trail.0.push(planet_position.0);
+                    let next_vertices = trail.0.iter().map(|v| *v).collect::<Vec<Vec3>>();
+                    polyline.vertices = next_vertices;
+                } else {
+                    if polyline.vertices.len() > 1 {
+                        *trail
+                            .0
+                            .get_mut(-1)
+                            .expect("Failed to get trail with -1 index") = planet_position.0;
+                        *polyline
+                            .vertices
+                            .last_mut()
+                            .expect("Failed to get orbital polyline last vertex") =
+                            planet_position.0.into();
+                    }
                 }
             }
         } else {
             trail.0.push(planet_position.0);
-            polylines
-                .get_mut(polyline_handle)
-                .expect("Failed to get orbital polyline resource")
-                .vertices = trail.0.iter().map(|v| Vec3::from(*v)).collect()
+            polyline.vertices.push(planet_position.0);
         }
     });
 }

@@ -27,7 +27,7 @@ impl From<&Planetesimal> for PlanetModel {
 }
 
 impl PlanetModel {
-    pub fn create_planet_resourses(
+    pub fn create_planet_model(
         commands: &mut Commands,
         state: &mut ResMut<SimulationState>,
         meshes: &mut ResMut<Assets<Mesh>>,
@@ -53,12 +53,12 @@ impl PlanetModel {
                     ..default()
                 }),
                 material: polyline_materials.add(PolylineMaterial {
-                    width: 0.15,
+                    width: 0.1,
                     color: Color::WHITE,
                     perspective: true,
                     ..default()
                 }),
-                // visibility: Visibility { is_visible: false },
+                visibility: Visibility { is_visible: false },
                 ..default()
             })
             .insert_bundle(Orbit::new(orbital_parameters))
@@ -71,55 +71,73 @@ impl PlanetModel {
                     })),
                     material: materials.add(color.into()),
                     transform: Transform::from_translation(position),
-                    visibility: Visibility { is_visible: true },
+                    visibility: Visibility { is_visible: false },
                     ..default()
                 });
             });
     }
 
-    pub fn update_planet_resources(
-        mesh_handle: &Handle<Mesh>,
-        material_handle: &Handle<StandardMaterial>,
+    pub fn update_planet_model(
+        children: &Children,
+        child_query: &mut Query<
+            (&Handle<Mesh>, &Handle<StandardMaterial>, &mut Visibility),
+            Without<PlanetId>,
+        >,
         visibility: &mut Visibility,
         state: &mut ResMut<SimulationState>,
         meshes: &mut ResMut<Assets<Mesh>>,
         materials: &mut ResMut<Assets<StandardMaterial>>,
         planetesimal: &Planetesimal,
     ) {
-        if let Some(mesh) = meshes.get_mut(mesh_handle) {
-            let next_mesh = Mesh::from(shape::Icosphere {
-                radius: 0.2,
-                // radius: OrbitalParameters::scaled_radius(planetesimal.radius),
-                subdivisions: 32,
-            });
-            mesh.clone_from(&next_mesh);
-        }
+        for &child in children.iter() {
+            if let Ok((mesh_handle, material_handle, mut mesh_visibility)) =
+                child_query.get_mut(child)
+            {
+                if let Some(mesh) = meshes.get_mut(mesh_handle) {
+                    let next_mesh = Mesh::from(shape::Icosphere {
+                        radius: 0.2,
+                        // radius: OrbitalParameters::scaled_radius(planetesimal.radius),
+                        subdivisions: 32,
+                    });
+                    mesh.clone_from(&next_mesh);
+                }
 
-        if let Some(material) = materials.get_mut(material_handle) {
-            let color = get_planet_color(planetesimal);
-            material.clone_from(&color.into());
-        }
+                if let Some(material) = materials.get_mut(material_handle) {
+                    let color = get_planet_color(planetesimal);
+                    material.clone_from(&color.into());
+                }
 
-        visibility.is_visible = true;
-        state
-            .planets
-            .insert(planetesimal.id.to_owned(), planetesimal.clone());
+                visibility.is_visible = true;
+                mesh_visibility.is_visible = true;
+
+                state
+                    .planets
+                    .insert(planetesimal.id.to_owned(), planetesimal.clone());
+            }
+        }
     }
 
     pub fn remove_planet_resources(
+        children: &Children,
+        child_query: &mut Query<
+            (&Handle<Mesh>, &Handle<StandardMaterial>, &mut Visibility),
+            Without<PlanetId>,
+        >,
         entity: Entity,
         id: &PlanetId,
-        mesh_handle: &Handle<Mesh>,
-        material_handle: &Handle<StandardMaterial>,
         commands: &mut Commands,
         state: &mut ResMut<SimulationState>,
         meshes: &mut ResMut<Assets<Mesh>>,
         materials: &mut ResMut<Assets<StandardMaterial>>,
     ) {
-        commands.entity(entity).despawn();
-        materials.remove(material_handle);
-        meshes.remove(mesh_handle);
-        state.planets.remove(&id.0);
+        for &child in children.iter() {
+            if let Ok((mesh_handle, material_handle, _)) = child_query.get_mut(child) {
+                commands.entity(entity).despawn();
+                materials.remove(material_handle);
+                meshes.remove(mesh_handle);
+                state.planets.remove(&id.0);
+            }
+        }
     }
 }
 

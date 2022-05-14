@@ -1,4 +1,4 @@
-use crate::consts::{COLLISION_DISTANCE, UPDATE_A_LIMIT};
+use crate::consts::{COLLISION_DISTANCE, SIMULATION_SPEED_IMMEDIATE_THRESHOLD, UPDATE_A_LIMIT};
 use crate::orbit::{Orbit, OrbitalParameters};
 use crate::planet_model::{PlanetId, PlanetModel, PlanetPosition};
 use crate::ring_model::RingModel;
@@ -58,13 +58,16 @@ impl ActiveEvent {
             &mut Visibility,
             &Children,
         )>,
-        mut child_query: Query<(&Handle<Mesh>, &Handle<StandardMaterial>)>,
+        mut child_query: Query<
+            (&Handle<Mesh>, &Handle<StandardMaterial>, &mut Visibility),
+            Without<PlanetId>,
+        >,
     ) {
         if let Some(event) = &self.event {
             match event {
                 AccreteEvent::OuterBodyInjected(_, planet)
                 | AccreteEvent::PlanetesimalCreated(_, planet) => {
-                    PlanetModel::create_planet_resourses(
+                    PlanetModel::create_planet_model(
                         &mut commands,
                         &mut state,
                         &mut meshes,
@@ -89,23 +92,18 @@ impl ActiveEvent {
                                 primary_star.stellar_mass,
                             );
 
-                            let immediate = state.simulation_speed > 10.0;
+                            let immediate =
+                                state.simulation_speed > SIMULATION_SPEED_IMMEDIATE_THRESHOLD;
                             if (resulting_planet_a - planet_orbit.a) < UPDATE_A_LIMIT || immediate {
-                                for &child in children.iter() {
-                                    let (mesh_handle, material_handle) = child_query
-                                        .get_mut(child)
-                                        .expect("Failed to get transform");
-
-                                    PlanetModel::update_planet_resources(
-                                        mesh_handle,
-                                        material_handle,
-                                        &mut visibility,
-                                        &mut state,
-                                        &mut meshes,
-                                        &mut materials,
-                                        planet,
-                                    );
-                                }
+                                PlanetModel::update_planet_model(
+                                    children,
+                                    &mut child_query,
+                                    &mut visibility,
+                                    &mut state,
+                                    &mut meshes,
+                                    &mut materials,
+                                    planet,
+                                );
 
                                 planet_orbit.update_orbit_immediate(
                                     resulting_planet_a,
@@ -186,21 +184,16 @@ impl ActiveEvent {
                             &mut materials,
                         );
 
-                        for &child in children.iter() {
-                            let (mesh_handle, material_handle) =
-                                child_query.get_mut(child).expect("Failed to get transform");
-
-                            PlanetModel::remove_planet_resources(
-                                moon_entity,
-                                moon_id,
-                                mesh_handle,
-                                material_handle,
-                                &mut commands,
-                                &mut state,
-                                &mut meshes,
-                                &mut materials,
-                            );
-                        }
+                        PlanetModel::remove_planet_resources(
+                            children,
+                            &mut child_query,
+                            moon_entity,
+                            moon_id,
+                            &mut commands,
+                            &mut state,
+                            &mut meshes,
+                            &mut materials,
+                        );
 
                         Orbit::remove_orbital_lines_resources(moon_polyline_handle, &mut polylines);
                         self.status = ActiveEventStatus::Executed;
@@ -228,7 +221,10 @@ impl ActiveEvent {
             &mut Visibility,
             &Children,
         )>,
-        mut child_query: Query<(&Handle<Mesh>, &Handle<StandardMaterial>)>,
+        mut child_query: Query<
+            (&Handle<Mesh>, &Handle<StandardMaterial>, &mut Visibility),
+            Without<PlanetId>,
+        >,
     ) {
         if let Some(event) = &self.event {
             match event {
@@ -243,38 +239,28 @@ impl ActiveEvent {
                         let (_, _, _, mut planet_orbit, _, mut visibility, planet_children) =
                             planet;
 
-                        for &child in moon_children.iter() {
-                            let (mesh_handle, material_handle) =
-                                child_query.get_mut(child).expect("Failed to get transform");
-
-                            PlanetModel::remove_planet_resources(
-                                moon_entity,
-                                moon_id,
-                                mesh_handle,
-                                material_handle,
-                                &mut commands,
-                                &mut state,
-                                &mut meshes,
-                                &mut materials,
-                            );
-                        }
+                        PlanetModel::remove_planet_resources(
+                            moon_children,
+                            &mut child_query,
+                            moon_entity,
+                            moon_id,
+                            &mut commands,
+                            &mut state,
+                            &mut meshes,
+                            &mut materials,
+                        );
 
                         Orbit::remove_orbital_lines_resources(moon_polyline_handle, &mut polylines);
 
-                        for &child in planet_children.iter() {
-                            let (mesh_handle, material_handle) =
-                                child_query.get_mut(child).expect("Failed to get transform");
-
-                            PlanetModel::update_planet_resources(
-                                mesh_handle,
-                                material_handle,
-                                &mut visibility,
-                                &mut state,
-                                &mut meshes,
-                                &mut materials,
-                                resulting_planet,
-                            );
-                        }
+                        PlanetModel::update_planet_model(
+                            planet_children,
+                            &mut child_query,
+                            &mut visibility,
+                            &mut state,
+                            &mut meshes,
+                            &mut materials,
+                            resulting_planet,
+                        );
 
                         planet_orbit.update_orbit_immediate(
                             OrbitalParameters::scaled_a(resulting_planet.a),
@@ -335,35 +321,25 @@ impl ActiveEvent {
 
                         commands.entity(planet_entity).add_child(moon_entity);
 
-                        for &child in moon_children.iter() {
-                            let (mesh_handle, material_handle) =
-                                child_query.get_mut(child).expect("Failed to get transform");
+                        PlanetModel::update_planet_model(
+                            moon_children,
+                            &mut child_query,
+                            &mut moon_visibility,
+                            &mut state,
+                            &mut meshes,
+                            &mut materials,
+                            resulting_moon,
+                        );
 
-                            PlanetModel::update_planet_resources(
-                                mesh_handle,
-                                material_handle,
-                                &mut moon_visibility,
-                                &mut state,
-                                &mut meshes,
-                                &mut materials,
-                                resulting_moon,
-                            );
-                        }
-
-                        for &child in planet_children.iter() {
-                            let (mesh_handle, material_handle) =
-                                child_query.get_mut(child).expect("Failed to get transform");
-
-                            PlanetModel::update_planet_resources(
-                                mesh_handle,
-                                material_handle,
-                                &mut planet_visibility,
-                                &mut state,
-                                &mut meshes,
-                                &mut materials,
-                                resulting_planet,
-                            );
-                        }
+                        PlanetModel::update_planet_model(
+                            planet_children,
+                            &mut child_query,
+                            &mut planet_visibility,
+                            &mut state,
+                            &mut meshes,
+                            &mut materials,
+                            resulting_planet,
+                        );
 
                         self.status = ActiveEventStatus::Executed;
                     }
@@ -408,7 +384,10 @@ pub fn active_event_system(
         &mut Visibility,
         &Children,
     )>,
-    mut child_query: Query<(&Handle<Mesh>, &Handle<StandardMaterial>)>,
+    mut child_query: Query<
+        (&Handle<Mesh>, &Handle<StandardMaterial>, &mut Visibility),
+        Without<PlanetId>,
+    >,
 ) {
     match &active_event.status {
         ActiveEventStatus::Initialized => active_event.initialized(
