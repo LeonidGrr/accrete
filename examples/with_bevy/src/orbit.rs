@@ -15,21 +15,14 @@ use ringbuffer::{ConstGenericRingBuffer, RingBufferExt, RingBufferWrite};
 pub struct Trail(ConstGenericRingBuffer<Vec3, TRAIL_LENGTH>);
 
 #[derive(Debug, Clone, Bundle)]
-pub struct Orbit {
-    pub parameters: OrbitalParameters,
+pub struct OrbitBundle {
+    pub parameters: Orbit,
     pub trail: Trail,
 }
 
-impl Orbit {
-    pub fn remove_orbital_lines_resources(
-        polyline_handle: &Handle<Polyline>,
-        polylines: &mut ResMut<Assets<Polyline>>,
-    ) {
-        polylines.remove(polyline_handle);
-    }
-
-    pub fn new(parameters: OrbitalParameters) -> Self {
-        Orbit {
+impl OrbitBundle {
+    pub fn new(parameters: Orbit) -> Self {
+        OrbitBundle {
             parameters,
             trail: Trail(ConstGenericRingBuffer::<Vec3, TRAIL_LENGTH>::new()),
         }
@@ -37,7 +30,7 @@ impl Orbit {
 }
 
 #[derive(Debug, Clone, Component)]
-pub struct OrbitalParameters {
+pub struct Orbit {
     pub a: f32,
     pub b: f32,
     pub e: f32,
@@ -46,16 +39,16 @@ pub struct OrbitalParameters {
     pub t: f32,
 }
 
-impl OrbitalParameters {
+impl Orbit {
     pub fn new(planet: &Planetesimal, parent_mass: f64) -> Self {
-        let a = OrbitalParameters::scaled_a(planet.a);
+        let a = Orbit::scaled_a(planet.a);
         let e = planet.e as f32;
         let u = 1.0;
-        let b = OrbitalParameters::get_semiminor_axis(a, e);
-        let t = OrbitalParameters::get_orbital_period(a as f64, planet.mass, parent_mass);
-        let focus = OrbitalParameters::get_focus(a, b);
+        let b = Orbit::get_semiminor_axis(a, e);
+        let t = Orbit::get_orbital_period(a as f64, planet.mass, parent_mass);
+        let focus = Orbit::get_focus(a, b);
 
-        OrbitalParameters {
+        Orbit {
             a,
             u,
             e,
@@ -63,6 +56,13 @@ impl OrbitalParameters {
             focus,
             t,
         }
+    }
+
+    pub fn remove_orbital_lines(
+        polyline_handle: &Handle<Polyline>,
+        polylines: &mut ResMut<Assets<Polyline>>,
+    ) {
+        polylines.remove(polyline_handle);
     }
 
     pub fn scaled_radius(raw_radius: f64) -> f32 {
@@ -82,9 +82,9 @@ impl OrbitalParameters {
     ) {
         self.a = target_a;
         self.e = target_e as f32;
-        self.b = OrbitalParameters::get_semiminor_axis(self.a, self.e);
-        self.focus = OrbitalParameters::get_focus(self.a, self.b);
-        self.t = OrbitalParameters::get_orbital_period(self.a as f64, mass, parent_mass);
+        self.b = Orbit::get_semiminor_axis(self.a, self.e);
+        self.focus = Orbit::get_focus(self.a, self.b);
+        self.t = Orbit::get_orbital_period(self.a as f64, mass, parent_mass);
     }
 
     pub fn update_value_by_limit(
@@ -109,21 +109,11 @@ impl OrbitalParameters {
     }
 
     pub fn update_orbit(&mut self, target_a: f32, target_e: f64, mass: f64, parent_mass: f64) {
-        OrbitalParameters::update_value_by_limit(
-            &mut self.a,
-            target_a,
-            UPDATE_A_RATE,
-            UPDATE_A_LIMIT,
-        );
-        OrbitalParameters::update_value_by_limit(
-            &mut self.e,
-            target_e as f32,
-            UPDATE_E_RATE,
-            UPDATE_E_LIMIT,
-        );
-        self.b = OrbitalParameters::get_semiminor_axis(self.a, self.e);
-        self.focus = OrbitalParameters::get_focus(self.a, self.b);
-        self.t = OrbitalParameters::get_orbital_period(self.a as f64, mass, parent_mass);
+        Orbit::update_value_by_limit(&mut self.a, target_a, UPDATE_A_RATE, UPDATE_A_LIMIT);
+        Orbit::update_value_by_limit(&mut self.e, target_e as f32, UPDATE_E_RATE, UPDATE_E_LIMIT);
+        self.b = Orbit::get_semiminor_axis(self.a, self.e);
+        self.focus = Orbit::get_focus(self.a, self.b);
+        self.t = Orbit::get_orbital_period(self.a as f64, mass, parent_mass);
     }
 
     pub fn get_focus(a: f32, b: f32) -> f32 {
@@ -139,7 +129,7 @@ impl OrbitalParameters {
     }
 
     pub fn get_orbital_position(&mut self, simulation_step: f32) -> Vec3 {
-        let OrbitalParameters { a, t, e, focus, .. } = *self;
+        let Orbit { a, t, e, focus, .. } = *self;
 
         // Relative time converted to radians
         let m = 2.0 * std::f32::consts::PI * simulation_step / t * PLANET_PERIOD_FACTOR;

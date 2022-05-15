@@ -1,6 +1,6 @@
 use crate::{
-    dust_model::DustPlugin, orbit::OrbitsPlugin, planet_model::PlanetsPlugin,
-    simulation_state::SimulationStatePlugin, ui::UIPlugin,
+    active_event::ActiveEventPlugin, dust_model::DustPlugin, orbit::OrbitsPlugin,
+    planet_model::PlanetsPlugin, simulation_state::SimulationStatePlugin, ui::UIPlugin,
 };
 use accrete::{events::AccreteEvent, PrimaryStar};
 use bevy::prelude::*;
@@ -23,6 +23,7 @@ pub fn run(log: Vec<AccreteEvent>, primary_star: PrimaryStar) {
         .add_plugin(PlanetsPlugin)
         .add_plugin(OrbitsPlugin)
         .add_plugin(DustPlugin)
+        .add_plugin(ActiveEventPlugin)
         .add_plugin(SimulationStatePlugin)
         .run();
 }

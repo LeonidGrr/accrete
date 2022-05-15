@@ -1,5 +1,5 @@
 use crate::consts::TRAIL_LENGTH;
-use crate::orbit::{Orbit, OrbitalParameters};
+use crate::orbit::{Orbit, OrbitBundle};
 use crate::simulation_state::SimulationState;
 use crate::surface::get_planet_color;
 use accrete::{Planetesimal, PrimaryStar};
@@ -10,24 +10,26 @@ use bevy_polyline::prelude::*;
 pub struct PlanetModel {
     pub planet_id: PlanetId,
     pub position: PlanetPosition,
+    pub planet_data: PlanetData,
 }
 
 impl From<&Planetesimal> for PlanetModel {
     fn from(planetesimal: &Planetesimal) -> Self {
         let Planetesimal { id, a, .. } = planetesimal;
-        let a = OrbitalParameters::scaled_a(*a);
+        let a = Orbit::scaled_a(*a);
         let planet_id = PlanetId(id.to_owned());
         let position = PlanetPosition(vec3(-(a - 0.001), 0.0, 0.0));
 
         PlanetModel {
             planet_id,
             position,
+            planet_data: PlanetData(planetesimal.clone()),
         }
     }
 }
 
 impl PlanetModel {
-    pub fn create_planet_model(
+    pub fn create_planet(
         commands: &mut Commands,
         state: &mut ResMut<SimulationState>,
         meshes: &mut ResMut<Assets<Mesh>>,
@@ -38,11 +40,10 @@ impl PlanetModel {
         primary_star: &PrimaryStar,
     ) {
         let mut planet_model = PlanetModel::from(planet);
-        let mut orbital_parameters = OrbitalParameters::new(planet, primary_star.stellar_mass);
+        let mut orbital_parameters = Orbit::new(planet, primary_star.stellar_mass);
         let position = planet_model
             .position
             .update_position(&mut orbital_parameters, state.current_step);
-        state.planets.insert(planet.id.to_owned(), planet.clone());
         let color = get_planet_color(&planet);
 
         commands
@@ -61,12 +62,12 @@ impl PlanetModel {
                 visibility: Visibility { is_visible: false },
                 ..default()
             })
-            .insert_bundle(Orbit::new(orbital_parameters))
+            .insert_bundle(OrbitBundle::new(orbital_parameters))
             .insert_bundle(planet_model)
             .with_children(|parent| {
                 parent.spawn_bundle(PbrBundle {
                     mesh: meshes.add(Mesh::from(shape::Icosphere {
-                        radius: OrbitalParameters::scaled_radius(planet.radius),
+                        radius: Orbit::scaled_radius(planet.radius),
                         subdivisions: 32,
                     })),
                     material: materials.add(color.into()),
@@ -84,7 +85,7 @@ impl PlanetModel {
             Without<PlanetId>,
         >,
         visibility: &mut Visibility,
-        state: &mut ResMut<SimulationState>,
+        planet_data: &mut PlanetData,
         meshes: &mut ResMut<Assets<Mesh>>,
         materials: &mut ResMut<Assets<StandardMaterial>>,
         planetesimal: &Planetesimal,
@@ -96,7 +97,7 @@ impl PlanetModel {
                 if let Some(mesh) = meshes.get_mut(mesh_handle) {
                     let next_mesh = Mesh::from(shape::Icosphere {
                         radius: 0.2,
-                        // radius: OrbitalParameters::scaled_radius(planetesimal.radius),
+                        // radius: Orbit::scaled_radius(planetesimal.radius),
                         subdivisions: 32,
                     });
                     mesh.clone_from(&next_mesh);
@@ -109,10 +110,7 @@ impl PlanetModel {
 
                 visibility.is_visible = true;
                 mesh_visibility.is_visible = true;
-
-                state
-                    .planets
-                    .insert(planetesimal.id.to_owned(), planetesimal.clone());
+                planet_data.0 = planetesimal.clone();
             }
         }
     }
@@ -124,9 +122,7 @@ impl PlanetModel {
             Without<PlanetId>,
         >,
         entity: Entity,
-        id: &PlanetId,
         commands: &mut Commands,
-        state: &mut ResMut<SimulationState>,
         meshes: &mut ResMut<Assets<Mesh>>,
         materials: &mut ResMut<Assets<StandardMaterial>>,
     ) {
@@ -135,7 +131,6 @@ impl PlanetModel {
                 commands.entity(entity).despawn();
                 materials.remove(material_handle);
                 meshes.remove(mesh_handle);
-                state.planets.remove(&id.0);
             }
         }
     }
@@ -147,10 +142,19 @@ pub struct PlanetId(pub String);
 #[derive(Debug, Clone, Copy, Component)]
 pub struct PlanetPosition(pub Vec3);
 
+#[derive(Debug, Clone, Component)]
+pub struct SourcePlanet;
+
+#[derive(Debug, Clone, Component)]
+pub struct TargetPlanet;
+
+#[derive(Debug, Clone, Component)]
+pub struct PlanetData(pub Planetesimal);
+
 impl PlanetPosition {
     pub fn update_position(
         &mut self,
-        orbital_parameters: &mut OrbitalParameters,
+        orbital_parameters: &mut Orbit,
         simulation_step: f32,
     ) -> Vec3 {
         let next_position = orbital_parameters.get_orbital_position(simulation_step);
@@ -171,7 +175,7 @@ impl Plugin for PlanetsPlugin {
 
 fn update_planets_position_system(
     state: Res<SimulationState>,
-    mut query: Query<(&mut PlanetPosition, &mut OrbitalParameters, &Children)>,
+    mut query: Query<(&mut PlanetPosition, &mut Orbit, &Children)>,
     mut child_query: Query<&mut Transform>,
 ) {
     query.for_each_mut(|(mut planet_position, mut orbital_parameters, children)| {
