@@ -116,14 +116,12 @@ fn event_initialized_system(
     }
 }
 
-fn event_in_progress_system(
-    mut commands: Commands,
+fn planetesimal_update_in_progress_system(
     primary_star: Res<PrimaryStar>,
     state: Res<SimulationState>,
     mut active_event: ResMut<ActiveEvent>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut polylines: ResMut<Assets<Polyline>>,
     mut query: Query<(
         Entity,
         &PlanetId,
@@ -133,15 +131,13 @@ fn event_in_progress_system(
         &mut Visibility,
         &mut PlanetData,
         &Children,
-        AnyOf<(&SourcePlanet, &TargetPlanet)>,
-    )>,
+    ), With<TargetPlanet>>,
     mut child_query: Query<
         (&Handle<Mesh>, &Handle<StandardMaterial>, &mut Visibility),
         Without<PlanetId>,
     >,
 ) {
-    if matches!(active_event.status, ActiveEventStatus::InProgress) {
-        let mut next_status = active_event.status.clone();
+    if !query.is_empty() && matches!(active_event.status, ActiveEventStatus::InProgress) {
         if let Some(event) = &active_event.event {
             match event {
                 AccreteEvent::PlanetesimalUpdated(_, planet) => {
@@ -154,8 +150,8 @@ fn event_in_progress_system(
                         mut visibility,
                         mut planet_data,
                         children,
-                        _,
                     ) = query.single_mut();
+
                     if planet_id.0 == planet.id {
                         let resulting_planet_a = Orbit::scaled_a(planet.a);
                         planet_orbit.update_orbit(
@@ -184,43 +180,93 @@ fn event_in_progress_system(
                                 planet.mass,
                                 primary_star.stellar_mass,
                             );
-                            next_status = ActiveEventStatus::Executed;
+                            active_event.status = ActiveEventStatus::Executed;
                         }
                     }
                 }
+                _ => (),
+            }
+        }
+    }
+}
+
+fn coalescence_in_progress_system(
+    mut commands: Commands,
+    primary_star: Res<PrimaryStar>,
+    state: Res<SimulationState>,
+    mut active_event: ResMut<ActiveEvent>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut polylines: ResMut<Assets<Polyline>>,
+    mut query: Query<(
+        Entity,
+        &PlanetId,
+        &mut PlanetPosition,
+        &mut Orbit,
+        &Handle<Polyline>,
+        &mut Visibility,
+        &mut PlanetData,
+        &Children,
+        Or<(With<SourcePlanet>, With<TargetPlanet>)>,
+    )>,
+    mut child_query: Query<
+        (&Handle<Mesh>, &Handle<StandardMaterial>, &mut Visibility),
+        Without<PlanetId>,
+    >,
+) {
+    if !query.is_empty() && matches!(active_event.status, ActiveEventStatus::InProgress) {
+        if let Some(event) = &active_event.event {
+            match event {
                 AccreteEvent::MoonsCoalesced(_, _, _, resulting_planet)
                 | AccreteEvent::PlanetesimalsCoalesced(_, _, _, resulting_planet) => {
+                    let resulting_planet_a = Orbit::scaled_a(resulting_planet.a);
+                    let mut iter = query.iter_combinations_mut();
+                    if let Some([source, target]) = iter.fetch_next() {
+                        let (
+                            _,
+                            source_id,
+                            source_position,
+                            mut source_orbit,
+                            _,
+                            mut source_visibility,
+                            mut source_data,
+                            children,
+                            _,
+                        ) = source;
 
-                    // if let Some((moon_entity, planet_entity)) = state.cached_planets {
-                    //     let [moon, planet] = query
-                    //         .get_many_mut([moon_entity, planet_entity])
-                    //         .expect("Failed to retrieve cached planets by enitities");
-                    //     let (_, moon_id, moon_position, mut moon_orbit, _, _, moon_data, _) = moon;
-                    //     let (_, _, planet_position, mut planet_orbit, _, _, planet_data, _) = planet;
+                        source_orbit.update_orbit(
+                            resulting_planet_a,
+                            resulting_planet.e,
+                            source_data.0.mass,
+                            primary_star.stellar_mass,
+                        );
 
-                    //     let resulting_planet_a = Orbit::scaled_a(resulting_planet.a);
+                        let (
+                            _,
+                            target_id,
+                            target_position,
+                            mut target_orbit,
+                            _,
+                            mut target_visibility,
+                            mut target_data,
+                            children,
+                            _,
+                        ) = target;
 
-                    //     moon_orbit.update_orbit(
-                    //         resulting_planet_a,
-                    //         resulting_planet.e,
-                    //         moon_data.0.mass,
-                    //         primary_star.stellar_mass,
-                    //     );
+                        target_orbit.update_orbit(
+                            resulting_planet_a,
+                            resulting_planet.e,
+                            target_data.0.mass,
+                            primary_star.stellar_mass,
+                        );
 
-                    //     planet_orbit.update_orbit(
-                    //         resulting_planet_a,
-                    //         resulting_planet.e,
-                    //         planet_data.0.mass,
-                    //         primary_star.stellar_mass,
-                    //     );
-
-                    //     let immediate = state.simulation_speed > SIMULATION_SPEED_IMMEDIATE_THRESHOLD;
-                    //     let planet_to_moon_distance = planet_position.0.distance(moon_position.0);
-                    //     let approach_limit =
-                    //         match resulting_planet.moons.iter().find(|m| m.id == moon_id.0) {
-                    //             Some(moon) => Orbit::scaled_a(moon.a),
-                    //             None => COLLISION_DISTANCE,
-                    //         };
+                        let planet_to_moon_distance = target_position.0.distance(source_position.0);
+                        let approach_limit =
+                            match resulting_planet.moons.iter().find(|m| m.id == source_id.0) {
+                                Some(moon) => Orbit::scaled_a(moon.a),
+                                None => COLLISION_DISTANCE,
+                            };
+                    }
 
                     //     if planet_to_moon_distance <= approach_limit || immediate {
                     //         next_status = ActiveEventStatus::InProgress;
@@ -267,150 +313,149 @@ fn event_in_progress_system(
                     //     next_status = ActiveEventStatus::Executed;
                     // }
                 }
-                AccreteEvent::PlanetesimalCaptureMoon(_, _, _, resulting_planet) => {
+                // AccreteEvent::PlanetesimalCaptureMoon(_, _, _, resulting_planet) => {
 
-                    // if let Some((moon_entity, planet_entity)) = state.cached_planets {
-                    //     let [moon, planet] = query
-                    //         .get_many_mut([moon_entity, planet_entity])
-                    //         .expect("Failed to retrieve cached planets by enitities");
-                    //     let (_, moon_id, moon_position, mut moon_orbit, _, _, moon_data, _) = moon;
-                    //     let (_, _, planet_position, mut planet_orbit, _, _, planet_data, _) = planet;
+                // if let Some((moon_entity, planet_entity)) = state.cached_planets {
+                //     let [moon, planet] = query
+                //         .get_many_mut([moon_entity, planet_entity])
+                //         .expect("Failed to retrieve cached planets by enitities");
+                //     let (_, moon_id, moon_position, mut moon_orbit, _, _, moon_data, _) = moon;
+                //     let (_, _, planet_position, mut planet_orbit, _, _, planet_data, _) = planet;
 
-                    //     let resulting_planet_a = Orbit::scaled_a(resulting_planet.a);
+                //     let resulting_planet_a = Orbit::scaled_a(resulting_planet.a);
 
-                    //     moon_orbit.update_orbit(
-                    //         resulting_planet_a,
-                    //         resulting_planet.e,
-                    //         moon_data.0.mass,
-                    //         primary_star.stellar_mass,
-                    //     );
+                //     moon_orbit.update_orbit(
+                //         resulting_planet_a,
+                //         resulting_planet.e,
+                //         moon_data.0.mass,
+                //         primary_star.stellar_mass,
+                //     );
 
-                    //     planet_orbit.update_orbit(
-                    //         resulting_planet_a,
-                    //         resulting_planet.e,
-                    //         planet_data.0.mass,
-                    //         primary_star.stellar_mass,
-                    //     );
+                //     planet_orbit.update_orbit(
+                //         resulting_planet_a,
+                //         resulting_planet.e,
+                //         planet_data.0.mass,
+                //         primary_star.stellar_mass,
+                //     );
 
-                    //     let immediate = state.simulation_speed > SIMULATION_SPEED_IMMEDIATE_THRESHOLD;
-                    //     let planet_to_moon_distance = planet_position.0.distance(moon_position.0);
-                    //     let approach_limit =
-                    //         match resulting_planet.moons.iter().find(|m| m.id == moon_id.0) {
-                    //             Some(moon) => Orbit::scaled_a(moon.a),
-                    //             None => COLLISION_DISTANCE,
-                    //         };
+                //     let immediate = state.simulation_speed > SIMULATION_SPEED_IMMEDIATE_THRESHOLD;
+                //     let planet_to_moon_distance = planet_position.0.distance(moon_position.0);
+                //     let approach_limit =
+                //         match resulting_planet.moons.iter().find(|m| m.id == moon_id.0) {
+                //             Some(moon) => Orbit::scaled_a(moon.a),
+                //             None => COLLISION_DISTANCE,
+                //         };
 
-                    //     if planet_to_moon_distance <= approach_limit || immediate {
-                    //         next_status = ActiveEventStatus::InProgress;
-                    //     }
-                    // }
+                //     if planet_to_moon_distance <= approach_limit || immediate {
+                //         next_status = ActiveEventStatus::InProgress;
+                //     }
+                // }
 
-                    // if let Some((moon_entity, planet_entity)) = state.cached_planets {
-                    //     let [moon, planet] = query
-                    //         .get_many_mut([moon_entity, planet_entity])
-                    //         .expect("Failed to retrieve cached planets by enitities");
+                // if let Some((moon_entity, planet_entity)) = state.cached_planets {
+                //     let [moon, planet] = query
+                //         .get_many_mut([moon_entity, planet_entity])
+                //         .expect("Failed to retrieve cached planets by enitities");
 
-                    //     let (
-                    //         moon_entity,
-                    //         moon_id,
-                    //         _,
-                    //         mut moon_orbit,
-                    //         _,
-                    //         mut moon_visibility,
-                    //         mut moon_data,
-                    //         moon_children,
-                    //     ) = moon;
-                    //     let (
-                    //         planet_entity,
-                    //         _,
-                    //         _,
-                    //         mut planet_orbit,
-                    //         _,
-                    //         mut planet_visibility,
-                    //         mut planet_data,
-                    //         planet_children,
-                    //     ) = planet;
+                //     let (
+                //         moon_entity,
+                //         moon_id,
+                //         _,
+                //         mut moon_orbit,
+                //         _,
+                //         mut moon_visibility,
+                //         mut moon_data,
+                //         moon_children,
+                //     ) = moon;
+                //     let (
+                //         planet_entity,
+                //         _,
+                //         _,
+                //         mut planet_orbit,
+                //         _,
+                //         mut planet_visibility,
+                //         mut planet_data,
+                //         planet_children,
+                //     ) = planet;
 
-                    //     // let moon_data = state.planets.get(&moon_id.0).expect("Failed to find moon");
-                    //     let resulting_moon = resulting_planet
-                    //         .moons
-                    //         .iter()
-                    //         .find(|m| m.id == moon_id.0)
-                    //         .expect("Failed to find resulting moon");
-                    //     let resulting_planet_a = Orbit::scaled_a(resulting_planet.a);
+                //     // let moon_data = state.planets.get(&moon_id.0).expect("Failed to find moon");
+                //     let resulting_moon = resulting_planet
+                //         .moons
+                //         .iter()
+                //         .find(|m| m.id == moon_id.0)
+                //         .expect("Failed to find resulting moon");
+                //     let resulting_planet_a = Orbit::scaled_a(resulting_planet.a);
 
-                    //     moon_orbit.update_orbit_immediate(
-                    //         resulting_moon.a as f32,
-                    //         resulting_moon.e,
-                    //         resulting_moon.mass,
-                    //         primary_star.stellar_mass,
-                    //     );
+                //     moon_orbit.update_orbit_immediate(
+                //         resulting_moon.a as f32,
+                //         resulting_moon.e,
+                //         resulting_moon.mass,
+                //         primary_star.stellar_mass,
+                //     );
 
-                    //     planet_orbit.update_orbit_immediate(
-                    //         resulting_planet_a,
-                    //         resulting_planet.e,
-                    //         resulting_planet.mass,
-                    //         primary_star.stellar_mass,
-                    //     );
+                //     planet_orbit.update_orbit_immediate(
+                //         resulting_planet_a,
+                //         resulting_planet.e,
+                //         resulting_planet.mass,
+                //         primary_star.stellar_mass,
+                //     );
 
-                    //     commands.entity(planet_entity).add_child(moon_entity);
+                //     commands.entity(planet_entity).add_child(moon_entity);
 
-                    //     PlanetModel::update_planet_model(
-                    //         moon_children,
-                    //         &mut child_query,
-                    //         &mut moon_visibility,
-                    //         &mut moon_data,
-                    //         &mut meshes,
-                    //         &mut materials,
-                    //         resulting_moon,
-                    //     );
+                //     PlanetModel::update_planet_model(
+                //         moon_children,
+                //         &mut child_query,
+                //         &mut moon_visibility,
+                //         &mut moon_data,
+                //         &mut meshes,
+                //         &mut materials,
+                //         resulting_moon,
+                //     );
 
-                    //     PlanetModel::update_planet_model(
-                    //         planet_children,
-                    //         &mut child_query,
-                    //         &mut planet_visibility,
-                    //         &mut planet_data,
-                    //         &mut meshes,
-                    //         &mut materials,
-                    //         resulting_planet,
-                    //     );
+                //     PlanetModel::update_planet_model(
+                //         planet_children,
+                //         &mut child_query,
+                //         &mut planet_visibility,
+                //         &mut planet_data,
+                //         &mut meshes,
+                //         &mut materials,
+                //         resulting_planet,
+                //     );
 
-                    //     next_status = ActiveEventStatus::Executed;
-                    // }
-                }
+                //     next_status = ActiveEventStatus::Executed;
+                // }
+                // }
 
-                AccreteEvent::PlanetesimalMoonToRing(_, target_id, source_id, _) => {
-                    // if let Some((moon_entity, planet_entity)) = state.cached_planets {
-                    //     let [moon, planet] = query
-                    //         .get_many_mut([moon_entity, planet_entity])
-                    //         .expect("Failed to retrieve cached planets by enitities");
-                    //     let (moon_entity, _, _, _, moon_polyline_handle, _, _, children) = moon;
-                    //     let (planet_entity, _, _, _, _, _, _, _) = planet;
-                    //     RingModel::create_ring_resources(
-                    //         &mut commands,
-                    //         planet_entity,
-                    //         resulting_ring,
-                    //         &mut meshes,
-                    //         &mut materials,
-                    //     );
+                // AccreteEvent::PlanetesimalMoonToRing(_, target_id, source_id, _) => {
+                // if let Some((moon_entity, planet_entity)) = state.cached_planets {
+                //     let [moon, planet] = query
+                //         .get_many_mut([moon_entity, planet_entity])
+                //         .expect("Failed to retrieve cached planets by enitities");
+                //     let (moon_entity, _, _, _, moon_polyline_handle, _, _, children) = moon;
+                //     let (planet_entity, _, _, _, _, _, _, _) = planet;
+                //     RingModel::create_ring_resources(
+                //         &mut commands,
+                //         planet_entity,
+                //         resulting_ring,
+                //         &mut meshes,
+                //         &mut materials,
+                //     );
 
-                    //     PlanetModel::remove_planet_resources(
-                    //         children,
-                    //         &mut child_query,
-                    //         moon_entity,
-                    //         &mut commands,
-                    //         &mut meshes,
-                    //         &mut materials,
-                    //     );
+                //     PlanetModel::remove_planet_resources(
+                //         children,
+                //         &mut child_query,
+                //         moon_entity,
+                //         &mut commands,
+                //         &mut meshes,
+                //         &mut materials,
+                //     );
 
-                    //     Orbit::remove_orbital_lines(moon_polyline_handle, &mut polylines);
-                    //     active_event.status = ActiveEventStatus::Executed;
-                    // }
-                }
+                //     Orbit::remove_orbital_lines(moon_polyline_handle, &mut polylines);
+                //     active_event.status = ActiveEventStatus::Executed;
+                // }
+                // }
                 _ => (),
             }
         }
-        active_event.status = next_status;
     }
 }
 
@@ -438,7 +483,8 @@ impl Plugin for ActiveEventPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(ActiveEvent::default())
             .add_system(event_initialized_system)
-            .add_system(event_in_progress_system)
+            .add_system(planetesimal_update_in_progress_system)
+            .add_system(coalescence_in_progress_system)
             .add_system(event_executed_system);
     }
 }

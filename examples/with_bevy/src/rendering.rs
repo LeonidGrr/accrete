@@ -23,8 +23,8 @@ pub fn run(log: Vec<AccreteEvent>, primary_star: PrimaryStar) {
         .add_plugin(PlanetsPlugin)
         .add_plugin(OrbitsPlugin)
         .add_plugin(DustPlugin)
-        .add_plugin(ActiveEventPlugin)
         .add_plugin(SimulationStatePlugin)
+        .add_plugin(ActiveEventPlugin)
         .run();
 }
 
