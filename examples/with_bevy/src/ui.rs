@@ -65,16 +65,16 @@ fn render_info_system(
     active_event: Res<ActiveEvent>,
     mut query_event_text: Query<&mut Text, With<InfoText>>,
 ) {
-    let event_name = match &active_event.event {
-        Some(e) => e.name(),
-        None => "",
-    };
     let event_idx = state.event_idx;
 
     if event_idx > 0 {
         for mut text in query_event_text.iter_mut() {
             text.sections[0].value = format!("Event {}\n", event_idx);
-            text.sections[1].value = format!("{} - {:?}\n", event_name, active_event.status);
+            text.sections[1].value = format!(
+                "{} - {:?}\n",
+                active_event.event.name(),
+                active_event.status
+            );
             text.sections[2].value = format!("Current step: {}", state.current_step);
         }
     }

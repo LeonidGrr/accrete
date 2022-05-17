@@ -131,6 +131,7 @@ impl EventSource for DustBands {
 /// List of events emitted during system generation
 #[derive(Debug, Clone)]
 pub enum AccreteEvent {
+    None,
     /// once at the very start of accretion
     PlanetarySystemSetup(String, System),
     /// new planetesimal created during accretion process
@@ -175,6 +176,7 @@ impl AccreteEvent {
             AccreteEvent::OuterBodyInjected(name, _) => name,
             AccreteEvent::PlanetaryEnvironmentGenerated(name, _) => name,
             AccreteEvent::PlanetarySystemComplete(name, _) => name,
+            AccreteEvent::None => "",
         }
     }
 }
