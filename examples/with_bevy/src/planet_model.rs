@@ -59,7 +59,7 @@ impl PlanetModel {
                     perspective: true,
                     ..default()
                 }),
-                // visibility: Visibility { is_visible: false },
+                visibility: Visibility { is_visible: false },
                 ..default()
             })
             .insert_bundle(OrbitBundle::new(orbital_parameters))
@@ -72,7 +72,7 @@ impl PlanetModel {
                     })),
                     material: materials.add(color.into()),
                     transform: Transform::from_translation(position),
-                    // visibility: Visibility { is_visible: false },
+                    visibility: Visibility { is_visible: false },
                     ..default()
                 });
             });

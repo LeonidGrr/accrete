@@ -40,7 +40,7 @@ fn setup_scene(mut commands: Commands) {
         ..default()
     });
     commands.spawn_bundle(PerspectiveCameraBundle {
-        transform: Transform::from_xyz(75.1, 75.0, 75.1).looking_at(Vec3::ZERO, Vec3::Y),
+        transform: Transform::from_xyz(0.1, 150.0, 0.1).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
 }
