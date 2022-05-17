@@ -1,9 +1,6 @@
 use crate::active_event::{ActiveEvent, ActiveEventStatus};
-use crate::orbit::Orbit;
-use crate::planet_model::{PlanetData, PlanetId, PlanetPosition};
 use accrete::events::AccreteEvent;
 use bevy::prelude::*;
-use bevy_polyline::prelude::Polyline;
 
 #[derive(Debug)]
 pub struct SimulationState {

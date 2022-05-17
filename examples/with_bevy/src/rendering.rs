@@ -7,7 +7,7 @@ use bevy::prelude::*;
 use bevy_polyline::prelude::*;
 // use bevy_inspector_egui::WorldInspectorPlugin;
 
-pub fn run(log: Vec<AccreteEvent>, primary_star: PrimaryStar) {
+pub fn run_simulation(log: Vec<AccreteEvent>, primary_star: PrimaryStar) {
     App::new()
         .insert_resource(WindowDescriptor {
             title: "Accrete simulation".to_string(),
