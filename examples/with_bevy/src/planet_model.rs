@@ -44,20 +44,18 @@ impl PlanetModel {
         let position = planet_model
             .position
             .update_position(&mut orbital_parameters, state.current_step);
-        let color = get_planet_color(&planet);
+        let color = get_planet_color(planet);
 
         commands
             .spawn()
             .insert_bundle(PolylineBundle {
                 polyline: polylines.add(Polyline {
                     vertices: Vec::with_capacity(TRAIL_LENGTH),
-                    ..default()
                 }),
                 material: polyline_materials.add(PolylineMaterial {
                     width: 0.1,
                     color: Color::WHITE,
                     perspective: true,
-                    ..default()
                 }),
                 visibility: Visibility { is_visible: false },
                 ..default()
@@ -181,9 +179,10 @@ fn update_planets_position_system(
     query.for_each_mut(|(mut planet_position, mut orbital_parameters, children)| {
         planet_position.update_position(&mut orbital_parameters, state.current_step);
         for &child in children.iter() {
-            let mut transform = child_query.get_mut(child).expect("Failed to get transform");
-            transform.translation.x = planet_position.0.x;
-            transform.translation.z = planet_position.0.z;
+            if let Ok(mut transform) = child_query.get_mut(child) {
+                transform.translation.x = planet_position.0.x;
+                transform.translation.z = planet_position.0.z;
+            }
         }
     });
 }

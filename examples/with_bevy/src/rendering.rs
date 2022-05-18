@@ -13,10 +13,11 @@ pub fn run_simulation(log: Vec<AccreteEvent>, primary_star: PrimaryStar) {
             title: "Accrete simulation".to_string(),
             ..default()
         })
+        .insert_resource(Msaa { samples: 4 })
         .insert_resource(primary_star)
         .insert_resource(log)
-        .add_startup_system(setup_scene)
         .add_plugins(DefaultPlugins)
+        // .add_plugin(CameraPlugin)
         .add_plugin(PolylinePlugin)
         // .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(UIPlugin)
@@ -25,6 +26,7 @@ pub fn run_simulation(log: Vec<AccreteEvent>, primary_star: PrimaryStar) {
         .add_plugin(DustPlugin)
         .add_plugin(SimulationStatePlugin)
         .add_plugin(ActiveEventPlugin)
+        .add_startup_system(setup_scene)
         .run();
 }
 

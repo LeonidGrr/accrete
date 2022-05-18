@@ -1,4 +1,5 @@
 mod active_event;
+mod camera;
 mod consts;
 mod dust_model;
 mod orbit;
@@ -6,14 +7,14 @@ mod planet_model;
 mod rendering;
 mod ring_model;
 mod simulation_state;
+mod stats;
 mod surface;
 mod ui;
-mod stats;
 
 use accrete::events::EVENTS;
 use accrete::Accrete;
-use stats::print_accrete_stats;
 use rendering::run_simulation;
+use stats::print_accrete_stats;
 
 fn main() {
     let mut accrete = Accrete::new(2);

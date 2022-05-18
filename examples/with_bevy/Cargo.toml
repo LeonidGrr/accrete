@@ -7,15 +7,16 @@ edition = "2021"
 
 [dependencies]
 accrete = { path = "../.." }
-bevy = "0.7.0"
+bevy = "0.7"
 bevy_polyline = "0.2"
 bevy_prototype_debug_lines = { version = "0.6", features = ["3d"] }
-bevy_egui = "0.13.0"
-egui = "0.17.0"
-bevy-inspector-egui = "0.10.0"
-rand = "0.8.3"
-getrandom = { version = "0.2.3", features = ["js"] }
-ringbuffer = "0.8.4"
+bevy_egui = "0.13"
+egui = "0.17"
+bevy-inspector-egui = "0.10"
+rand = "0.8"
+getrandom = { version = "0.2", features = ["js"] }
+ringbuffer = "0.8"
+smooth-bevy-cameras = { git = "https://github.com/bonsairobo/smooth-bevy-cameras", branch = "main" }
 
 [profile.dev]
 opt-level = 2

@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy::render::{render_resource::WgpuFeatures, settings::WgpuSettings};
 
 #[derive(Debug, Component)]
 pub struct PrimaryStar;
@@ -30,13 +29,7 @@ pub struct DustPlugin;
 
 impl Plugin for DustPlugin {
     fn build(&self, app: &mut App) {
-        let mut options = WgpuSettings::default();
-        options
-            .features
-            .set(WgpuFeatures::VERTEX_WRITABLE_STORAGE, true);
-
-        app.insert_resource(options)
-            .add_startup_system(setup_dust_model)
+        app.add_startup_system(setup_dust_model)
             .add_system(update_primary_star);
     }
 }

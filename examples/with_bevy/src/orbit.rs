@@ -1,15 +1,21 @@
 use crate::{
-    consts::{
-        A_SCALE_FACTOR, PLANET_PERIOD_FACTOR, PLANET_RADIUS_SCALE_FACTOR, TRAIL_LENGTH,
-        TRAIL_MINIMUM_ANGLE, TRAIL_MINIMUM_DISTANCE, UPDATE_A_LIMIT, UPDATE_A_RATE, UPDATE_E_LIMIT,
-        UPDATE_E_RATE,
-    },
+    consts::TRAIL_LENGTH,
     planet_model::{PlanetId, PlanetPosition},
 };
 use accrete::{enviro::period, Planetesimal};
 use bevy::{math::vec3, prelude::*};
 use bevy_polyline::prelude::*;
 use ringbuffer::{ConstGenericRingBuffer, RingBufferExt, RingBufferWrite};
+
+const A_SCALE_FACTOR: f32 = 2.0;
+const UPDATE_A_LIMIT: f32 = 0.1;
+const UPDATE_A_RATE: f32 = 0.1;
+const UPDATE_E_LIMIT: f32 = 0.01;
+const UPDATE_E_RATE: f32 = 0.01;
+const PLANET_RADIUS_SCALE_FACTOR: f32 = 0.000015;
+const PLANET_PERIOD_FACTOR: f32 = 100.0;
+const TRAIL_MINIMUM_ANGLE: f32 = 0.148_341_872;
+const TRAIL_MINIMUM_DISTANCE: f32 = 1.0;
 
 #[derive(Component, Clone, Default, Debug)]
 pub struct Trail(ConstGenericRingBuffer<Vec3, TRAIL_LENGTH>);
@@ -176,20 +182,17 @@ fn update_orbits_system(
                 let gt_min_angle = last_vec.dot(last_last_vec) > TRAIL_MINIMUM_ANGLE;
                 if gt_min_angle {
                     trail.0.push(planet_position.0);
-                    let next_vertices = trail.0.iter().map(|v| *v).collect::<Vec<Vec3>>();
+                    let next_vertices = trail.0.iter().copied().collect::<Vec<Vec3>>();
                     polyline.vertices = next_vertices;
-                } else {
-                    if polyline.vertices.len() > 1 {
-                        *trail
-                            .0
-                            .get_mut(-1)
-                            .expect("Failed to get trail with -1 index") = planet_position.0;
-                        *polyline
-                            .vertices
-                            .last_mut()
-                            .expect("Failed to get orbital polyline last vertex") =
-                            planet_position.0.into();
-                    }
+                } else if polyline.vertices.len() > 1 {
+                    *trail
+                        .0
+                        .get_mut(-1)
+                        .expect("Failed to get trail with -1 index") = planet_position.0;
+                    *polyline
+                        .vertices
+                        .last_mut()
+                        .expect("Failed to get orbital polyline last vertex") = planet_position.0;
                 }
             }
         } else {
