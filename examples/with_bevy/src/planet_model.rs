@@ -63,16 +63,17 @@ impl PlanetModel {
             .insert_bundle(OrbitBundle::new(orbital_parameters))
             .insert_bundle(planet_model)
             .with_children(|parent| {
-                parent.spawn_bundle(PbrBundle {
-                    mesh: meshes.add(Mesh::from(shape::Icosphere {
-                        radius: Orbit::scaled_radius(planet.radius),
-                        subdivisions: 32,
-                    })),
-                    material: materials.add(color.into()),
-                    transform: Transform::from_translation(position),
-                    visibility: Visibility { is_visible: false },
-                    ..default()
-                });
+                parent
+                    .spawn_bundle(PbrBundle {
+                        mesh: meshes.add(Mesh::from(shape::Icosphere {
+                            radius: Orbit::scaled_radius(planet.radius),
+                            subdivisions: 32,
+                        })),
+                        material: materials.add(color.into()),
+                        transform: Transform::from_translation(position),
+                        visibility: Visibility { is_visible: false },
+                        ..default()
+                    });
             });
     }
 
