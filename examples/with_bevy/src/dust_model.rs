@@ -22,14 +22,14 @@ fn create_dust_effect(
 
     let mut size_gradient = Gradient::new();
     size_gradient.add_key(0.0, Vec2::splat(0.25));
-    size_gradient.add_key(0.5, Vec2::splat(0.125));
-    size_gradient.add_key(1.0, Vec2::splat(0.125));
+    size_gradient.add_key(0.9, Vec2::splat(0.125));
+    size_gradient.add_key(1.0, Vec2::splat(0.0));
 
     let effect_handle = effects.add(
         EffectAsset {
             name: "DustEffect".to_string(),
             capacity: 1024,
-            spawner: Spawner::rate((radius * 64.0).into()),
+            spawner: Spawner::once((radius * 64.0).into(), true),
             ..default()
         }
         .init(PositionCircleModifier {
@@ -38,6 +38,9 @@ fn create_dust_effect(
             radius,
             speed: Value::Uniform((0.0, 0.01)),
             dimension: ShapeDimension::Volume,
+        })
+        .init(ParticleLifetimeModifier {
+            lifetime: 100.0,
         })
         // .render(ParticleTextureModifier {
         //     texture: texture_handle.clone_weak(),
@@ -97,11 +100,11 @@ fn update_force_fields(mut effects: ResMut<Assets<EffectAsset>>, dust_query: Que
                 force_fields.push(
                     ForceFieldParam {
                         position: planet_position.0,
-                        max_radius: 10.0,
-                        min_radius: 1.0,
-                        mass: 100.0,
+                        max_radius: 1.0,
+                        min_radius: 0.01,
+                        mass: 10.0,
                         force_exponent: 2.0,
-                        conform_to_sphere: false,
+                        conform_to_sphere: true,
                     }
                 );
             }
