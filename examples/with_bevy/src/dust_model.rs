@@ -1,8 +1,5 @@
-use bevy::{
-    prelude::*,
-    render::{render_resource::WgpuFeatures, settings::WgpuSettings},
-};
 use bevy_hanabi::*;
+use bevy::{prelude::*, render::{settings::WgpuSettings, render_resource::WgpuFeatures}};
 use crate::planet_model::{PlanetData, PlanetPosition};
 
 #[derive(Debug, Component)]
@@ -15,35 +12,35 @@ fn create_dust_effect(
     commands: &mut Commands,
     effects: &mut ResMut<Assets<EffectAsset>>,
     radius: f32,
+    // texture_handle: &Handle<Image>,
 ) -> Entity {
     let mut color_gradient = Gradient::new();
     color_gradient.add_key(0.0, Vec4::splat(1.0));
     color_gradient.add_key(0.1, Vec4::new(1.0, 1.0, 0.0, 1.0));
     color_gradient.add_key(0.4, Vec4::new(1.0, 0.0, 0.0, 1.0));
-    color_gradient.add_key(1.0, Vec4::splat(0.0));
+    color_gradient.add_key(1.0, Vec4::splat(1.0));
 
     let mut size_gradient = Gradient::new();
-    size_gradient.add_key(0.0, Vec2::splat(1.0));
-    size_gradient.add_key(0.3, Vec2::splat(0.6));
-    size_gradient.add_key(0.6, Vec2::splat(0.3));
-    size_gradient.add_key(1.0, Vec2::splat(0.0));
+    size_gradient.add_key(0.0, Vec2::splat(0.25));
+    size_gradient.add_key(0.5, Vec2::splat(0.125));
+    size_gradient.add_key(1.0, Vec2::splat(0.125));
 
     let effect_handle = effects.add(
         EffectAsset {
             name: "DustEffect".to_string(),
             capacity: 1024,
-            spawner: Spawner::rate(64.0.into()),
+            spawner: Spawner::rate((radius * 64.0).into()),
             ..default()
         }
         .init(PositionCircleModifier {
             center: Vec3::ZERO,
             axis: Vec3::Y,
             radius,
-            speed: Value::Uniform((0.0, 1.0)),
-            dimension: ShapeDimension::Surface,
+            speed: Value::Uniform((0.0, 0.01)),
+            dimension: ShapeDimension::Volume,
         })
         // .render(ParticleTextureModifier {
-        //     texture: texture_handle.clone(),
+        //     texture: texture_handle.clone_weak(),
         // })
         .render(ColorOverLifetimeModifier {
             gradient: color_gradient,
@@ -67,8 +64,7 @@ fn setup_dust_model_system(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut effects: ResMut<Assets<EffectAsset>>,
 ) {
-    // let texture_handle: Handle<Image> = asset_server.load("cloud.png");
-    
+    // let texture_handle: Handle<Image> = asset_server.load("textures/cloud.png");
     let entity = commands
         .spawn()
         .insert(PrimaryStar)
@@ -93,8 +89,6 @@ fn update_primary_star_system(mut primary_star_query: Query<&mut Transform, With
 }
 
 fn update_force_fields(mut effects: ResMut<Assets<EffectAsset>>, dust_query: Query<&Handle<EffectAsset>, With<DustModel>>, planets_query: Query<(&PlanetData, &PlanetPosition, &Visibility)>) {
-
-
     dust_query.for_each(|effect| {
         let effect_asset = effects.get_mut(effect).expect("Failed to get effect asset");
         let mut force_fields = vec![];
@@ -104,10 +98,10 @@ fn update_force_fields(mut effects: ResMut<Assets<EffectAsset>>, dust_query: Que
                     ForceFieldParam {
                         position: planet_position.0,
                         max_radius: 10.0,
-                        min_radius: 0.1,
-                        mass: 10.0,
+                        min_radius: 1.0,
+                        mass: 100.0,
                         force_exponent: 2.0,
-                        conform_to_sphere: true,
+                        conform_to_sphere: false,
                     }
                 );
             }
@@ -127,10 +121,12 @@ impl Plugin for DustPlugin {
             .features
             .set(WgpuFeatures::VERTEX_WRITABLE_STORAGE, true);
 
-        app.insert_resource(options)
+         app.insert_resource(options)
             .add_plugin(HanabiPlugin)
             .add_startup_system(setup_dust_model_system)
-            .add_system(update_primary_star_system)
-            .add_system(update_force_fields);
+            .add_system(update_force_fields)
+            .add_system(update_primary_star_system);
+       
     }
 }
+
