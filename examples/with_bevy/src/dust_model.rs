@@ -12,24 +12,24 @@ fn create_dust_effect(
     commands: &mut Commands,
     effects: &mut ResMut<Assets<EffectAsset>>,
     radius: f32,
-    // texture_handle: &Handle<Image>,
+    texture_handle: &Handle<Image>,
 ) -> Entity {
     let mut color_gradient = Gradient::new();
     color_gradient.add_key(0.0, Vec4::splat(1.0));
     color_gradient.add_key(0.1, Vec4::new(1.0, 1.0, 0.0, 1.0));
-    color_gradient.add_key(0.4, Vec4::new(1.0, 0.0, 0.0, 1.0));
-    color_gradient.add_key(1.0, Vec4::splat(1.0));
+    color_gradient.add_key(0.8, Vec4::new(1.0, 0.0, 0.0, 1.0));
+    color_gradient.add_key(1.0, Vec4::splat(0.0));
 
     let mut size_gradient = Gradient::new();
-    size_gradient.add_key(0.0, Vec2::splat(0.25));
-    size_gradient.add_key(0.9, Vec2::splat(0.125));
+    size_gradient.add_key(0.0, Vec2::splat(1.0));
+    size_gradient.add_key(0.9, Vec2::splat(0.5));
     size_gradient.add_key(1.0, Vec2::splat(0.0));
 
     let effect_handle = effects.add(
         EffectAsset {
             name: "DustEffect".to_string(),
-            capacity: 1024,
-            spawner: Spawner::once((radius * 64.0).into(), true),
+            capacity: 4096,
+            spawner: Spawner::once((radius * 128.0).into(), true),
             ..default()
         }
         .init(PositionCircleModifier {
@@ -42,9 +42,9 @@ fn create_dust_effect(
         .init(ParticleLifetimeModifier {
             lifetime: 100.0,
         })
-        // .render(ParticleTextureModifier {
-        //     texture: texture_handle.clone_weak(),
-        // })
+        .render(ParticleTextureModifier {
+            texture: texture_handle.clone(),
+        })
         .render(ColorOverLifetimeModifier {
             gradient: color_gradient,
         })
@@ -61,13 +61,13 @@ fn create_dust_effect(
 }
 
 fn setup_dust_model_system(
-    // asset_server: Res<AssetServer>,
+    asset_server: Res<AssetServer>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut effects: ResMut<Assets<EffectAsset>>,
 ) {
-    // let texture_handle: Handle<Image> = asset_server.load("textures/cloud.png");
+    let texture_handle: Handle<Image> = asset_server.load("textures/cloud.png");
     let entity = commands
         .spawn()
         .insert(PrimaryStar)
@@ -77,9 +77,9 @@ fn setup_dust_model_system(
             ..default()
         }).id();
 
-    for i in 0..10 {
+    for i in 0..20 {
         let bound = (i * 5) as f32;
-        let child_effect = create_dust_effect(&mut commands, &mut effects, bound);
+        let child_effect = create_dust_effect(&mut commands, &mut effects, bound, &texture_handle);
         commands.entity(entity).add_child(child_effect);
     }
 }
