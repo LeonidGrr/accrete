@@ -1,6 +1,6 @@
 Accrete.rs
 ========================
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)]
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://github.com/leonidgrr/accrete/actions/workflows/rust.yml/badge.svg)](https://github.com/leonidgrr/accrete/actions/workflows/rust.yml)
 [![Doc](https://docs.rs/accrete/badge.svg)](https://docs.rs/accrete)
 [![Crate](https://img.shields.io/crates/v/accrete.svg)](https://crates.io/crates/accrete)
