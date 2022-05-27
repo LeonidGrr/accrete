@@ -1,5 +1,10 @@
 Accrete.rs
 ========================
+[![License: MIT](https://img.shields.io/badge/License-MIT.svg)](./LICENSE)
+[![Build Status](https://github.com/leonidgrr/accrete/actions/workflows/rust.yml/badge.svg)](https://github.com/leonidgrr/accrete/actions/workflows/rust.yml)
+[![Doc](https://docs.rs/accrete/badge.svg)](https://docs.rs/accrete)
+[![Crate](https://img.shields.io/crates/v/accrete.svg)](https://crates.io/crates/accrete)
+
 Rust port of Accrete, planetary system generation algorithm. Based on 'Formation of Planetary Systems by Aggregation: A Computer Simulation' by Stephen H. Dole. Improved and extended by many talented people during past ~50 years ([good overview here](https://github.com/zakski/accrete-starform-stargen), also brief history below).
 This version of Accrete can be used for procedural generation of plausible planetary system.
 
