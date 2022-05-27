@@ -1,7 +1,17 @@
+#![deny(
+    missing_copy_implementations,
+    trivial_casts,
+    trivial_numeric_casts,
+    unsafe_code,
+    unused_import_braces,
+    unused_qualifications,
+    // missing_docs,
+)]
+#![allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub mod accrete;
 pub mod consts;
 pub mod enviro;
-pub mod events;
+pub mod events_log;
 pub mod structs;
 pub mod utils;
 pub mod wasm;

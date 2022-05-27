@@ -40,7 +40,7 @@ pub fn accrete_dust(
     a: &f64,
     e: &f64,
     crit_mass: &f64,
-    dust_bands: &mut Vec<DustBand>,
+    dust_bands: &mut [DustBand],
     cloud_eccentricity: &f64,
     dust_density: &f64,
     k: &f64,

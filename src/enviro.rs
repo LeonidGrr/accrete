@@ -55,9 +55,8 @@ pub fn kothari_radius(mass: &f64, giant: &bool, zone: &i32) -> f64 {
         (_, _) => (),
     }
 
-    let mut temp = atomic_weight * atomic_num;
-    temp = 2.0 * BETA_20 * SOLAR_MASS_IN_GRAMS.powf(1.0 / 3.0)
-        / (A1_20 * (temp as f64).powf(1.0 / 3.0));
+    let mut temp: f64 = atomic_weight * atomic_num;
+    temp = 2.0 * BETA_20 * SOLAR_MASS_IN_GRAMS.powf(1.0 / 3.0) / (A1_20 * temp.powf(1.0 / 3.0));
 
     let mut temp2 = A2_20 * atomic_weight.powf(4.0 / 3.0) * SOLAR_MASS_IN_GRAMS.powf(2.0 / 3.0);
     temp2 *= mass.powf(2.0 / 3.0);
@@ -324,7 +323,7 @@ pub fn planet_albedo(
     rng: &mut dyn RngCore,
 ) -> f64 {
     let mut rock_fraction = 1.0 - *water_fraction - *ice_fraction;
-    let mut components = 0.0;
+    let mut components: f64 = 0.0;
 
     if *water_fraction > 0.0 {
         components += 1.0;
@@ -336,7 +335,7 @@ pub fn planet_albedo(
         components += 1.0;
     }
 
-    let cloud_adjustment = *cloud_fraction / components as f64;
+    let cloud_adjustment = *cloud_fraction / components;
 
     if rock_fraction >= cloud_adjustment {
         rock_fraction -= cloud_adjustment;
@@ -482,12 +481,12 @@ pub fn get_day_night_temp_kelvin(planet: &mut Planetesimal) {
         day_hours,
         ..
     } = planet;
-    let pressmod = 1.0 / (1.0 + 20.0 * *surface_pressure_bar).sqrt();
+    let pressmod: f64 = 1.0 / (1.0 + 20.0 * *surface_pressure_bar).sqrt();
     let ppmod = 1.0 / (10.0 + 5.0 * *surface_pressure_bar).sqrt();
     let tiltmod = ((*axial_tilt * PI / 180.0).cos() * (1.0 + *e).powf(2.0)).abs();
     let daymod = 1.0 / (200.0 / *day_hours + 1.0);
-    let mh = (1.0 + daymod).powf(pressmod as f64);
-    let ml = (1.0 - daymod).powf(pressmod as f64);
+    let mh = (1.0 + daymod).powf(pressmod);
+    let ml = (1.0 - daymod).powf(pressmod);
     let hi = mh * *surface_temp_kelvin;
     let mut lo = ml * *surface_temp_kelvin;
     let sh = hi + ((100.0 + hi) * tiltmod).powf((ppmod).sqrt());

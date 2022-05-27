@@ -58,8 +58,8 @@ pub fn aphelion_distance(radius: &f64, eccentricity: &f64) -> f64 {
 }
 
 pub fn random_eccentricity(rng: &mut dyn RngCore) -> f64 {
-    let random = rng.gen_range(0.0..1.0);
-    1.0 - (1.0 - random as f64).powf(ECCENTRICITY_COEFF)
+    let random: f64 = rng.gen_range(0.0..1.0);
+    1.0 - (1.0 - random).powf(ECCENTRICITY_COEFF)
 }
 
 /// Roche limit for planet / moon system in AU. Moon radius passes in AU, masses in solar mass.

@@ -1,5 +1,5 @@
 use crate::consts::*;
-use crate::events::EventSource;
+use crate::events_log::event_source::EventSource;
 use crate::structs::planetesimal::Planetesimal;
 use crate::structs::system::System;
 use crate::utils::*;
