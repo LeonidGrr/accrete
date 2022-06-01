@@ -13,7 +13,7 @@
         <br />
         <pre id="output"></pre>
         <script type="module">
-            import init, { generate, planetary_system, planet } from './pkg/accrete.js';
+            import init, { planetary_system, planet } from './pkg/accrete.js';
 
             function syntaxHighlight(json) {
                 json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -40,8 +40,7 @@
                 Object.assign(document.getElementById('accrete_system'), {
                     async onclick() {
                         const seed = document.getElementById('seed').value;
-                        const accrete = generate(BigInt(seed));
-                        const output = planetary_system(accrete);
+                        const output = planetary_system(BigInt(seed), 1);
                         document.getElementById('output').innerHTML = syntaxHighlight(JSON.stringify(output, undefined, 2));
                     },
                     disabled: false
@@ -50,8 +49,7 @@
                 Object.assign(document.getElementById('accrete_planet'), {
                     async onclick() {
                         const seed = document.getElementById('seed').value;
-                        const accrete = generate(BigInt(seed));
-                        const output = planet(accrete);
+                        const output = planet(BigInt(seed), 1);
                         document.getElementById('output').innerHTML = syntaxHighlight(JSON.stringify(output, undefined, 4));
                     },
                     disabled: false
