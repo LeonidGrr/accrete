@@ -33,12 +33,12 @@ fn main() {
 
 Javascript:
 ```javascript
-import init, { generate, planetary_system, planet } from 'accrete-wasm';
+import init, { planetary_system } from 'accrete-wasm';
 async function run() {
     await init();
     const seed = 1;
-    const accrete = generate(BigInt(seed));
-    const output = planetary_system(accrete);
+    const stellar_mass = 1;
+    const output = planetary_system(BigInt(seed), stellar_mass);
 }
 run();
 ```
@@ -86,12 +86,12 @@ fn main() {
 
 Javascript:
 ```javascript
-import init, { generate, planetary_system, planet } from 'accrete-wasm';
+import init, { planet } from 'accrete-wasm';
 async function run() {
     await init();
     const seed = 1;
-    const accrete = generate(BigInt(seed));
-    const output = planet(accrete);
+    const stellar_mass = 1;
+    const output = planet(BigInt(seed), stellar_mass);
 }
 run();
 ```

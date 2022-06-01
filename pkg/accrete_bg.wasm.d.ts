@@ -1,30 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
-export function generate(a: number, b: number): number;
-export function planetary_system(a: number): number;
-export function planet(a: number): number;
-export function __wbg_accrete_free(a: number): void;
-export function __wbg_get_accrete_stellar_mass(a: number): number;
-export function __wbg_set_accrete_stellar_mass(a: number, b: number): void;
-export function __wbg_get_accrete_dust_density_coeff(a: number): number;
-export function __wbg_set_accrete_dust_density_coeff(a: number, b: number): void;
-export function __wbg_get_accrete_k(a: number): number;
-export function __wbg_set_accrete_k(a: number, b: number): void;
-export function __wbg_get_accrete_cloud_eccentricity(a: number): number;
-export function __wbg_set_accrete_cloud_eccentricity(a: number, b: number): void;
-export function __wbg_get_accrete_b(a: number): number;
-export function __wbg_set_accrete_b(a: number, b: number): void;
-export function __wbg_get_accrete_post_accretion_intensity(a: number): number;
-export function __wbg_set_accrete_post_accretion_intensity(a: number, b: number): void;
-export function __wbg_get_accrete_planet_a(a: number): number;
-export function __wbg_set_accrete_planet_a(a: number, b: number): void;
-export function __wbg_get_accrete_planet_e(a: number): number;
-export function __wbg_set_accrete_planet_e(a: number, b: number): void;
-export function __wbg_get_accrete_planet_mass(a: number): number;
-export function __wbg_set_accrete_planet_mass(a: number, b: number): void;
-export function __wbg_get_accrete_stellar_luminosity(a: number): number;
-export function __wbg_set_accrete_stellar_luminosity(a: number, b: number): void;
+export function planetary_system(a: number, b: number, c: number): number;
+export function planet(a: number, b: number, c: number): number;
+export function __wbindgen_free(a: number, b: number): void;
 export function __wbindgen_malloc(a: number): number;
 export function __wbindgen_realloc(a: number, b: number, c: number): number;
-export function __wbindgen_free(a: number, b: number): void;

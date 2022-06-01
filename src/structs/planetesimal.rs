@@ -1,5 +1,6 @@
 use crate::consts::*;
 use crate::enviro::*;
+use crate::events_log::accrete_event::AccreteEvents;
 use crate::structs::*;
 use crate::utils::*;
 
@@ -8,7 +9,7 @@ use rand::{Rng, RngCore};
 use serde::{Deserialize, Serialize};
 
 // http://orbitsimulator.com/formulas/
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Planetesimal {
     // "In an anonymous footnote to his 1766 translation of Charles Bonnet's Contemplation de la Nature, the astronomer Johann Daniel Titius of Wittenberg noted an apparent pattern in the layout of the planets, now known as the Titius-Bode Law. If one began a numerical sequence at 0, then included 3, 6, 12, 24, 48, etc., doubling each time, and added four to each number and divided by 10, this produced a remarkably close approximation to the radii of the orbits of the known planets as measured in astronomic units."
     // Semi-major axis, AU
@@ -255,6 +256,7 @@ impl Planetesimal {
         mass: f64,
         post_accretion_intensity: u32,
         rng: &mut dyn RngCore,
+        events_log: &mut AccreteEvents,
     ) -> Planetesimal {
         let main_seq_age = main_sequence_age(stellar_mass, stellar_luminosity);
         let stellar_radius_au = stellar_radius_au(stellar_mass);
@@ -334,6 +336,7 @@ impl Planetesimal {
                 &stellar_luminosity,
                 &stellar_mass,
                 rng,
+                events_log,
             );
         }
 

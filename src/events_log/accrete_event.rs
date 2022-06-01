@@ -1,34 +1,37 @@
+use serde::{Serialize, Deserialize};
 use crate::{structs::dust::DustBands, Planetesimal, Ring, System};
 
-/// List of events emitted during system generation
-#[derive(Debug, Clone)]
+pub type AccreteEvents = Vec<AccreteEvent>;
+
+/// Event emitted during system generation
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum AccreteEvent {
     None,
-    /// once at the very start of accretion
+    /// Once at the very start of accretion
     PlanetarySystemSetup(String, System),
-    /// new planetesimal created during accretion process
+    /// New planetesimal created during accretion process
     PlanetesimalCreated(String, Planetesimal),
-    ///planetesimal finished accretion of dust and gas
+    /// Planetesimal finished accretion of dust and gas
     PlanetesimalUpdated(String, Planetesimal),
-    /// planetesimal become gas giant
+    /// Planetesimal become gas giant
     PlanetesimalToGasGiant(String, Planetesimal),
-    /// dust bands recalculated every time planetesimal finish accretion
+    /// Dust bands recalculated every time planetesimal finish accretion
     DustBandsUpdated(String, DustBands),
-    /// two planetesimals coalesce
+    /// Two planetesimals coalesce
     PlanetesimalsCoalesced(String, String, String, Planetesimal),
-    /// two moons coalesce
+    /// Two moons coalesce
     MoonsCoalesced(String, String, String, Planetesimal),
-    /// one planetesimal catch another as moon
+    /// One planetesimal catch another as moon
     PlanetesimalCaptureMoon(String, String, String, Planetesimal),
-    /// moons turned into rings
+    /// Moons turned into rings
     PlanetesimalMoonToRing(String, String, String, Ring),
-    /// once at the very end of accretion
+    /// Once at the very end of accretion
     PostAccretionStarted(String),
-    /// for every outer body injected into system
+    /// For every outer body injected into system
     OuterBodyInjected(String, Planetesimal),
-    /// planetary environment generated for all planets
+    /// Planetary environment generated for all planets
     PlanetaryEnvironmentGenerated(String, System),
-    /// planetary system generation completed
+    /// Planetary system generation completed
     PlanetarySystemComplete(String, System),
 }
 

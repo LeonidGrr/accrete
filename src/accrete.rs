@@ -1,5 +1,6 @@
 use crate::consts::*;
 use crate::events_log::event_source::EventSource;
+use crate::events_log::accrete_event::AccreteEvents;
 use crate::structs::planetesimal::Planetesimal;
 use crate::structs::system::System;
 use crate::utils::*;
@@ -7,7 +8,6 @@ use crate::utils::*;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use serde::{Deserialize, Serialize};
-use wasm_bindgen::prelude::*;
 
 /// ### Configuration:
 ///
@@ -41,7 +41,9 @@ use wasm_bindgen::prelude::*;
 ///
 /// **stellar_luminosity** - Primary star luminosity.
 /// *Default: 1.0*
-#[wasm_bindgen]
+///
+/// **events_log** - AccreteEvents log.
+/// *Default: []*
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Accrete {
     pub stellar_mass: f64,
@@ -54,6 +56,7 @@ pub struct Accrete {
     pub planet_e: f64,
     pub planet_mass: f64,
     pub stellar_luminosity: f64,
+    pub events_log: AccreteEvents,
     rng: ChaCha8Rng,
 }
 
@@ -78,6 +81,7 @@ impl Default for Accrete {
             planet_e,
             planet_mass,
             rng,
+            events_log: vec![],
         }
     }
 }
@@ -103,6 +107,7 @@ impl Accrete {
             planet_e,
             planet_mass,
             rng,
+            events_log: vec![],
         }
     }
 
@@ -116,6 +121,7 @@ impl Accrete {
             b,
             post_accretion_intensity,
             rng,
+            events_log,
             ..
         } = self;
 
@@ -127,11 +133,16 @@ impl Accrete {
             *b,
         );
 
-        planetary_system.distribute_planetary_masses(rng);
-        planetary_system.post_accretion(*post_accretion_intensity, rng);
+        planetary_system.event("system_setup", events_log);
+
+        planetary_system.distribute_planetary_masses(rng, events_log);
+        planetary_system.post_accretion(*post_accretion_intensity, rng, events_log);
         planetary_system.process_planets(rng);
 
-        planetary_system.event("system_complete");
+        planetary_system.event("planetary_environment_generated", events_log);
+
+        planetary_system.event("system_complete", events_log);
+    
         planetary_system
     }
 
@@ -145,6 +156,7 @@ impl Accrete {
             planet_mass,
             post_accretion_intensity,
             rng,
+            events_log,
             ..
         } = self;
 
@@ -156,6 +168,7 @@ impl Accrete {
             *planet_mass,
             *post_accretion_intensity,
             rng,
+            events_log,
         )
     }
 }

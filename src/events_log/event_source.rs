@@ -1,19 +1,12 @@
-use super::accrete_event::AccreteEvent;
+use super::accrete_event::{AccreteEvents, AccreteEvent};
 use crate::{structs::dust::DustBands, Planetesimal, Ring, System};
-use once_cell::sync::Lazy;
-use std::sync::Mutex;
-
-type Events = Vec<AccreteEvent>;
-
-pub static EVENTS: Lazy<Mutex<Events>> = Lazy::new(|| Mutex::new(Vec::new()));
 
 pub trait EventSource: Clone {
-    fn event(&self, _event_type: &str) {}
+    fn event(&self, _event_type: &str, _events_log: &mut AccreteEvents) {}
 }
 
 impl EventSource for System {
-    fn event(&self, event_type: &str) {
-        let mut events = EVENTS.lock().expect("Failed to access EVENT_STORE");
+    fn event(&self, event_type: &str, events_log: &mut AccreteEvents) {
         let event = match event_type {
             "system_setup" => Some(AccreteEvent::PlanetarySystemSetup(
                 event_type.to_string(),
@@ -34,14 +27,13 @@ impl EventSource for System {
         };
 
         if let Some(e) = event {
-            events.push(e)
+            events_log.push(e)
         }
     }
 }
 
 impl EventSource for Planetesimal {
-    fn event(&self, event_type: &str) {
-        let mut events = EVENTS.lock().expect("Failed to access EVENT_STORE");
+    fn event(&self, event_type: &str, events_log: &mut AccreteEvents) {
         let mut event = match event_type {
             "planetesimal_created" => Some(AccreteEvent::PlanetesimalCreated(
                 event_type.to_string(),
@@ -93,17 +85,16 @@ impl EventSource for Planetesimal {
         }
 
         if let Some(e) = event {
-            events.push(e)
+            events_log.push(e)
         }
     }
 }
 
 impl EventSource for Ring {
-    fn event(&self, event_type: &str) {
-        let mut events = EVENTS.lock().expect("Failed to access EVENT_STORE");
+    fn event(&self, event_type: &str, events_log: &mut AccreteEvents) {
         if event_type.contains("moon_to_ring") {
             let data: Vec<&str> = event_type.split(':').collect();
-            events.push(AccreteEvent::PlanetesimalMoonToRing(
+            events_log.push(AccreteEvent::PlanetesimalMoonToRing(
                 data[0].to_string(),
                 data[1].to_string(),
                 data[2].to_string(),
@@ -114,8 +105,7 @@ impl EventSource for Ring {
 }
 
 impl EventSource for DustBands {
-    fn event(&self, event_type: &str) {
-        let mut events = EVENTS.lock().expect("Failed to access EVENT_STORE");
+    fn event(&self, event_type: &str, events_log: &mut AccreteEvents) {
         let event = match event_type {
             "dust_bands_updated" => Some(AccreteEvent::DustBandsUpdated(
                 event_type.to_string(),
@@ -125,7 +115,7 @@ impl EventSource for DustBands {
         };
 
         if let Some(e) = event {
-            events.push(e)
+            events_log.push(e)
         }
     }
 }

@@ -3,7 +3,7 @@ use crate::{structs::Planetesimal, utils::random_id};
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Ring {
     pub a: f64,
     pub mass: f64,

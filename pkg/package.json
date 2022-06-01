@@ -4,7 +4,7 @@
     "Leonid <leonidgrr@gmail.com>"
   ],
   "description": "Rust port of Accrete, planetary system generation algorithm. Based on 'Formation of Planetary Systems by Aggregation: A Computer Simulation' by Stephen H. Dole. Improved and extended by many talented people during past ~50 years.",
-  "version": "0.1.9",
+  "version": "0.2.0",
   "license": "MIT",
   "repository": {
     "type": "git",

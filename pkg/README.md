@@ -1,5 +1,10 @@
 Accrete.rs
 ========================
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://github.com/leonidgrr/accrete/actions/workflows/rust.yml/badge.svg)](https://github.com/leonidgrr/accrete/actions/workflows/rust.yml)
+[![Doc](https://docs.rs/accrete/badge.svg)](https://docs.rs/accrete)
+[![Crate](https://img.shields.io/crates/v/accrete.svg)](https://crates.io/crates/accrete)
+
 Rust port of Accrete, planetary system generation algorithm. Based on 'Formation of Planetary Systems by Aggregation: A Computer Simulation' by Stephen H. Dole. Improved and extended by many talented people during past ~50 years ([good overview here](https://github.com/zakski/accrete-starform-stargen), also brief history below).
 This version of Accrete can be used for procedural generation of plausible planetary system.
 
@@ -28,12 +33,12 @@ fn main() {
 
 Javascript:
 ```javascript
-import init, { generate, planetary_system, planet } from 'accrete-wasm';
+import init, { planetary_system } from 'accrete-wasm';
 async function run() {
     await init();
     const seed = 1;
-    const accrete = generate(BigInt(seed));
-    const output = planetary_system(accrete);
+    const stellar_mass = 1;
+    const output = planetary_system(BigInt(seed), stellar_mass);
 }
 run();
 ```
@@ -81,12 +86,12 @@ fn main() {
 
 Javascript:
 ```javascript
-import init, { generate, planetary_system, planet } from 'accrete-wasm';
+import init, { planet } from 'accrete-wasm';
 async function run() {
     await init();
     const seed = 1;
-    const accrete = generate(BigInt(seed));
-    const output = planet(accrete);
+    const stellar_mass = 1;
+    const output = planet(BigInt(seed), stellar_mass);
 }
 run();
 ```

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 /// [Star class by Harvard system](https://en.wikipedia.org/wiki/Stellar_classification)
 /// [Additional info](https://www.enchantedlearning.com/subjects/astronomy/stars/startypes.shtml)
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub enum SpectralClass {
     Rogue,
     Y,
