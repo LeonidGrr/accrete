@@ -1,4 +1,4 @@
 pub mod accrete_event;
-pub mod event_source;
 pub mod accrete_state;
+pub mod event_source;
 mod tests;

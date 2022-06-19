@@ -1,6 +1,6 @@
 use crate::enviro::*;
-use crate::events_log::event_source::EventSource;
 use crate::events_log::accrete_event::AccreteEvents;
+use crate::events_log::event_source::EventSource;
 use crate::structs::*;
 use crate::utils::*;
 
@@ -40,7 +40,7 @@ impl System {
         let dust_band = DustBand::new(outer_dust, inner_dust, true, true);
         let dust_bands = vec![dust_band];
 
-        let system = Self {
+        Self {
             primary_star,
             planets: Vec::new(),
             k,
@@ -53,12 +53,14 @@ impl System {
             outer_dust,
             dust_bands,
             dust_left: true,
-        };
-
-        system
+        }
     }
 
-    pub fn distribute_planetary_masses(&mut self, rng: &mut dyn RngCore, events_log: &mut AccreteEvents) {
+    pub fn distribute_planetary_masses(
+        &mut self,
+        rng: &mut dyn RngCore,
+        events_log: &mut AccreteEvents,
+    ) {
         let Self {
             primary_star,
             planets,
@@ -134,7 +136,12 @@ impl System {
         }
     }
 
-    pub fn post_accretion(&mut self, intensity: u32, rng: &mut dyn RngCore, events_log: &mut AccreteEvents) {
+    pub fn post_accretion(
+        &mut self,
+        intensity: u32,
+        rng: &mut dyn RngCore,
+        events_log: &mut AccreteEvents,
+    ) {
         self.event("post_accretion_started", events_log);
 
         let Self {
@@ -218,7 +225,14 @@ pub fn coalesce_planetesimals(
             next_planets.push(p.clone());
         } else if let Some(prev_p) = next_planets.last_mut() {
             if check_orbits_intersect(p.a, p.e, p.mass, prev_p.a, prev_p.e, prev_p.mass) {
-                planetesimals_intersect(p, prev_p, primary_star_luminosity, primary_star_mass, rng, events_log);
+                planetesimals_intersect(
+                    p,
+                    prev_p,
+                    primary_star_luminosity,
+                    primary_star_mass,
+                    rng,
+                    events_log,
+                );
             } else {
                 next_planets.push(p.clone());
             }
@@ -292,7 +306,11 @@ fn check_orbits_intersect(
 }
 
 /// Two planetesimals collide and form one planet
-fn coalesce_two_planets(a: &Planetesimal, b: &Planetesimal, events_log: &mut AccreteEvents) -> Planetesimal {
+fn coalesce_two_planets(
+    a: &Planetesimal,
+    b: &Planetesimal,
+    events_log: &mut AccreteEvents,
+) -> Planetesimal {
     let new_mass = a.mass + b.mass;
     let new_axis = new_mass / (a.mass / a.a + b.mass / b.a);
     let term1 = a.mass * (a.a * (1.0 - a.e.powf(2.0))).sqrt();
@@ -359,7 +377,10 @@ fn capture_moon(
         m.distance_to_primary_star = planet.a;
     }
 
-    planet.event(format!("planetesimal_capture_moon:{}:{}", planet.id, moon_id).as_str(), events_log);
+    planet.event(
+        format!("planetesimal_capture_moon:{}:{}", planet.id, moon_id).as_str(),
+        events_log,
+    );
 
     planet
 }
@@ -371,7 +392,10 @@ fn moons_to_rings(planet: &mut Planetesimal, events_log: &mut AccreteEvents) {
         let moon_perhelion = perihelion_distance(&m.a, &m.e);
         if moon_perhelion <= roche_limit * 2.0 {
             let ring = Ring::from_planet(roche_limit, m);
-            ring.event(format!("moon_to_ring:{}:{}", planet.id, m.id).as_str(), events_log);
+            ring.event(
+                format!("moon_to_ring:{}:{}", planet.id, m.id).as_str(),
+                events_log,
+            );
             planet.rings.push(ring);
         } else {
             next_moons.push(m.clone());

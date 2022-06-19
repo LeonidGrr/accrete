@@ -1,6 +1,6 @@
 use crate::consts::*;
-use crate::events_log::event_source::EventSource;
 use crate::events_log::accrete_event::AccreteEvents;
+use crate::events_log::event_source::EventSource;
 use crate::structs::planetesimal::Planetesimal;
 use crate::structs::system::System;
 use crate::utils::*;
@@ -142,7 +142,7 @@ impl Accrete {
         planetary_system.event("planetary_environment_generated", events_log);
 
         planetary_system.event("system_complete", events_log);
-    
+
         planetary_system
     }
 

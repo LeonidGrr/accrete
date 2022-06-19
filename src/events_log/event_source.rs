@@ -1,4 +1,4 @@
-use super::accrete_event::{AccreteEvents, AccreteEvent};
+use super::accrete_event::{AccreteEvent, AccreteEvents};
 use crate::{structs::dust::DustBands, Planetesimal, Ring, System};
 
 pub trait EventSource: Clone {

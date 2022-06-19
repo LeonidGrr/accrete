@@ -1,5 +1,5 @@
-use serde::{Serialize, Deserialize};
 use crate::{structs::dust::DustBands, Planetesimal, Ring, System};
+use serde::{Deserialize, Serialize};
 
 pub type AccreteEvents = Vec<AccreteEvent>;
 

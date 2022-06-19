@@ -2,7 +2,6 @@ use crate::accrete::Accrete;
 use crate::utils::set_panic_hook;
 use wasm_bindgen::prelude::*;
 
-
 /// Generate planetary system from seed and primary star mass
 #[wasm_bindgen]
 pub fn planetary_system(seed: u64, stellar_mass: f64) -> JsValue {
