@@ -2,5 +2,8 @@
   "private": true,
   "scripts": {
     "start": "cp -r ../../pkg . && node index.js"
+  },
+  "dependencies": {
+    "accrete-wasm": "^0.2.1"
   }
 }

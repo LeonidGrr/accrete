@@ -1,4 +1,4 @@
-const { planetary_system } = require('./pkg/accrete-node');
+const { planetary_system } = require('accrete-wasm/accrete-node');
 
 console.log('Run accrete');
 console.log('=======================');
