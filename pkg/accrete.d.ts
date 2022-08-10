@@ -2,18 +2,18 @@
 /* eslint-disable */
 /**
 * Generate planetary system from seed and primary star mass
-* @param {BigInt} seed
+* @param {bigint} seed
 * @param {number} stellar_mass
 * @returns {any}
 */
-export function planetary_system(seed: BigInt, stellar_mass: number): any;
+export function planetary_system(seed: bigint, stellar_mass: number): any;
 /**
 * Generate random planet from seed and primary star mass
-* @param {BigInt} seed
+* @param {bigint} seed
 * @param {number} stellar_mass
 * @returns {any}
 */
-export function planet(seed: BigInt, stellar_mass: number): any;
+export function planet(seed: bigint, stellar_mass: number): any;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
@@ -25,6 +25,15 @@ export interface InitOutput {
   readonly __wbindgen_malloc: (a: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number) => number;
 }
+
+/**
+* Synchronously compiles the given `bytes` and instantiates the WebAssembly module.
+*
+* @param {BufferSource} bytes
+*
+* @returns {InitOutput}
+*/
+export function initSync(bytes: BufferSource): InitOutput;
 
 /**
 * If `module_or_path` is {RequestInfo} or {URL}, makes a request and

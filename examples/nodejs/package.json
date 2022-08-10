@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "scripts": {
+    "start": "cp -r ../../pkg . && node index.js"
+  }
+}
