@@ -374,6 +374,7 @@ fn capture_moon(
     for m in planet.moons.iter_mut() {
         m.a = rng.gen_range(0.0..planet.hill_sphere);
         m.e = random_eccentricity(rng);
+        m.b = m.a * (1.0 - m.e.powf(2.0)).sqrt();
         m.distance_to_primary_star = planet.a;
     }
 
