@@ -9,7 +9,7 @@ pub fn planetary_system(seed: u64, stellar_mass: f64) -> JsValue {
     let mut accrete = Accrete::new(seed);
     accrete.stellar_mass = stellar_mass;
     let planetary_system = accrete.planetary_system();
-    JsValue::from_serde(&planetary_system).unwrap()
+    serde_wasm_bindgen::to_value(&planetary_system).unwrap()
 }
 
 /// Generate random planet from seed and primary star mass
@@ -19,5 +19,5 @@ pub fn planet(seed: u64, stellar_mass: f64) -> JsValue {
     let mut accrete = Accrete::new(seed);
     accrete.stellar_mass = stellar_mass;
     let planet = accrete.planet();
-    JsValue::from_serde(&planet).unwrap()
+    serde_wasm_bindgen::to_value(&planet).unwrap()
 }
