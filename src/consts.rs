@@ -18,7 +18,7 @@ pub enum SpectralClass {
     O,
 }
 
-pub const PRECISION_FOR_RANDOM: f64 = 10e9;
+pub const PRECISION_FOR_RANDOM: f64 = 10e8;
 
 pub const PI: f64 = std::f64::consts::PI;
 
