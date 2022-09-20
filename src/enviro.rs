@@ -422,7 +422,7 @@ pub fn iterate_surface_temp(
     planet: &mut Planetesimal,
     ecosphere_radius: &f64,
     rng: &mut dyn RngCore,
-) -> f64 {
+) {
     let mut albedo = 0.0;
     let mut water = 0.0;
     let mut clouds = 0.0;
@@ -461,8 +461,7 @@ pub fn iterate_surface_temp(
     planet.cloud_cover = clouds;
     planet.ice_cover = ice;
     planet.albedo = albedo;
-    planet.surface_temp_kelvin = surface_temp_kelvin;
-    surface_temp_kelvin
+    planet.surface_temp_kelvin = float_to_precision(surface_temp_kelvin);
 }
 
 pub fn check_tidal_lock(day_length: f64, orbital_period: f64) -> bool {
@@ -516,10 +515,10 @@ pub fn get_day_night_temp_kelvin(planet: &mut Planetesimal) {
     let min_temp = soft(&wl, &max, &min);
 
     if (high_temp - max_temp).abs() > 10.0 || (low_temp - min_temp).abs() > 10.0 {
-        planet.day_temp_kelvin = high_temp;
-        planet.night_temp_kelvin = low_temp;
+        planet.day_temp_kelvin = float_to_precision(high_temp);
+        planet.night_temp_kelvin = float_to_precision(low_temp);
     }
 
-    planet.day_temp_kelvin = max_temp;
-    planet.night_temp_kelvin = min_temp;
+    planet.max_temp_kelvin = float_to_precision(max_temp);
+    planet.min_temp_kelvin = float_to_precision(min_temp);
 }
