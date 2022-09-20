@@ -175,20 +175,21 @@ pub fn rms_vel(molecular_weight: &f64, orbital_radius: &f64) -> f64 {
 /// This function returns the smallest molecular weight retained by the body, which is useful for determining the atmosphere composition. Orbital radius is in A.U.(ie: in units of the earth's orbital radius), mass is in units of solar masses, and equatorial radius is in units of kilometers.
 pub fn molecule_limit(mass: &f64, equatorial_radius: &f64) -> f64 {
     let escape_velocity = escape_vel(mass, equatorial_radius);
-    3.0 * (GAS_RETENTION_THRESHOLD * CM_PER_METER).powf(2.0)
+    let molecule_weight = 3.0 * (GAS_RETENTION_THRESHOLD * CM_PER_METER).powf(2.0)
         * MOLAR_GAS_CONST
         * EARTH_EXOSPHERE_TEMP
-        / escape_velocity.powf(2.0)
+        / escape_velocity.powf(2.0);
+    trunc_to_precision(molecule_weight)
 }
 
 /// This function calculates the surface acceleration of a planet. The mass is in units of solar masses, the radius in terms of km, and the acceleration is returned in units of cm/sec2.
 pub fn acceleration(mass: &f64, radius: &f64) -> f64 {
-    GRAV_CONSTANT * mass * SOLAR_MASS_IN_GRAMS / (radius * CM_PER_KM).powf(2.0)
+    trunc_to_precision(GRAV_CONSTANT * mass * SOLAR_MASS_IN_GRAMS / (radius * CM_PER_KM).powf(2.0))
 }
 
 /// This function calculates the surface gravity of a planet. The acceleration is in units of cm/sec2, and the gravity is returned in units of Earth gravities.
 pub fn gravity(acceleration: &f64) -> f64 {
-    acceleration / EARTH_ACCELERATION
+    trunc_to_precision(acceleration / EARTH_ACCELERATION)
 }
 
 /// Note that if the orbital radius of the planet is greater than or equal to R_inner, 99% of it's volatiles are assumed to have been deposited in surface reservoirs (otherwise, it suffers from the greenhouse effect).
