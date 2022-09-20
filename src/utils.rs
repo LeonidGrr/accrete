@@ -102,13 +102,13 @@ pub fn critical_limit(
 }
 
 pub fn trunc_to_precision(value: f64) -> f64 {
-    f64::trunc(value * PRECISION_FOR_RANDOM) / PRECISION_FOR_RANDOM
+    let formatted = format!("{:.10}", value);
+    formatted.parse::<f64>().expect("Failed to parse f64 with precision.")
 }
 
 pub fn semi_major_axis(planetesimal_inner_bound: f64, planetesimal_outer_bound: f64,  rng: &mut dyn RngCore) -> f64 {
     let a = rng.gen_range(planetesimal_inner_bound..planetesimal_outer_bound);
     trunc_to_precision(a)
-
 }
 
 pub fn semi_minor_axis(a: f64, e: f64) -> f64 {

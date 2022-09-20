@@ -362,8 +362,9 @@ fn capture_moon(
     let term3 = (term1 + term2) / (new_mass * new_axis.sqrt());
     let term4 = 1.0 - term3.powf(2.0);
     let new_eccn = term4.abs().sqrt();
-    planet.a = new_axis;
-    planet.e = new_eccn;
+    planet.a = trunc_to_precision(new_axis);
+    planet.e = trunc_to_precision(new_eccn);
+    planet.b = semi_minor_axis(planet.a, planet.e);
     planet.distance_to_primary_star = new_axis;
     planet.hill_sphere = hill_sphere_au(&planet.a, &planet.e, &planet.mass, stellar_mass);
 
