@@ -26,10 +26,15 @@ pub use structs::System;
 #[cfg(test)]
 mod tests {
     use crate::Accrete;
-    use std::fs;
+    use std::{fs, env};
     use std::io::{Error, Write};
 
-    const GENERATE_FIXTURES: bool = false;
+    fn generate_fixtures_env() -> bool {
+        match env::var("GENERATE_FIXTURES") {
+            Ok(s) => s == "true",
+            _ => false
+        }
+    }
 
     fn write_to_file(data: &str, path: &str) -> Result<(), Error> {
         let mut output = fs::File::create(path)?;
@@ -41,7 +46,7 @@ mod tests {
     }
 
     fn get_fixture(path: &str, accrete: &mut Accrete) -> String {
-        if GENERATE_FIXTURES {
+        if generate_fixtures_env() {
             write_to_file(&format!("{:?}", accrete.planetary_system()), path)
                 .expect("Failed to write fixture");
         }
@@ -218,7 +223,7 @@ mod tests {
         let mut accrete = Accrete::new(1);
         accrete.planet();
         let path = "./src/fixtures/random_planet_default";
-        if GENERATE_FIXTURES {
+        if generate_fixtures_env() {
             write_to_file(&format!("{:?}", accrete.planet()), path)
                 .expect("Failed to write fixture");
         }
