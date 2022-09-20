@@ -204,9 +204,9 @@ impl Planetesimal {
 
         self.hill_sphere = hill_sphere_au(&self.a, &self.e, &self.mass, stellar_mass);
         self.earth_masses = get_earth_mass(self.mass);
-        self.earth_radii = trunc_to_precision(self.radius / EARTH_RADIUS_IN_KM);
+        self.earth_radii = float_to_precision(self.radius / EARTH_RADIUS_IN_KM);
         self.length_of_year = self.orbital_period_days / 365.25;
-        self.escape_velocity_km_per_sec = self.escape_velocity / CM_PER_KM;
+        self.escape_velocity_km_per_sec = float_to_precision(self.escape_velocity / CM_PER_KM);
         self.is_tidally_locked = check_tidal_lock(self.day_hours, self.orbital_period_days);
 
         // Probability of planet have a tectonic activity:
@@ -237,7 +237,7 @@ impl Planetesimal {
     ) -> Self {
         let mut random_body =
             Planetesimal::new(planetesimal_inner_bound, planetesimal_outer_bound, rng);
-        random_body.mass = rng.gen_range(PLANETESIMAL_MASS..PROTOPLANET_MASS * 1.0e5);
+        random_body.mass = float_to_precision(rng.gen_range(PLANETESIMAL_MASS..PROTOPLANET_MASS * 1.0e5));
         random_body.orbit_zone = 3;
         random_body.radius = kothari_radius(
             &random_body.mass,

@@ -17,7 +17,8 @@ pub fn orbital_zone(luminosity: &f64, distance_to_primary_star: f64) -> i32 {
 /// The mass is in units of solar masses, and the density is in units of grams/cc. The radius returned is in units of km.
 pub fn volume_radius(mass: &f64, density: &f64) -> f64 {
     let volume = mass * SOLAR_MASS_IN_GRAMS / density;
-    ((3.0 * volume) / (4.0 * PI)).powf(0.33) / CM_PER_KM
+    let radius = ((3.0 * volume) / (4.0 * PI)).powf(0.33) / CM_PER_KM;
+    float_to_precision(radius)
 }
 
 /// Returns the radius of the planet in kilometers.
@@ -67,7 +68,7 @@ pub fn kothari_radius(mass: &f64, giant: &bool, zone: &i32) -> f64 {
     temp = (temp * mass.powf(1.0 / 3.0)) / CM_PER_KM;
     temp /= JIMS_FUDGE;
 
-    trunc_to_precision(temp)
+    float_to_precision(temp)
 }
 
 /// The mass passed in is in units of solar masses, and the orbital radius is in units of AU. The density is returned in units of grams/cc.
@@ -85,7 +86,7 @@ pub fn empirical_density(
         false => density * 5.5,
     };
 
-    trunc_to_precision(density)
+    float_to_precision(density)
 }
 
 /// The mass passed in is in units of solar masses, and the equatorial radius is in km. The density is returned in units of grams/cc.
@@ -93,14 +94,14 @@ pub fn volume_density(mass: &f64, equat_radius: &f64) -> f64 {
     let equat_radius = equat_radius * CM_PER_KM;
     let volume = (4.0 * PI * equat_radius.powf(3.0)) / 3.0;
     let density = mass * SOLAR_MASS_IN_GRAMS / volume;
-    trunc_to_precision(density)
+    float_to_precision(density)
 }
 
 /// Separation - Units of AU between the masses returns the period of an entire xorbit in Earth days.
 pub fn period(separation: &f64, small_mass: &f64, large_mass: &f64) -> f64 {
     let period_in_years = (separation.powf(3.0) / (small_mass + large_mass)).sqrt();
     // period_in_years * planet.days_in_year
-    trunc_to_precision(period_in_years * DAYS_IN_A_YEAR)
+    float_to_precision(period_in_years * DAYS_IN_A_YEAR)
 }
 
 /// Fogg's information for this routine came from Dole "Habitable Planets for Man", Blaisdell Publishing Company, NY, 1964. From this, he came up with his eq.12, which is the equation for the base_angular_velocity below.
@@ -146,14 +147,14 @@ pub fn day_length(planet: &mut Planetesimal, stellar_mass: &f64, main_sequence_a
         }
     }
     
-    trunc_to_precision(day_in_hours)
+    float_to_precision(day_in_hours)
 }
 
 /// The orbital radius is expected in units of Astronomical Units (AU).
 /// Inclination is returned in units of degrees.
 pub fn inclination(orbital_radius: &f64, rng: &mut dyn RngCore) -> f64 {
     let inclination = orbital_radius.powf(0.2) * about(EARTH_AXIAL_TILT, 0.4, rng);
-    trunc_to_precision(inclination % 360.0)
+    float_to_precision(inclination % 360.0)
 }
 
 /// This function implements the escape velocity calculation. Note that it appears that Fogg's eq.15 is i/ncorrect.
@@ -162,14 +163,14 @@ pub fn escape_vel(mass: &f64, radius: &f64) -> f64 {
     let mass_in_grams = mass * SOLAR_MASS_IN_GRAMS;
     let radius_in_cm = radius * CM_PER_KM;
     let escape_vel = (2.0 * GRAV_CONSTANT * mass_in_grams / radius_in_cm).sqrt();
-    trunc_to_precision(escape_vel)
+    float_to_precision(escape_vel)
 }
 
 /// This is Fogg's eq.16. The molecular weight (usually assumed to be N2) is used as the basis of the Root Mean Square velocity of the molecule or atom. The velocity returned is in cm/sec.
 pub fn rms_vel(molecular_weight: &f64, orbital_radius: &f64) -> f64 {
     let exospheric_temp = EARTH_EXOSPHERE_TEMP / orbital_radius.powf(2.0);
     let rms_vel = ((3.0 * MOLAR_GAS_CONST * exospheric_temp) / molecular_weight).sqrt() * CM_PER_METER;
-    trunc_to_precision(rms_vel)
+    float_to_precision(rms_vel)
 }
 
 /// This function returns the smallest molecular weight retained by the body, which is useful for determining the atmosphere composition. Orbital radius is in A.U.(ie: in units of the earth's orbital radius), mass is in units of solar masses, and equatorial radius is in units of kilometers.
@@ -179,17 +180,17 @@ pub fn molecule_limit(mass: &f64, equatorial_radius: &f64) -> f64 {
         * MOLAR_GAS_CONST
         * EARTH_EXOSPHERE_TEMP
         / escape_velocity.powf(2.0);
-    trunc_to_precision(molecule_weight)
+    float_to_precision(molecule_weight)
 }
 
 /// This function calculates the surface acceleration of a planet. The mass is in units of solar masses, the radius in terms of km, and the acceleration is returned in units of cm/sec2.
 pub fn acceleration(mass: &f64, radius: &f64) -> f64 {
-    trunc_to_precision(GRAV_CONSTANT * mass * SOLAR_MASS_IN_GRAMS / (radius * CM_PER_KM).powf(2.0))
+    float_to_precision(GRAV_CONSTANT * mass * SOLAR_MASS_IN_GRAMS / (radius * CM_PER_KM).powf(2.0))
 }
 
 /// This function calculates the surface gravity of a planet. The acceleration is in units of cm/sec2, and the gravity is returned in units of Earth gravities.
 pub fn gravity(acceleration: &f64) -> f64 {
-    trunc_to_precision(acceleration / EARTH_ACCELERATION)
+    float_to_precision(acceleration / EARTH_ACCELERATION)
 }
 
 /// Note that if the orbital radius of the planet is greater than or equal to R_inner, 99% of it's volatiles are assumed to have been deposited in surface reservoirs (otherwise, it suffers from the greenhouse effect).
@@ -226,7 +227,7 @@ pub fn vol_inventory(
         _ => 10.0,
     };
 
-    let mass_in_earth_units = trunc_to_precision(mass * EARTH_MASSES_PER_SOLAR_MASS);
+    let mass_in_earth_units = float_to_precision(mass * EARTH_MASSES_PER_SOLAR_MASS);
     let temp1 = proportion_const * mass_in_earth_units / stellar_mass;
     let temp2 = about(temp1, 0.2, rng);
 
@@ -413,7 +414,7 @@ pub fn opacity(molecular_weight: f64, surface_pressure_bar: f64) -> f64 {
 
 /// Convert solar mass to Earth mass
 pub fn get_earth_mass(mass: f64) -> f64 {
-    trunc_to_precision(mass * EARTH_MASSES_PER_SOLAR_MASS)
+    float_to_precision(mass * EARTH_MASSES_PER_SOLAR_MASS)
 }
 
 /// The temperature calculated is in degrees Kelvin.
