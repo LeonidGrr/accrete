@@ -59,7 +59,8 @@ pub fn aphelion_distance(radius: &f64, eccentricity: &f64) -> f64 {
 
 pub fn random_eccentricity(rng: &mut dyn RngCore) -> f64 {
     let random: f64 = rng.gen_range(0.0..1.0);
-    1.0 - (1.0 - random).powf(ECCENTRICITY_COEFF)
+    let e = 1.0 - (1.0 - random).powf(ECCENTRICITY_COEFF);
+    trunc_to_precision(e)    
 }
 
 /// Roche limit for planet / moon system in AU. Moon radius passes in AU, masses in solar mass.
@@ -74,7 +75,8 @@ pub fn hill_sphere_au(
     planet_mass: &f64,
     stellar_mass: &f64,
 ) -> f64 {
-    planet_axis * (1.0 - planet_eccn) * (planet_mass / (3.0 * stellar_mass)).powf(1.0 / 3.0)
+    let hill_sphere = planet_axis * (1.0 - planet_eccn) * (planet_mass / (3.0 * stellar_mass)).powf(1.0 / 3.0);
+    trunc_to_precision(hill_sphere)
 }
 
 /// Clearing neightbourhood around planets orbit Margot's П discriminant (masses in solar mass, axis untiless)
@@ -97,6 +99,21 @@ pub fn critical_limit(
     let perihelion_dist = orbital_radius - orbital_radius * eccentricity;
     let temp = perihelion_dist * stellar_luminosity_ratio.sqrt();
     b * temp.powf(-0.75)
+}
+
+pub fn trunc_to_precision(value: f64) -> f64 {
+    f64::trunc(value * PRECISION_FOR_RANDOM) / PRECISION_FOR_RANDOM
+}
+
+pub fn semi_major_axis(planetesimal_inner_bound: f64, planetesimal_outer_bound: f64,  rng: &mut dyn RngCore) -> f64 {
+    let a = rng.gen_range(planetesimal_inner_bound..planetesimal_outer_bound);
+    trunc_to_precision(a)
+
+}
+
+pub fn semi_minor_axis(a: f64, e: f64) -> f64 {
+    let b = a * (1.0 - e.powf(2.0)).sqrt();
+    trunc_to_precision(b)
 }
 
 #[cfg(test)]

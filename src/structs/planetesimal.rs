@@ -77,9 +77,9 @@ impl Planetesimal {
         planetesimal_outer_bound: &f64,
         rng: &mut dyn RngCore,
     ) -> Self {
-        let a = rng.gen_range(*planetesimal_inner_bound..*planetesimal_outer_bound);
+        let a = semi_major_axis(*planetesimal_inner_bound, *planetesimal_outer_bound, rng);
         let e = random_eccentricity(rng);
-        let b = a * (1.0 - e.powf(2.0)).sqrt();
+        let b = semi_minor_axis(a, e);
         let id = random_id(rng);
 
         Planetesimal {
@@ -204,7 +204,7 @@ impl Planetesimal {
 
         self.hill_sphere = hill_sphere_au(&self.a, &self.e, &self.mass, stellar_mass);
         self.earth_masses = get_earth_mass(self.mass);
-        self.earth_radii = self.radius / EARTH_RADIUS_IN_KM;
+        self.earth_radii = trunc_to_precision(self.radius / EARTH_RADIUS_IN_KM);
         self.length_of_year = self.orbital_period_days / 365.25;
         self.escape_velocity_km_per_sec = self.escape_velocity / CM_PER_KM;
         self.is_tidally_locked = check_tidal_lock(self.day_hours, self.orbital_period_days);
@@ -276,7 +276,7 @@ impl Planetesimal {
             is_dwarf_planet = true;
         }
         let id = random_id(rng);
-        let b = a * (1.0 - e.powf(2.0)).sqrt();
+        let b = semi_minor_axis(a, e);
 
         let mut random_planet = Planetesimal {
             a,
