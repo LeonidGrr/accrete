@@ -163,7 +163,8 @@ pub fn escape_vel(mass: &f64, radius: &f64) -> f64 {
 /// This is Fogg's eq.16. The molecular weight (usually assumed to be N2) is used as the basis of the Root Mean Square velocity of the molecule or atom. The velocity returned is in cm/sec.
 pub fn rms_vel(molecular_weight: &f64, orbital_radius: &f64) -> f64 {
     let exospheric_temp = EARTH_EXOSPHERE_TEMP / orbital_radius.powf(2.0);
-    ((3.0 * MOLAR_GAS_CONST * exospheric_temp) / molecular_weight).sqrt() * CM_PER_METER
+    let rms_vel = ((3.0 * MOLAR_GAS_CONST * exospheric_temp) / molecular_weight).sqrt() * CM_PER_METER;
+    f64::trunc(rms_vel * 10e9) / 10e9
 }
 
 /// This function returns the smallest molecular weight retained by the body, which is useful for determining the atmosphere composition. Orbital radius is in A.U.(ie: in units of the earth's orbital radius), mass is in units of solar masses, and equatorial radius is in units of kilometers.
