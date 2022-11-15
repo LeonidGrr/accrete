@@ -19,20 +19,6 @@ This version of Accrete can be used for procedural generation of plausible plane
 - [NPM package](https://www.npmjs.com/package/accrete-wasm)
 
 ## Generate planetary system
-Rust:
-```rust
-use accrete;
-
-fn main() {
-    let u64_seed = 123;
-    let mut accrete = Accrete::new(u64_seed);
-    // To modify accrete configuration just change public field:
-    // accrete.stellar_mass = 1.5;
-    accrete.planetary_system();
-}
-```
-
-Javascript:
 ```javascript
 import init, { planetary_system } from 'accrete-wasm';
 async function run() {
@@ -71,21 +57,6 @@ Simple way to variate output is to change stellar mass. This accrete implementat
 *Default: 1000*
 
 ## Generate planet
-
-Rust:
-```rust
-use accrete;
-
-fn main() {
-    let u64_seed = 123;
-    let mut accrete = Accrete::new(u64_seed);
-    // To modify accrete configuration just change public field:
-    // accrete.planet_mass = 2.5;
-    accrete.planet();
-}
-```
-
-Javascript:
 ```javascript
 import init, { planet } from 'accrete-wasm';
 async function run() {
