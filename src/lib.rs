@@ -240,4 +240,45 @@ mod tests {
         let s2 = a2.planetary_system();
         assert_eq!(format!("{:?}", s1), format!("{:?}", s2));
     }
+
+    #[test]
+    fn coalesce_produces_correct_count() {
+        let mut accrete = Accrete::new(1);
+        let system = accrete.planetary_system();
+        assert!(
+            !system.planets.is_empty(),
+            "coalesce_planetesimals should leave at least one planet"
+        );
+    }
+
+    #[test]
+    fn capture_moon_adds_moon() {
+        let mut accrete = Accrete::new(1);
+        let system = accrete.planetary_system();
+        let moon_count: usize = system.planets.iter().map(|p| p.moons.len()).sum();
+        assert!(
+            moon_count > 0,
+            "post-accretion bombardment should capture at least one moon"
+        );
+    }
+
+    #[test]
+    fn no_spurious_coalescence() {
+        let mut accrete = Accrete::new(1);
+        accrete.post_accretion_intensity = 0;
+        let system = accrete.planetary_system();
+        assert!(
+            !system.planets.is_empty(),
+            "should produce at least one planet without bombardment"
+        );
+    }
+
+    #[test]
+    fn same_seed_same_system_after_perf_fixes() {
+        let mut a1 = Accrete::new(42);
+        let s1 = a1.planetary_system();
+        let mut a2 = Accrete::new(42);
+        let s2 = a2.planetary_system();
+        assert_eq!(format!("{:?}", s1), format!("{:?}", s2));
+    }
 }

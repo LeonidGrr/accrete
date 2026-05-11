@@ -211,7 +211,11 @@ impl System {
     }
 }
 
-/// Check planetesimal coalescence
+/// Check planetesimal coalescence. Iterates `planets` in place; removes a
+/// body from the Vec only on actual coalescence. The previous implementation
+/// allocated a shadow Vec and cloned every planet on every call regardless
+/// of whether any coalescence occurred — costly on the post-accretion hot
+/// path where most calls have no intersections.
 pub fn coalesce_planetesimals(
     primary_star_luminosity: &f64,
     primary_star_mass: &f64,
@@ -219,26 +223,29 @@ pub fn coalesce_planetesimals(
     rng: &mut dyn RngCore,
     events_log: &mut AccreteEvents,
 ) {
-    let mut next_planets = Vec::new();
-    for (i, p) in planets.iter_mut().enumerate() {
-        if i == 0 {
-            next_planets.push(p.clone());
-        } else if let Some(prev_p) = next_planets.last_mut() {
-            if check_orbits_intersect(p.a, p.e, p.mass, prev_p.a, prev_p.e, prev_p.mass) {
-                planetesimals_intersect(
-                    p,
-                    prev_p,
-                    primary_star_luminosity,
-                    primary_star_mass,
-                    rng,
-                    events_log,
-                );
-            } else {
-                next_planets.push(p.clone());
-            }
+    let mut i = 1;
+    while i < planets.len() {
+        let do_intersect = {
+            let p = &planets[i];
+            let prev_p = &planets[i - 1];
+            check_orbits_intersect(p.a, p.e, p.mass, prev_p.a, prev_p.e, prev_p.mass)
+        };
+        if do_intersect {
+            // Remove planets[i] by value, merge it into planets[i-1] in place.
+            let mut p = planets.remove(i);
+            planetesimals_intersect(
+                &mut p,
+                &mut planets[i - 1],
+                primary_star_luminosity,
+                primary_star_mass,
+                rng,
+                events_log,
+            );
+            // Do not advance i — the merged body may now intersect planets[i].
+        } else {
+            i += 1;
         }
     }
-    *planets = next_planets;
 }
 
 /// Two planetesimals intersect
@@ -274,7 +281,13 @@ pub fn planetesimals_intersect(
             if p.mass >= prev_p.mass {
                 std::mem::swap(p, prev_p);
             }
-            *prev_p = capture_moon(prev_p, p, primary_star_mass, rng, events_log);
+            // Take owned values out of the &mut slots via placeholder. The
+            // placeholder left in *p is dropped at scope end (the slot is
+            // either a Vec::remove local or a fresh outer_body local);
+            // *prev_p is overwritten by the capture_moon result below.
+            let prev_owned = std::mem::replace(prev_p, Planetesimal::placeholder());
+            let p_owned = std::mem::replace(p, Planetesimal::placeholder());
+            *prev_p = capture_moon(prev_owned, p_owned, primary_star_mass, rng, events_log);
             prev_p
                 .moons
                 .sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
@@ -351,16 +364,16 @@ fn coalesce_two_planets(
     coalesced
 }
 
-/// Larger planetsimal capture smaller as moon
+/// Larger planetsimal capture smaller as moon. Takes ownership of both
+/// bodies and modifies the larger (`planet`) in place — only the smaller
+/// body's id String is cloned (for the event message), not the struct.
 fn capture_moon(
-    larger: &Planetesimal,
-    smaller: &Planetesimal,
+    mut planet: Planetesimal,
+    mut moon: Planetesimal,
     stellar_mass: &f64,
     rng: &mut dyn RngCore,
     events_log: &mut AccreteEvents,
 ) -> Planetesimal {
-    let mut planet = larger.clone();
-    let mut moon = smaller.clone();
     moon.is_moon = true;
     let moon_id = moon.id.clone();
 
