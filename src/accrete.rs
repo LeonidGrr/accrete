@@ -42,8 +42,12 @@ use serde::{Deserialize, Serialize};
 /// **stellar_luminosity** - Primary star luminosity.
 /// *Default: 1.0*
 ///
-/// **events_log** - AccreteEvents log.
-/// *Default: []*
+/// **events_log** - Optional event log. Set to `Some(vec![])` to record state-transition
+/// events (planet creation, coalescence, capture, bombardment, etc.); set to `None` to
+/// disable event recording entirely. Disabling skips deep clones of `System` /
+/// `Planetesimal` / `DustBands` / `Ring` on every state transition — recommended for
+/// high-volume batch workloads (`post_accretion_intensity` × N_planets clones avoided).
+/// *Default: Some(vec![]) — event recording on; opt out by assigning None.*
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Accrete {
     pub stellar_mass: f64,
@@ -56,7 +60,7 @@ pub struct Accrete {
     pub planet_e: f64,
     pub planet_mass: f64,
     pub stellar_luminosity: f64,
-    pub events_log: AccreteEvents,
+    pub events_log: Option<AccreteEvents>,
     rng: ChaCha8Rng,
 }
 
@@ -81,7 +85,7 @@ impl Default for Accrete {
             planet_e,
             planet_mass,
             rng,
-            events_log: vec![],
+            events_log: Some(vec![]),
         }
     }
 }
@@ -107,7 +111,7 @@ impl Accrete {
             planet_e,
             planet_mass,
             rng,
-            events_log: vec![],
+            events_log: Some(vec![]),
         }
     }
 
@@ -133,15 +137,15 @@ impl Accrete {
             *b,
         );
 
-        planetary_system.event("system_setup", events_log);
+        planetary_system.event("system_setup", events_log.as_mut());
 
-        planetary_system.distribute_planetary_masses(rng, events_log);
-        planetary_system.post_accretion(*post_accretion_intensity, rng, events_log);
+        planetary_system.distribute_planetary_masses(rng, events_log.as_mut());
+        planetary_system.post_accretion(*post_accretion_intensity, rng, events_log.as_mut());
         planetary_system.process_planets(rng);
 
-        planetary_system.event("planetary_environment_generated", events_log);
+        planetary_system.event("planetary_environment_generated", events_log.as_mut());
 
-        planetary_system.event("system_complete", events_log);
+        planetary_system.event("system_complete", events_log.as_mut());
 
         planetary_system
     }
@@ -168,7 +172,7 @@ impl Accrete {
             *planet_mass,
             *post_accretion_intensity,
             rng,
-            events_log,
+            events_log.as_mut(),
         )
     }
 }

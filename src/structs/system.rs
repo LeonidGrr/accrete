@@ -59,7 +59,7 @@ impl System {
     pub fn distribute_planetary_masses(
         &mut self,
         rng: &mut dyn RngCore,
-        events_log: &mut AccreteEvents,
+        mut events_log: Option<&mut AccreteEvents>,
     ) {
         let Self {
             primary_star,
@@ -82,7 +82,7 @@ impl System {
 
         while *dust_left {
             let mut p = Planetesimal::new(planetesimal_inner_bound, planetesimal_outer_bound, rng);
-            p.event("planetesimal_created", events_log);
+            p.event("planetesimal_created", events_log.as_deref_mut());
 
             let inside_range = inner_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
             let outside_range = outer_swept_limit(&p.a, &p.e, &p.mass, cloud_eccentricity);
@@ -107,11 +107,11 @@ impl System {
                 update_dust_lanes(dust_bands, min, max, &p.mass, &crit_mass);
                 compress_dust_lanes(dust_bands);
 
-                dust_bands.event("dust_bands_updated", events_log);
+                dust_bands.event("dust_bands_updated", events_log.as_deref_mut());
 
                 if p.mass > crit_mass {
                     p.is_gas_giant = true;
-                    p.event("planetesimal_to_gas_giant", events_log);
+                    p.event("planetesimal_to_gas_giant", events_log.as_deref_mut());
                 }
 
                 p.orbit_clearing = clearing_neightbourhood(&p.mass, &p.a, stellar_mass);
@@ -121,11 +121,11 @@ impl System {
                 p.orbit_zone = orbital_zone(stellar_luminosity, p.distance_to_primary_star);
                 p.radius = kothari_radius(&p.mass, &p.is_gas_giant, &p.orbit_zone);
 
-                p.event("planetesimal_updated", events_log);
+                p.event("planetesimal_updated", events_log.as_deref_mut());
 
                 planets.push(p);
                 planets.sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
-                coalesce_planetesimals(stellar_luminosity, stellar_mass, planets, rng, events_log);
+                coalesce_planetesimals(stellar_luminosity, stellar_mass, planets, rng, events_log.as_deref_mut());
             }
 
             *dust_left = dust_availible(
@@ -140,9 +140,9 @@ impl System {
         &mut self,
         intensity: u32,
         rng: &mut dyn RngCore,
-        events_log: &mut AccreteEvents,
+        mut events_log: Option<&mut AccreteEvents>,
     ) {
-        self.event("post_accretion_started", events_log);
+        self.event("post_accretion_started", events_log.as_deref_mut());
 
         let Self {
             primary_star,
@@ -163,7 +163,7 @@ impl System {
             let r_outer = outer_effect_limit(a, e, mass);
             let mut outer_body = Planetesimal::random_outer_body(&r_inner, &r_outer, rng);
 
-            outer_body.event("outer_body_injected", events_log);
+            outer_body.event("outer_body_injected", events_log.as_deref_mut());
 
             planetesimals_intersect(
                 &mut outer_body,
@@ -171,7 +171,7 @@ impl System {
                 &primary_star.stellar_luminosity,
                 &primary_star.stellar_mass,
                 rng,
-                events_log,
+                events_log.as_deref_mut(),
             );
         }
     }
@@ -217,7 +217,7 @@ pub fn coalesce_planetesimals(
     primary_star_mass: &f64,
     planets: &mut Vec<Planetesimal>,
     rng: &mut dyn RngCore,
-    events_log: &mut AccreteEvents,
+    mut events_log: Option<&mut AccreteEvents>,
 ) {
     let mut next_planets = Vec::new();
     for (i, p) in planets.iter_mut().enumerate() {
@@ -231,7 +231,7 @@ pub fn coalesce_planetesimals(
                     primary_star_luminosity,
                     primary_star_mass,
                     rng,
-                    events_log,
+                    events_log.as_deref_mut(),
                 );
             } else {
                 next_planets.push(p.clone());
@@ -248,11 +248,11 @@ pub fn planetesimals_intersect(
     primary_star_luminosity: &f64,
     primary_star_mass: &f64,
     rng: &mut dyn RngCore,
-    events_log: &mut AccreteEvents,
+    mut events_log: Option<&mut AccreteEvents>,
 ) {
     // Moon is not likely to capture other moon in a presence of planet
     if p.is_moon {
-        *prev_p = coalesce_two_planets(prev_p, p, events_log);
+        *prev_p = coalesce_two_planets(prev_p, p, events_log.as_deref_mut());
     } else {
         // Check for larger/smaller planetesimal
         let (larger, smaller) = match p.mass >= prev_p.mass {
@@ -262,9 +262,9 @@ pub fn planetesimals_intersect(
         let roche_limit = roche_limit_au(&larger.mass, &smaller.mass, &smaller.radius);
         // Planetesimals collide or one capture another as moon
         if (prev_p.a - p.a).abs() <= roche_limit * 2.0 {
-            *prev_p = coalesce_two_planets(prev_p, p, events_log);
+            *prev_p = coalesce_two_planets(prev_p, p, events_log.as_deref_mut());
         } else {
-            *prev_p = capture_moon(&larger, &smaller, primary_star_mass, rng, events_log);
+            *prev_p = capture_moon(&larger, &smaller, primary_star_mass, rng, events_log.as_deref_mut());
             prev_p
                 .moons
                 .sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
@@ -273,9 +273,9 @@ pub fn planetesimals_intersect(
                 primary_star_mass,
                 &mut prev_p.moons,
                 rng,
-                events_log,
+                events_log.as_deref_mut(),
             );
-            moons_to_rings(prev_p, events_log);
+            moons_to_rings(prev_p, events_log.as_deref_mut());
         }
     }
 }
@@ -309,7 +309,7 @@ fn check_orbits_intersect(
 fn coalesce_two_planets(
     a: &Planetesimal,
     b: &Planetesimal,
-    events_log: &mut AccreteEvents,
+    events_log: Option<&mut AccreteEvents>,
 ) -> Planetesimal {
     let new_mass = a.mass + b.mass;
     let new_axis = new_mass / (a.mass / a.a + b.mass / b.a);
@@ -347,7 +347,7 @@ fn capture_moon(
     smaller: &Planetesimal,
     stellar_mass: &f64,
     rng: &mut dyn RngCore,
-    events_log: &mut AccreteEvents,
+    events_log: Option<&mut AccreteEvents>,
 ) -> Planetesimal {
     let mut planet = larger.clone();
     let mut moon = smaller.clone();
@@ -387,7 +387,7 @@ fn capture_moon(
     planet
 }
 
-fn moons_to_rings(planet: &mut Planetesimal, events_log: &mut AccreteEvents) {
+fn moons_to_rings(planet: &mut Planetesimal, mut events_log: Option<&mut AccreteEvents>) {
     let mut next_moons = Vec::new();
     for m in planet.moons.iter_mut() {
         let roche_limit = roche_limit_au(&planet.mass, &m.mass, &m.radius);
@@ -396,7 +396,7 @@ fn moons_to_rings(planet: &mut Planetesimal, events_log: &mut AccreteEvents) {
             let ring = Ring::from_planet(roche_limit, m);
             ring.event(
                 format!("moon_to_ring:{}:{}", planet.id, m.id).as_str(),
-                events_log,
+                events_log.as_deref_mut(),
             );
             planet.rings.push(ring);
         } else {
