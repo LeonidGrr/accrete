@@ -254,17 +254,27 @@ pub fn planetesimals_intersect(
     if p.is_moon {
         *prev_p = coalesce_two_planets(prev_p, p, events_log);
     } else {
-        // Check for larger/smaller planetesimal
-        let (larger, smaller) = match p.mass >= prev_p.mass {
-            true => (p.clone(), prev_p.clone()),
-            false => (prev_p.clone(), p.clone()),
+        // Compute roche_limit from scalars — avoids deep-cloning both bodies
+        // (each carries Vec<Planetesimal> moons + Vec<Ring> rings) just to read
+        // three f64s. The original code cloned `larger` and `smaller` purely to
+        // satisfy the borrow checker. Third arg to roche_limit_au is the
+        // smaller/moon body's radius (see roche_limit_au doc in utils.rs).
+        let (larger_mass, smaller_mass, smaller_radius) = if p.mass >= prev_p.mass {
+            (p.mass, prev_p.mass, prev_p.radius)
+        } else {
+            (prev_p.mass, p.mass, p.radius)
         };
-        let roche_limit = roche_limit_au(&larger.mass, &smaller.mass, &smaller.radius);
+        let roche_limit = roche_limit_au(&larger_mass, &smaller_mass, &smaller_radius);
         // Planetesimals collide or one capture another as moon
         if (prev_p.a - p.a).abs() <= roche_limit * 2.0 {
             *prev_p = coalesce_two_planets(prev_p, p, events_log);
         } else {
-            *prev_p = capture_moon(&larger, &smaller, primary_star_mass, rng, events_log);
+            // Ensure prev_p holds the larger body before capture_moon. Use
+            // `>=` to preserve the original tiebreak (p wins on equal mass).
+            if p.mass >= prev_p.mass {
+                std::mem::swap(p, prev_p);
+            }
+            *prev_p = capture_moon(prev_p, p, primary_star_mass, rng, events_log);
             prev_p
                 .moons
                 .sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
