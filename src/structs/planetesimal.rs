@@ -134,6 +134,62 @@ impl Planetesimal {
         }
     }
 
+    /// Zero-initialized stub for `std::mem::replace` extraction. Used by
+    /// `planetesimals_intersect` to take owned `Planetesimal` values out of
+    /// `&mut Planetesimal` slots before calling `capture_moon`. The slot is
+    /// overwritten in the same statement, so this value is never observed.
+    /// Visibility is `pub(crate)` to keep it out of the public API.
+    pub(crate) fn placeholder() -> Self {
+        Planetesimal {
+            a: 0.0,
+            b: 0.0,
+            e: 0.0,
+            distance_to_primary_star: 0.0,
+            mass: 0.0,
+            earth_masses: 0.0,
+            orbit_zone: 0,
+            radius: 0.0,
+            earth_radii: 0.0,
+            density: 0.0,
+            orbital_period_days: 0.0,
+            day_hours: 0.0,
+            resonant_period: false,
+            axial_tilt: 0.0,
+            escape_velocity: 0.0,
+            surface_accel: 0.0,
+            surface_grav: 0.0,
+            rms_velocity: 0.0,
+            molecule_weight: 0.0,
+            volatile_gas_inventory: 0.0,
+            greenhouse_effect: false,
+            albedo: 0.0,
+            surface_temp_kelvin: 0.0,
+            day_temp_kelvin: 0.0,
+            night_temp_kelvin: 0.0,
+            max_temp_kelvin: 0.0,
+            min_temp_kelvin: 0.0,
+            surface_pressure_bar: 0.0,
+            boiling_point_kelvin: 0.0,
+            hydrosphere: 0.0,
+            cloud_cover: 0.0,
+            ice_cover: 0.0,
+            moons: Vec::new(),
+            rings: Vec::new(),
+            length_of_year: 0.0,
+            escape_velocity_km_per_sec: 0.0,
+            is_tidally_locked: false,
+            is_moon: false,
+            is_gas_giant: false,
+            is_dwarf_planet: false,
+            orbit_clearing: 0.0,
+            hill_sphere: 0.0,
+            tectonic_activity: false,
+            magnetosphere: false,
+            has_collision: false,
+            id: String::new(),
+        }
+    }
+
     pub fn derive_planetary_environment(
         &mut self,
         stellar_luminosity: &f64,
