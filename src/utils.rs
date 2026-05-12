@@ -1,11 +1,14 @@
 use crate::consts::*;
 use rand::{distributions::Alphanumeric, Rng, RngCore};
 
+// wee_alloc is a WASM code-size allocator that never returns freed pages to the
+// OS on native targets. Gate both the extern and the global_allocator on wasm32
+// so native builds use the system allocator (glibc malloc), which reclaims pages
+// normally and avoids unbounded RSS growth in batch pipelines.
+#[cfg(all(feature = "wee_alloc", target_arch = "wasm32"))]
 extern crate wee_alloc;
 
-// When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
-// allocator.
-#[cfg(feature = "wee_alloc")]
+#[cfg(all(feature = "wee_alloc", target_arch = "wasm32"))]
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 

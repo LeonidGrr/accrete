@@ -316,7 +316,7 @@ impl Planetesimal {
         mass: f64,
         post_accretion_intensity: u32,
         rng: &mut dyn RngCore,
-        events_log: &mut AccreteEvents,
+        mut events_log: Option<&mut AccreteEvents>,
     ) -> Planetesimal {
         let main_seq_age = main_sequence_age(stellar_mass, stellar_luminosity);
         let stellar_radius_au = stellar_radius_au(stellar_mass);
@@ -398,7 +398,7 @@ impl Planetesimal {
                 &stellar_luminosity,
                 &stellar_mass,
                 rng,
-                events_log,
+                events_log.as_deref_mut(),
             );
         }
 
