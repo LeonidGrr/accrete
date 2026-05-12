@@ -2,11 +2,12 @@ use super::accrete_event::{AccreteEvent, AccreteEvents};
 use crate::{structs::dust::DustBands, Planetesimal, Ring, System};
 
 pub trait EventSource: Clone {
-    fn event(&self, _event_type: &str, _events_log: &mut AccreteEvents) {}
+    fn event(&self, _event_type: &str, _events_log: Option<&mut AccreteEvents>) {}
 }
 
 impl EventSource for System {
-    fn event(&self, event_type: &str, events_log: &mut AccreteEvents) {
+    fn event(&self, event_type: &str, events_log: Option<&mut AccreteEvents>) {
+        let Some(log) = events_log else { return };
         let event = match event_type {
             "system_setup" => Some(AccreteEvent::PlanetarySystemSetup(
                 event_type.to_string(),
@@ -27,13 +28,14 @@ impl EventSource for System {
         };
 
         if let Some(e) = event {
-            events_log.push(e)
+            log.push(e)
         }
     }
 }
 
 impl EventSource for Planetesimal {
-    fn event(&self, event_type: &str, events_log: &mut AccreteEvents) {
+    fn event(&self, event_type: &str, events_log: Option<&mut AccreteEvents>) {
+        let Some(log) = events_log else { return };
         let mut event = match event_type {
             "planetesimal_created" => Some(AccreteEvent::PlanetesimalCreated(
                 event_type.to_string(),
@@ -85,16 +87,17 @@ impl EventSource for Planetesimal {
         }
 
         if let Some(e) = event {
-            events_log.push(e)
+            log.push(e)
         }
     }
 }
 
 impl EventSource for Ring {
-    fn event(&self, event_type: &str, events_log: &mut AccreteEvents) {
+    fn event(&self, event_type: &str, events_log: Option<&mut AccreteEvents>) {
+        let Some(log) = events_log else { return };
         if event_type.contains("moon_to_ring") {
             let data: Vec<&str> = event_type.split(':').collect();
-            events_log.push(AccreteEvent::PlanetesimalMoonToRing(
+            log.push(AccreteEvent::PlanetesimalMoonToRing(
                 data[0].to_string(),
                 data[1].to_string(),
                 data[2].to_string(),
@@ -105,7 +108,8 @@ impl EventSource for Ring {
 }
 
 impl EventSource for DustBands {
-    fn event(&self, event_type: &str, events_log: &mut AccreteEvents) {
+    fn event(&self, event_type: &str, events_log: Option<&mut AccreteEvents>) {
+        let Some(log) = events_log else { return };
         let event = match event_type {
             "dust_bands_updated" => Some(AccreteEvent::DustBandsUpdated(
                 event_type.to_string(),
@@ -115,7 +119,7 @@ impl EventSource for DustBands {
         };
 
         if let Some(e) = event {
-            events_log.push(e)
+            log.push(e)
         }
     }
 }
