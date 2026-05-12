@@ -274,7 +274,7 @@ pub fn planetesimals_intersect(
             if p.mass >= prev_p.mass {
                 std::mem::swap(p, prev_p);
             }
-            *prev_p = capture_moon(prev_p, p, primary_star_mass, rng, events_log);
+            *prev_p = capture_moon(prev_p, p, primary_star_mass, rng, events_log.as_deref_mut());
             prev_p
                 .moons
                 .sort_by(|p1, p2| p1.a.partial_cmp(&p2.a).unwrap());
