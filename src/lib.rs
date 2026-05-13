@@ -231,4 +231,13 @@ mod tests {
         let system = format!("{:?}", accrete.planet());
         assert_eq!(system, fixture);
     }
+
+    #[test]
+    fn same_seed_same_system_after_fix_3a() {
+        let mut a1 = Accrete::new(1);
+        let s1 = a1.planetary_system();
+        let mut a2 = Accrete::new(1);
+        let s2 = a2.planetary_system();
+        assert_eq!(format!("{:?}", s1), format!("{:?}", s2));
+    }
 }
